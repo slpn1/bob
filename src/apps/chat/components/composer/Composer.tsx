@@ -679,16 +679,16 @@ export function Composer(props: {
       : isReAct ? 'Ask a multi-step reasoning question...'
         : isTextBeam ? 'Combine insights from multiple AI models...'
           : showChatInReferenceTo ? 'Chat about this...'
-            : 'Type'
-            + (props.isDeveloperMode ? ' · attach code' : '')
-            + (isDesktop ? ` · drop ${props.isDeveloperMode ? 'source' : 'files'}` : '')
-            + ` · ${placeholderAction}`
-            + (recognitionState.isAvailable ? ' · ramble' : '')
+            : 'Type or drop files here'
+            // + (props.isDeveloperMode ? ' · attach code' : '')
+            // + (isDesktop ? ` · drop ${props.isDeveloperMode ? 'source' : 'files'}` : '')
+            // + ` · ${placeholderAction}`
+            // + (recognitionState.isAvailable ? '' : '')
             + '...';
 
   if (isDesktop && timeToShowTips) {
     if (explainShiftEnter)
-      textPlaceholder += !enterIsNewline ? '\n\n💡 Shift + Enter to add a new line' : '\n\n💡 Shift + Enter to send';
+      textPlaceholder += !enterIsNewline ? '\n\n💡 Tip: Shift + Enter to add a new line' : '\n\n💡 Shift + Enter to send';
     else if (explainAltEnter)
       textPlaceholder += platformAwareKeystrokes('\n\n💡 Tip: Alt + Enter to just append the message');
     else if (explainCtrlEnter)
@@ -719,7 +719,7 @@ export function Composer(props: {
         >
 
           {/* [Mobile: top, Desktop: left] */}
-          <Grid xs={12} md={9}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
+          <Grid xs={12} md={10.5}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
 
             {/* [Mobile, Col1] Mic, Insert Multi-modal content, and Broadcast buttons */}
             {isMobile && (
@@ -768,13 +768,13 @@ export function Composer(props: {
                 {/*</FormHelperText>*/}
 
                 {/* Responsive Open Files button */}
-                <ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />
+                {/*<ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />*/}
 
-                {/* Responsive Paste button */}
-                {supportsClipboardRead() && <ButtonAttachClipboardMemo onClick={attachAppendClipboardItems} />}
+                {/*/!* Responsive Paste button *!/*/}
+                {/*{supportsClipboardRead() && <ButtonAttachClipboardMemo onClick={attachAppendClipboardItems} />}*/}
 
-                {/* Responsive Screen Capture button */}
-                {labsAttachScreenCapture && supportsScreenCapture && <ButtonAttachScreenCaptureMemo onAttachScreenCapture={handleAttachScreenCapture} />}
+                {/*/!* Responsive Screen Capture button *!/*/}
+                {/*{labsAttachScreenCapture && supportsScreenCapture && <ButtonAttachScreenCaptureMemo onAttachScreenCapture={handleAttachScreenCapture} />}*/}
 
                 {/* Responsive Camera OCR button */}
                 {labsCameraDesktop && <ButtonAttachCameraMemo onOpenCamera={openCamera} />}
@@ -830,18 +830,20 @@ export function Composer(props: {
                       },
                     }}
                     sx={{
-                      backgroundColor: 'background.level1',
-                      '&:focus-within': { backgroundColor: 'background.popup', '.within-composer-focus': { backgroundColor: 'background.popup' } },
+                      backgroundColor: '#FFFFFF',
+                      fontSize: '0.9em',
+                      '&:focus': { borderColor: 'purple' },
+                      '&:focus-within': { backgroundColor: '#FFFFFF', '.within-composer-focus': { backgroundColor: '#FFFFFF' } },
                       lineHeight: lineHeightTextareaMd,
                     }} />
 
-                  {!showChatInReferenceTo && tokenLimit > 0 && (tokensComposer > 0 || (tokensHistory + tokensResponseMax) > 0) && (
-                    <TokenProgressbarMemo chatPricing={tokenChatPricing} direct={tokensComposer} history={tokensHistory} responseMax={tokensResponseMax} limit={tokenLimit} />
-                  )}
+                  {/*{!showChatInReferenceTo && tokenLimit > 0 && (tokensComposer > 0 || (tokensHistory + tokensResponseMax) > 0) && (*/}
+                  {/*  <TokenProgressbarMemo chatPricing={tokenChatPricing} direct={tokensComposer} history={tokensHistory} responseMax={tokensResponseMax} limit={tokenLimit} />*/}
+                  {/*)}*/}
 
-                  {!showChatInReferenceTo && tokenLimit > 0 && (
-                    <TokenBadgeMemo hideBelowDollars={0.0001} chatPricing={tokenChatPricing} direct={tokensComposer} history={tokensHistory} responseMax={tokensResponseMax} limit={tokenLimit} showCost={labsShowCost} enableHover={!isMobile} showExcess absoluteBottomRight />
-                  )}
+                  {/*{!showChatInReferenceTo && tokenLimit > 0 && (*/}
+                  {/*  <TokenBadgeMemo hideBelowDollars={0.0001} chatPricing={tokenChatPricing} direct={tokensComposer} history={tokensHistory} responseMax={tokensResponseMax} limit={tokenLimit} showCost={labsShowCost} enableHover={!isMobile} showExcess absoluteBottomRight />*/}
+                  {/*)}*/}
 
                 </Box>
 
@@ -854,7 +856,8 @@ export function Composer(props: {
                     mr: isDesktop ? 1 : 0.25,
                     display: 'flex', flexDirection: 'column', gap: isDesktop ? 1 : 0.25,
                   }}>
-                    {isDesktop && <ButtonMicMemo variant={micVariant} color={micColor} errorMessage={recognitionState.errorMessage} onClick={handleToggleMic} noBackground={!recognitionState.isActive} />}
+                    {/*{isDesktop && <ButtonMicMemo variant={micVariant} color={micColor} errorMessage={recognitionState.errorMessage} onClick={handleToggleMic} noBackground={!recognitionState.isActive} />}*/}
+                    <ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />
 
                     {micIsRunning && (
                       <ButtonMicContinuationMemo
@@ -934,7 +937,7 @@ export function Composer(props: {
 
 
           {/* [Mobile: bottom, Desktop: right] */}
-          <Grid xs={12} md={3}>
+          <Grid xs={12} md={1}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' } as const}>
 
               {/* [mobile] This row is here only for the [mobile] bottom-start corner item */}
@@ -1009,8 +1012,9 @@ export function Composer(props: {
                     <ExpandLessIcon />
                   </IconButton>
                 </ButtonGroup>
+{/*
 
-                {/* [desktop] secondary-top buttons */}
+                 [desktop] secondary-top buttons
                 {isDesktop && showChatExtras && !assistantAbortible && (
                   <ButtonBeamMemo
                     color={beamButtonColor}
@@ -1019,6 +1023,7 @@ export function Composer(props: {
                     onClick={handleSendTextBeamClicked}
                   />
                 )}
+*/}
 
               </Box>
 
@@ -1029,7 +1034,7 @@ export function Composer(props: {
               {isDesktop && <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
 
                 {/* [desktop] Call secondary button */}
-                {showChatExtras && <ButtonCallMemo disabled={noConversation || noLLM || assistantAbortible} onClick={handleCallClicked} />}
+                {/*{showChatExtras && <ButtonCallMemo disabled={noConversation || noLLM || assistantAbortible} onClick={handleCallClicked} />}*/}
 
                 {/* [desktop] Draw Options secondary button */}
                 {isDraw && <ButtonOptionsDraw onClick={handleDrawOptionsClicked} />}

@@ -381,29 +381,29 @@ function ChatDrawer(props: {
       <ListDivider sx={{ my: 0 }} />
 
       {/* Bottom commands */}
-      <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-        <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>
-          <ListItemDecorator>
-            <FileDownloadOutlinedIcon />
-          </ListItemDecorator>
-          Import
-          {/*<OpenAIIcon sx={{  ml: 'auto' }} />*/}
-        </ListItemButton>
+      {/*<Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>*/}
+      {/*  <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>*/}
+      {/*    <ListItemDecorator>*/}
+      {/*      <FileDownloadOutlinedIcon />*/}
+      {/*    </ListItemDecorator>*/}
+      {/*    Import*/}
+      {/*    /!*<OpenAIIcon sx={{  ml: 'auto' }} />*!/*/}
+      {/*  </ListItemButton>*/}
 
-        <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>
-          <ListItemDecorator>
-            <FileUploadOutlinedIcon />
-          </ListItemDecorator>
-          Export
-        </ListItemButton>
-      </Box>
+      {/*  <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>*/}
+      {/*    <ListItemDecorator>*/}
+      {/*      <FileUploadOutlinedIcon />*/}
+      {/*    </ListItemDecorator>*/}
+      {/*    Export*/}
+      {/*  </ListItemButton>*/}
+      {/*</Box>*/}
 
-      <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
-        <ListItemDecorator>
-          <DeleteOutlineIcon />
-        </ListItemDecorator>
-        Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
-      </ListItemButton>
+      {/*<ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>*/}
+      {/*  <ListItemDecorator>*/}
+      {/*    <DeleteOutlineIcon />*/}
+      {/*  </ListItemDecorator>*/}
+      {/*  Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}*/}
+      {/*</ListItemButton>*/}
 
     </OptimaDrawerList>
 

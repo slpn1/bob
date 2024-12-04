@@ -582,7 +582,7 @@ export function fromManualMapping(mappings: ManualMappings, id: string, created?
   // full label
   label = label
     + (suffix ? ` [${suffix.replaceAll('-', ' ').trim()}]` : '')
-    + (known.isLatest ? ' 🌟' : '')
+    + (known.isLatest ? '' : '')
     + (known.isLegacy ? /*' 💩'*/ ' [legacy]' : '');
 
   // set the date in YYYY-MM-DD format if available and requested

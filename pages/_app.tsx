@@ -22,6 +22,8 @@ import { ProviderSingleTab } from '~/common/providers/ProviderSingleTab';
 import { ProviderTheming } from '~/common/providers/ProviderTheming';
 import { SnackbarInsert } from '~/common/components/snackbar/SnackbarInsert';
 import { hasGoogleAnalytics, OptionalGoogleAnalytics } from '~/common/components/GoogleAnalytics';
+import {useEffect} from "react";
+import {useRouter} from "next/router";
 
 
 const Big_AGI_App = ({ Component, emotionCache, pageProps }: MyAppProps) => {
@@ -30,6 +32,15 @@ const Big_AGI_App = ({ Component, emotionCache, pageProps }: MyAppProps) => {
   // This reduces the flicker and the time switching between apps, and seems to not have impact on
   // the build. This is a good trade-off for now.
   const getLayout = Component.getLayout ?? ((page: any) => page);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (!isLoggedIn && router.pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [router]);
 
   return <>
 

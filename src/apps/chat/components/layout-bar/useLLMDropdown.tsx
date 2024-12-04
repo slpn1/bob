@@ -61,6 +61,7 @@ function LLMDropdown(props: {
       return lcFilterString ? true : !llm.hidden;
     });
 
+
     for (const llm of filteredLLMs) {
       // add separators when changing services
       if (!prevServiceId || llm.sId !== prevServiceId) {
@@ -187,6 +188,8 @@ export function useChatLLMDropdown(dropdownRef: React.Ref<OptimaBarControlMethod
     llms: state.llms, // NOTE: we don't need a deep comparison as we reference the same array
     chatLLMId: state.chatLLMId,
   })));
+
+  console.log('llms', llms);
 
   const chatLLMDropdown = React.useMemo(
     () => <LLMDropdown dropdownRef={dropdownRef} llms={llms} chatLlmId={chatLLMId} setChatLlmId={llmsStoreActions().setChatLLMId} />,

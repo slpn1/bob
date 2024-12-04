@@ -37,7 +37,7 @@ const startLayoutSx: SxProps = {
 
 const endLayoutSx: SxProps = {
   ...editLayoutSx,
-  justifyContent: 'flex-end',
+  justifyContent: 'flex-start',
 };
 
 

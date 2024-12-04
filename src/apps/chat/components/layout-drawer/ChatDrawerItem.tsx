@@ -249,7 +249,7 @@ function ChatDrawerItem(props: {
       <Box
         onDoubleClick={handleTitleEditBegin}
         sx={{
-          color: isActive ? 'text.primary' : 'text.secondary',
+          color: isActive ? 'text.primary' : '#FFFFFF',
           overflowWrap: 'anywhere',
           flex: 1,
         }}
@@ -428,18 +428,23 @@ function ChatDrawerItem(props: {
   ) : (
 
     // Inactive Conversation - click to activate
-    <ListItem
-      // sx={{ '--ListItem-minHeight': '2.75rem' }}
-    >
+    <ListItem>
 
       <ListItemButton
         onClick={handleConversationActivate}
         sx={{
           border: 'none', // there's a default border of 1px and invisible.. hmm
+          backgroundColor: '#4B4C4F',
+          ":hover": {
+            color: 'black',
+            backgroundColor: 'purple !important',
+          },
           position: 'relative', // for the progress bar
-          borderRadius: 'sm', // OPTIMA_NAV_RADIUS, // sync with the optima radius, because they need to match
+          borderRadius: 'sm',
+          my: '0.25rem',
+          mx: '-0.5rem',
           ...isIncognito && {
-            filter: 'contrast(0)',
+            filter: 'contrast(0.0)',
           },
         }}
       >

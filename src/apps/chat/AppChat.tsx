@@ -559,6 +559,12 @@ export function AppChat() {
     <PanelGroup
       direction={(isMobile || isTallScreen) ? 'vertical' : 'horizontal'}
       id='app-chat-panels'
+      style={{
+        backgroundImage: "url('/images/sg-background.png')",
+        backgroundSize: 'cover', // Ensures the image covers the entire area
+        backgroundPosition: 'center', // Centers the image
+        backgroundRepeat: 'no-repeat', // Prevents tiling
+      }}
     >
 
       {chatPanes.map((pane, idx) => {

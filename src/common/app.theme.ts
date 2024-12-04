@@ -1,9 +1,10 @@
 import createCache from '@emotion/cache';
 
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono, Poppins } from 'next/font/google';
 import { extendTheme } from '@mui/joy';
 
 import { animationEnterModal } from '~/common/util/animUtils';
+import {rgbToHex} from "@mui/system";
 
 
 // Definitions
@@ -17,7 +18,7 @@ export const hideOnMobile = { display: { xs: 'none', md: 'flex' } };
 
 // Theme & Fonts
 
-const font = Inter({
+const font = Poppins({
   weight: [ /* '300', sm */ '400' /* (undefined, default) */, '500' /* md */, '600' /* lg */, '700' /* xl */],
   subsets: ['latin'],
   display: 'swap',
@@ -43,27 +44,41 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
   colorSchemes: {
     light: {
       palette: {
+        primary: {
+          mainChannel: 'var(--joy-palette-neutral-50)',
+          softBg: 'var(--joy-palette-neutral-700)',
+          softColor: 'var(--joy-palette-neutral-50)',
+          plainHoverBg: 'var(--joy-palette-neutral-200)',
+          solidBg: 'var(--joy-palette-neutral-700)',
+        },
         neutral: {
-          plainColor: 'var(--joy-palette-neutral-800)',     // [700 -> 800] Dropdown menu: increase text contrast a bit
+          50: '#FFFFFF', // [50 -> 100] Background: surface
+          100: '#F6F6F6', // [100 -> 200] Background: level1
+          200: '#311A35',
+          700: '#311A35', // [700 -> 800] Dropdown menu: increase text contrast a bit
+          plainColor: '#311A35',     // [700 -> 800] Dropdown menu: increase text contrast a bit
           solidBg: 'var(--joy-palette-neutral-700)',        // [500 -> 700] PageBar background & Button[solid]
           solidHoverBg: 'var(--joy-palette-neutral-800)',   // [600 -> 800] Buttons[solid]:hover
         },
         // primary [800] > secondary [700 -> 800] > tertiary [600] > icon [500 -> 700]
         text: {
-          icon: 'var(--joy-palette-neutral-700)',           // <IconButton color='neutral' /> icon color
-          secondary: 'var(--joy-palette-neutral-800)',      // increase contrast a bit
+          primary: '#232323',                               // <IconButton color='neutral' /> text color
+          icon: '#FACDEE',           // <IconButton color='neutral' /> icon color
+          secondary: '#FACDEE',      // increase contrast a bit
           // tertiary: 'var(--joy-palette-neutral-700)',       // increase contrast a bit
         },
         // popup [white] > surface [50] > level1 [100] > level2 [200] > level3 [300 -> unused] > body [white -> 300]
         background: {
           // New
-          surface: 'var(--joy-palette-neutral-50, #FBFCFE)',
-          level1: 'var(--joy-palette-neutral-100, #F0F4F8)',
+          surface: 'var(--joy-palette-neutral-100, #F6F6F6)',
+          level1: 'var(--joy-palette-neutral-50, #FFFFFF)',
           level2: 'var(--joy-palette-neutral-200, #DDE7EE)',
           body: 'var(--joy-palette-neutral-300, #CDD7E1)',
+          popup: 'var(--joy-palette-neutral-100, #F6F6F6)',
           // Former
           // body: 'var(--joy-palette-neutral-400, #9FA6AD)',
         },
+        focusVisible: 'var(--joy-palette-primary-800, #311A35)',
       },
     },
     dark: {

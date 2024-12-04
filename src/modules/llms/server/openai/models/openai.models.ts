@@ -28,7 +28,7 @@ export const _knownOpenAIChatModels: ManualMappings = [
   {
     isLatest: true,
     idPrefix: 'gpt-4o-2024-08-06',
-    label: 'GPT-4o (2024-08-06)',
+    label: 'GPT-4o',
     description: 'Latest snapshot that supports Structured Outputs.',
     contextWindow: 128000,
     maxCompletionTokens: 16384,

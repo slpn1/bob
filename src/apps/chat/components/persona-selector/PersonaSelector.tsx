@@ -51,9 +51,12 @@ function Tile(props: {
   return (
     <Button
       variant={(!props.isEditMode && props.isActive) ? 'solid' : props.isHighlighted ? 'soft' : 'soft'}
-      color={(!props.isEditMode && props.isActive) ? 'primary' : props.isHighlighted ? 'primary' : TILE_ACTIVE_COLOR}
+      color={(!props.isEditMode && props.isActive) ? 'primary' : props.isHighlighted ? 'primary' : 'neutral'}
       onClick={props.onClick}
       sx={{
+        ":hover": {
+          color: '#fff'
+        },
         aspectRatio: 1,
         height: `${tileSize}rem`,
         fontWeight: 'md',
@@ -318,7 +321,7 @@ export function PersonaSelector(props: {
         {(editMode || !hidePersonaCreator) && (
           <Tile
             text='Persona Creator'
-            symbol='🎭'
+            symbol='♐'
             isActive={false}
             isEditMode={editMode}
             isHidden={hidePersonaCreator}

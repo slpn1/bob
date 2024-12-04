@@ -1,0 +1,42 @@
+.background {
+    background-image: url("/images/login-background.png");
+    background-size: cover;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.box {
+    text-align: center;
+    background-color: #311A35;
+    padding: 3%;
+    border-radius: 5px;
+    color: #FCDEE9;
+}
+
+.box h1 {
+    color: #FCDEE9;
+    font-weight: 200;
+    font-size: 24px;
+}
+
+.box button {
+    padding: 10px;
+}
+
+#loginButton {
+    margin-top: 5%;
+    font-weight: 800;
+    border-radius: 30px;
+    background-color: #FCDEE9;
+    color: #311A35;
+    border: none;
+    font-size: 16px;
+    padding: 18px 60px;
+    font-weight: 200;
+}

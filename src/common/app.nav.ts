@@ -99,8 +99,9 @@ export const navItems: {
       type: 'app',
       route: '/',
       appMenuToPanel: true,
+      hideIcon: true,
     },
-    {
+    /*{
       name: 'Call',
       barTitle: 'Voice Calls',
       icon: CallOutlinedIcon,
@@ -109,8 +110,8 @@ export const navItems: {
       route: '/call',
       hideDrawer: true,
       fullWidth: true,
-    },
-    {
+    },*/
+    /*{
       name: 'Draw',
       icon: FormatPaintOutlinedIcon,
       iconActive: FormatPaintTwoToneIcon,
@@ -120,7 +121,7 @@ export const navItems: {
       // hideOnMobile: true,
       // isDev: true,
       // _delete: true,
-    },
+    },*/
     {
       name: 'Cortex',
       icon: AutoAwesomeOutlinedIcon,
@@ -151,75 +152,75 @@ export const navItems: {
       _delete: true,
     },
     // <-- divider here -->
-    {
-      name: SPECIAL_DIVIDER,
-      type: 'app',
-      route: SPECIAL_DIVIDER,
-      icon: () => null,
-    },
-    {
-      name: 'Create Personas',
-      icon: Diversity2Icon, // was: Outlined.. but they look the same
-      // iconActive: Diversity2Icon,
-      type: 'app',
-      route: '/personas',
-      hideBar: true,
-    },
-    {
-      name: 'Compare Text',
-      barTitle: 'Comparison',
-      icon: DifferenceOutlinedIcon,
-      type: 'app',
-      route: '/diff',
-      hideDrawer: true,
-    },
-    {
-      name: 'Tokenize Text',
-      barTitle: 'Tokenization',
-      icon: GrainIcon,
-      type: 'app',
-      route: '/tokens',
-      hideDrawer: true,
-    },
-    {
-      name: 'Beam',
-      icon: ChatBeamIcon,
-      type: 'app',
-      route: '/dev/beam',
-      hideDrawer: true,
-      hideIcon: true,
-      isDev: true,
-    },
-    {
-      name: 'Media Library',
-      icon: ImageOutlinedIcon,
-      iconActive: ImageIcon,
-      type: 'app',
-      route: '/media',
-      isDev: true,
-      _delete: true,
-    },
-    {
-      name: 'Shared Chats',
-      barTitle: 'Shared Chat',
-      icon: IosShareOutlinedIcon,
-      iconActive: IosShareIcon,
-      type: 'app',
-      route: '/link/chat/[chatLinkId]',
-      landingRoute: '/link/chat/list',
-      hideOnMobile: true,
-      hideIcon: hasNoChatLinkItems,
-      hideNav: hasNoChatLinkItems,
-    },
-    {
-      name: 'News',
-      icon: EventNoteOutlinedIcon,
-      iconActive: EventNoteIcon,
-      type: 'app',
-      route: '/news',
-      hideBar: true,
-      hideDrawer: true,
-    },
+    // {
+    //   name: SPECIAL_DIVIDER,
+    //   type: 'app',
+    //   route: SPECIAL_DIVIDER,
+    //   icon: () => null,
+    // },
+    // {
+    //   name: 'Create Personas',
+    //   icon: Diversity2Icon, // was: Outlined.. but they look the same
+    //   // iconActive: Diversity2Icon,
+    //   type: 'app',
+    //   route: '/personas',
+    //   hideBar: true,
+    // },
+    // {
+    //   name: 'Compare Text',
+    //   barTitle: 'Comparison',
+    //   icon: DifferenceOutlinedIcon,
+    //   type: 'app',
+    //   route: '/diff',
+    //   hideDrawer: true,
+    // },
+    // {
+    //   name: 'Tokenize Text',
+    //   barTitle: 'Tokenization',
+    //   icon: GrainIcon,
+    //   type: 'app',
+    //   route: '/tokens',
+    //   hideDrawer: true,
+    // },
+    // {
+    //   name: 'Beam',
+    //   icon: ChatBeamIcon,
+    //   type: 'app',
+    //   route: '/dev/beam',
+    //   hideDrawer: true,
+    //   hideIcon: true,
+    //   isDev: true,
+    // },
+    // {
+    //   name: 'Media Library',
+    //   icon: ImageOutlinedIcon,
+    //   iconActive: ImageIcon,
+    //   type: 'app',
+    //   route: '/media',
+    //   isDev: true,
+    //   _delete: true,
+    // },
+    // {
+    //   name: 'Shared Chats',
+    //   barTitle: 'Shared Chat',
+    //   icon: IosShareOutlinedIcon,
+    //   iconActive: IosShareIcon,
+    //   type: 'app',
+    //   route: '/link/chat/[chatLinkId]',
+    //   landingRoute: '/link/chat/list',
+    //   hideOnMobile: true,
+    //   hideIcon: hasNoChatLinkItems,
+    //   hideNav: hasNoChatLinkItems,
+    // },
+    // {
+    //   name: 'News',
+    //   icon: EventNoteOutlinedIcon,
+    //   iconActive: EventNoteIcon,
+    //   type: 'app',
+    //   route: '/news',
+    //   hideBar: true,
+    //   hideDrawer: true,
+    // },
   ],
 
   // Modals
@@ -246,18 +247,18 @@ export const navItems: {
     //   icon: TwitterIcon,
     //   href: 'https://twitter.com',
     // },
-    {
-      type: 'extLink',
-      name: 'Discord',
-      icon: DiscordIcon,
-      href: Brand.URIs.SupportInvite,
-    },
-    {
-      type: 'extLink',
-      name: 'GitHub',
-      icon: GitHubIcon,
-      href: Brand.URIs.OpenRepo,
-    },
+    // {
+    //   type: 'extLink',
+    //   name: 'Discord',
+    //   icon: DiscordIcon,
+    //   href: Brand.URIs.SupportInvite,
+    // },
+    // {
+    //   type: 'extLink',
+    //   name: 'GitHub',
+    //   icon: GitHubIcon,
+    //   href: Brand.URIs.OpenRepo,
+    // },
   ],
 
 };
@@ -270,6 +271,9 @@ export function checkDivider(app?: NavItemApp) {
 }
 
 export function checkVisibileIcon(app: NavItemApp, isMobile: boolean, currentApp?: NavItemApp) {
+  if(typeof app.hideIcon !== 'function' && app.hideIcon) {
+    return false;
+  }
   return app.hideOnMobile && isMobile ? false : app === currentApp ? true : typeof app.hideIcon === 'function' ? !app.hideIcon() : !app.hideIcon;
 }
 

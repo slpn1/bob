@@ -12,12 +12,12 @@ const buildType =
     : process.env.BIG_AGI_BUILD === 'static' ? 'export'
       : undefined;
 
-buildType && console.log(` 🧠 big-AGI: building for ${buildType}...\n`);
+buildType && console.log(` BOB SG: building for ${buildType}...\n`);
 
 /** @type {import('next').NextConfig} */
 let nextConfig = {
   reactStrictMode: true,
-
+  productionBrowserSourceMaps: true,
   // [exports] https://nextjs.org/docs/advanced-features/static-html-export
   ...buildType && {
     output: buildType,
@@ -55,6 +55,8 @@ let nextConfig = {
       // noinspection JSUnresolvedReference
       config.optimization.splitChunks.minSize = 40 * 1024;
     }
+
+    config.devtool = 'cheap-module-source-map'; // Ensures source maps are generated
 
     return config;
   },

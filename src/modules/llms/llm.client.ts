@@ -47,6 +47,8 @@ export async function llmsUpdateModelsForServiceOrThrow(serviceId: DModelsServic
   // fetch models
   const data = await vendor.rpcUpdateModelsOrThrow(transportAccess);
 
+  console.log('data, data')
+
   // update the global models store
   llmsStoreActions().setLLMs(
     data.models.map(model => _createDLLMFromModelDescription(model, service)),
