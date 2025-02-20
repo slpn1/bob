@@ -28,7 +28,9 @@ export const ProviderSingleTab = (props: { children: React.ReactNode }) => {
       }}
     >
 
-      <Typography>
+      <Typography
+        sx={{ color: 'white' }}
+      >
         It looks like {Brand.Title.Base} is already running in another tab or window.
         To continue here, please close the other instance first.
       </Typography>

@@ -26,7 +26,7 @@ const hotFixSquashTextSeparator = '\n\n\n---\n\n\n';
 type TRequest = OpenAIWire_API_Chat_Completions.Request;
 type TRequestMessages = TRequest['messages'];
 
-export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, jsonOutput: boolean, streaming: boolean): TRequest {
+export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, jsonOutput: boolean, streaming: boolean, user = ""): TRequest {
 
   // Dialect incompatibilities -> Hotfixes
   const hotFixAlternateUserAssistantRoles = openAIDialect === 'perplexity';
@@ -76,7 +76,7 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
     response_format: jsonOutput ? { type: 'json_object' } : undefined,
     seed: undefined,
     stop: undefined,
-    user: undefined,
+    user: user,
   };
 
   if (hotFixOpenAIO1Preview)

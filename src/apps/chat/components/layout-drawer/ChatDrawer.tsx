@@ -33,6 +33,7 @@ import { ChatFolderList } from './folders/ChatFolderList';
 import { ChatNavGrouping, ChatSearchDepth, ChatSearchSorting, isDrawerSearching, useChatDrawerRenderItems } from './useChatDrawerRenderItems';
 import { ClearFolderText } from '../layout-bar/useFolderDropdown';
 import { useChatDrawerFilters } from '../../store-app-chat';
+import {LogoutButton} from "~/common/components/LogoutButton";
 
 
 // this is here to make shallow comparisons work on the next hook
@@ -379,7 +380,7 @@ function ChatDrawer(props: {
       </Box>
 
       <ListDivider sx={{ my: 0 }} />
-
+      <LogoutButton></LogoutButton>
       {/* Bottom commands */}
       {/*<Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>*/}
       {/*  <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>*/}
@@ -448,7 +449,6 @@ function ChatDrawer(props: {
             </ListItemButton>
           </ListItem>
         )}
-
       </CloseableMenu>
     )}
 

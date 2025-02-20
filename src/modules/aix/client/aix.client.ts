@@ -180,6 +180,7 @@ export async function aixChatGenerateText_Simple(
   clientOptions?: Partial<AixClientOptions>, // this makes the abortController optional
   // optional callback for streaming
   onTextStreamUpdate?: (text: string, isDone: boolean, generator: DMessageGenerator) => void,
+    userName?: string,
 ): Promise<string> {
 
   // Aix Access
@@ -243,6 +244,7 @@ export async function aixChatGenerateText_Simple(
     aixChatGenerate,
     aixContext,
     aixStreaming,
+    userName || '',
     abortSignal,
     clientOptions?.throttleParallelThreads ?? 0,
     !aixStreaming ? undefined : (ll: AixChatGenerateContent_LL, _isDone: boolean /* we want to issue this, in case the next action is an exception */) => {
@@ -408,7 +410,7 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   }
 
   // Aix Low-Level Chat Generation
-  const llAccumulator = await _aixChatGenerateContent_LL(aixAccess, aixModel, aixChatGenerate, aixContext, aixStreaming, clientOptions.abortSignal, clientOptions.throttleParallelThreads ?? 0,
+  const llAccumulator = await _aixChatGenerateContent_LL(aixAccess, aixModel, aixChatGenerate, aixContext, aixStreaming, 'not set', clientOptions.abortSignal, clientOptions.throttleParallelThreads ?? 0,
     (ll: AixChatGenerateContent_LL, isDone: boolean) => {
       if (isDone) return; // optimization, as there aren't branches between here and the final update below
       if (onStreamingUpdate) {
@@ -502,6 +504,7 @@ export interface AixChatGenerateContent_LL {
  *    - other special parts include the Anthropic Caching hints, on select message
  * @param aixContext specifies the scope of the caller, such as what's the high level objective of this call
  * @param aixStreaming requests the source to provide incremental updates
+ * @param userName
  * @param abortSignal allows the caller to stop the operation
  * @param throttleParallelThreads allows the caller to limit the number of parallel threads
  *
@@ -519,6 +522,7 @@ async function _aixChatGenerateContent_LL(
   aixChatGenerate: AixAPIChatGenerate_Request,
   aixContext: AixAPI_Context_ChatGenerate,
   aixStreaming: boolean,
+  userName: string,
   // others
   abortSignal: AbortSignal,
   throttleParallelThreads: number | undefined,
@@ -552,6 +556,7 @@ async function _aixChatGenerateContent_LL(
           debugDispatchRequestbody: true, // [DEV] Debugging the request without requiring a server restart
         },
       }),
+      user: userName
     }, {
       signal: abortSignal,
     });

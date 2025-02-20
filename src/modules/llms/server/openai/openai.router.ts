@@ -77,7 +77,6 @@ const moderationInputSchema = z.object({
 
 
 export const llmOpenAIRouter = createTRPCRouter({
-
   /* [OpenAI] List the Models available */
   listModels: publicProcedure
     .input(listModelsInputSchema)
@@ -367,7 +366,7 @@ export const llmOpenAIRouter = createTRPCRouter({
 });
 
 
-const DEFAULT_HELICONE_OPENAI_HOST = 'oai.hconeai.com';
+const DEFAULT_HELICONE_OPENAI_HOST = 'oai.helicone.ai';
 const DEFAULT_DEEPSEEK_HOST = 'https://api.deepseek.com';
 const DEFAULT_GROQ_HOST = 'https://api.groq.com/openai';
 const DEFAULT_LOCALAI_HOST = 'http://127.0.0.1:8080';
@@ -464,7 +463,7 @@ export function openAIAccess(access: OpenAIAccessSchema, modelRefId: string | nu
         oaiHost = 'https://gateway.ai.cloudflare.com';
         apiPath = `/v1/${accountTag}/${gatewayName}/${provider || 'openai'}${apiPath}`;
       }
-
+      console.log('PAthyWaThy', oaiHost + apiPath);
       return {
         headers: {
           'Content-Type': 'application/json',

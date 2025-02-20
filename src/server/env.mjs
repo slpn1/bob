@@ -18,7 +18,7 @@ export const env = createEnv({
 
     // LLM: OpenAI
     OPENAI_API_KEY: z.string().optional(),
-    OPENAI_API_HOST: z.string().url().optional(),
+    OPENAI_API_HOST: z.string().optional(),
     OPENAI_API_ORG_ID: z.string().optional(),
 
     // LLM: Azure OpenAI

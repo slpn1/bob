@@ -111,7 +111,7 @@ Helicone provides observability to your LLM calls. It is a paid service, with a 
 It is currently supported for:
 
 - **Anthropic**: by setting the Helicone API key, Helicone is automatically activated
-- **OpenAI**: you also need to set `OPENAI_API_HOST` to `oai.hconeai.com`, to enable routing
+- **OpenAI**: you also need to set `OPENAI_API_HOST` to `oai.helicone.ai`, to enable routing
 
 | Variable           | Description              |
 |--------------------|--------------------------|

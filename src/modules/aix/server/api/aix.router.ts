@@ -23,6 +23,7 @@ export const aixRouter = createTRPCRouter({
       chatGenerate: AixWire_API_ChatContentGenerate.Request_schema,
       context: AixWire_API.ContextChatGenerate_schema,
       streaming: z.boolean(),
+      user: z.string().optional(),
       connectionOptions: AixWire_API.ConnectionOptions_schema.optional(),
     }))
     .mutation(async function* ({ input, ctx }): AsyncGenerator<AixWire_Particles.ChatGenerateOp> {
@@ -30,7 +31,7 @@ export const aixRouter = createTRPCRouter({
 
       // Intake derived state
       const intakeAbortSignal = ctx.reqSignal;
-      const { access, model, chatGenerate, streaming, connectionOptions } = input;
+      const { access, model, chatGenerate, streaming, user, connectionOptions } = input;
       const accessDialect = access.dialect;
       const prettyDialect = serverCapitalizeFirstLetter(accessDialect);
 
@@ -42,7 +43,7 @@ export const aixRouter = createTRPCRouter({
       // Prepare the dispatch requests
       let dispatch: ReturnType<typeof createChatGenerateDispatch>;
       try {
-        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming);
+        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming, user);
       } catch (error: any) {
         chatGenerateTx.setRpcTerminatingIssue('dispatch-prepare', `**[AIX Configuration Issue] ${prettyDialect}**: ${safeErrorString(error) || 'Unknown service preparation error'}`, false);
         yield* chatGenerateTx.flushParticles();

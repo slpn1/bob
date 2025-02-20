@@ -5,7 +5,7 @@
   "author": "Enrico Ros <enrico.ros@gmail.com>",
   "repository": "https://github.com/enricoros/big-agi",
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "NODE_OPTIONS='--inspect' next dev --turbopack",
     "dev-debug": "cross-env NODE_OPTIONS='--inspect' next dev",
     "dev-https": "next dev --experimental-https",
     "build": "next build",
@@ -20,6 +20,7 @@
     "schema": "src/server/prisma/schema.prisma"
   },
   "dependencies": {
+    "@azure/msal-node": "^2.16.2",
     "@emotion/cache": "^11.13.5",
     "@emotion/react": "^11.13.5",
     "@emotion/server": "^11.11.0",
@@ -48,6 +49,7 @@
     "mammoth": "^1.8.0",
     "nanoid": "^5.0.9",
     "next": "~15.0.3",
+    "next-auth": "^4.24.10",
     "nprogress": "^0.2.0",
     "pdfjs-dist": "4.8.69",
     "plantuml-encoder": "^1.4.0",
@@ -77,6 +79,7 @@
   "devDependencies": {
     "@cloudflare/puppeteer": "0.0.11",
     "@types/diff": "^6.0.0",
+    "@types/next-auth": "^3.15.0",
     "@types/node": "^22.10.1",
     "@types/nprogress": "^0.2.3",
     "@types/plantuml-encoder": "^1.4.2",

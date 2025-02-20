@@ -21,7 +21,7 @@ import { ModelVendorOpenAI } from './openai.vendor';
 
 
 // avoid repeating it all over
-const HELICONE_OPENAI_HOST = 'oai.hconeai.com';
+const HELICONE_OPENAI_HOST = 'oai.helicone.ai';
 
 
 export function OpenAIServiceSetup(props: { serviceId: DModelsServiceId }) {

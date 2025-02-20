@@ -11,6 +11,11 @@ import { ZodError } from 'zod';
 import { initTRPC } from '@trpc/server';
 import { transformer } from '~/server/trpc/trpc.transformer';
 
+import { getToken } from 'next-auth/jwt';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '../../../app/api/auth/[...nextauth]/route';
+import {convertFetchRequestToNextRequest} from "../../../utils/convertRequest";
+
 /**
  * 1. CONTEXT
  *
@@ -19,16 +24,19 @@ import { transformer } from '~/server/trpc/trpc.transformer';
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
 export const createTRPCFetchContext = async ({ req }: FetchCreateContextFnOptions) => {
-  // const user = { name: req.headers.get('username') ?? 'anonymous' };
-  // return { req, resHeaders };
+  const nextRequest = convertFetchRequestToNextRequest(req);
+  // Get the user's token (note: `req` is a Fetch Request)
+  const token = await getToken({req:  nextRequest as any  }); // No need for res or authOptions
+
   return {
     // only used by Backend Analytics
     hostName: req.headers?.get('host') ?? 'localhost',
     // enables cancelling upstream requests when the downstream request is aborted
     reqSignal: req.signal,
+    // 🔥 Attach user info from the token 🔥
+    user: token ? { id: token.sub, name: token.name, email: token.email } : null,
   };
 };
-
 
 /**
  * 2. SERVER-SIDE INITIALIZATION
