@@ -17,7 +17,6 @@ declare module "next-auth/jwt" {
     }
 }
 
-console.log('ClientID: ' + process.env.AZURE_CLIENT_ID as string);
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -44,6 +43,9 @@ export const authOptions: NextAuthOptions = {
             return session;
         },
     },
+    pages: {
+        signIn: "/login",
+    }
 };
 
 const handler = NextAuth(authOptions);

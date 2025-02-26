@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 // API Paths to be restricted.
 const protectedRoutes = ["/"];
-const allowedRoutes = ["/api/auth/", "/auth/"];
+const allowedRoutes = ["/api/auth/", "/auth/", "/login"];
 
 export default async function middleware(request: NextRequest) {
 
@@ -12,7 +12,6 @@ export default async function middleware(request: NextRequest) {
     // Check if the pathname matches any of the allowed routes
     for (const route of allowedRoutes) {
         if (pathname.startsWith(route)) {
-            console.log('Here');
             return NextResponse.next(); // Exit the function if the route is allowed
         }
     }
