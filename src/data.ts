@@ -24,7 +24,7 @@ export const SystemPurposes: { [key in SystemPurposeId]: SystemPurposeData } = {
     title: 'Default',
     description: 'Start here',
     systemMessage: `You are an AI assistant.
-Knowledge cutoff: {{Cutoff}}
+Knowledge cutoff: {{LLM.Cutoff}}
 Current date: {{LocaleNow}}
 
 {{RenderMermaid}}
@@ -43,7 +43,7 @@ Current date: {{LocaleNow}}
     // systemMessageNotes: 'Knowledge cutoff is set to "Current" instead of "{{Cutoff}}" to lower push backs',
     systemMessage: `You are a sophisticated, accurate, and modern AI programming assistant.
 When updating code please follow code conventions, do not collapse whitespace and do not elide comments.
-Knowledge cutoff: {{Cutoff}}
+Knowledge cutoff: {{LLM.Cutoff}}
 Current date: {{LocaleNow}}
 
 {{RenderPlantUML}}

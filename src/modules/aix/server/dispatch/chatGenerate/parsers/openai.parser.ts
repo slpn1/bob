@@ -136,9 +136,24 @@ export function createOpenAIChatCompletionsChunkParser(): ChatGenerateParseFunct
       if (typeof delta.content === 'string') {
 
         accumulator.content = (accumulator.content || '') + delta.content;
-        pt.appendText(delta.content);
+        pt.appendAutoText_weak(delta.content);
 
-      } else if (delta.content !== undefined && delta.content !== null)
+      }
+      // delta: Reasoning Content [Deepseek, 2025-01-20]
+      else if (typeof delta.reasoning_content === 'string') {
+
+        // Note: not using the accumulator as it's a relic of the past probably
+        pt.appendReasoningText(delta.reasoning_content);
+
+      }
+      // delta: Reasoning [OpenRouter, 2025-01-24]
+      else if (typeof delta.reasoning === 'string') {
+
+        // Note: not using the accumulator as it's a relic of the past probably
+        pt.appendReasoningText(delta.reasoning);
+
+      }
+      else if (delta.content !== undefined && delta.content !== null)
         throw new Error(`unexpected delta content type: ${typeof delta.content}`);
 
       // delta: Tool Calls
@@ -245,8 +260,10 @@ export function createOpenAIChatCompletionsParserNS(): ChatGenerateParseFunction
 
       // message: Text
       if (typeof message.content === 'string') {
-        if (message.content)
+        if (message.content) {
+          // we will return the EXACT content for non-streaming calls, hence we don't call `appendAutoText_weak` here
           pt.appendText(message.content);
+        }
       } else if (message.content !== undefined && message.content !== null)
         throw new Error(`unexpected message content type: ${typeof message.content}`);
 
@@ -313,7 +330,7 @@ function _fromOpenAIUsage(usage: OpenAIWire_API_Chat_Completions.Response['usage
     return undefined;
 
   // Require at least the completion tokens, or issue a DEV warning otherwise
-  if (!usage.completion_tokens) {
+  if (usage.completion_tokens === undefined) {
     // Warn, so we may adjust this usage parsing for Non-OpenAI APIs
     console.log('[DEV] AIX: OpenAI-dispatch missing completion tokens in usage', { usage });
     return undefined;
@@ -336,6 +353,16 @@ function _fromOpenAIUsage(usage: OpenAIWire_API_Chat_Completions.Response['usage
       metricsUpdate.TCacheRead = TCacheRead;
       if (metricsUpdate.TIn !== undefined)
         metricsUpdate.TIn -= TCacheRead;
+    }
+  }
+
+  // [DeepSeek] Input redistribution: Cache Read
+  if (usage.prompt_cache_hit_tokens !== undefined) {
+    const TCacheRead = usage.prompt_cache_hit_tokens;
+    if (TCacheRead > 0) {
+      metricsUpdate.TCacheRead = TCacheRead;
+      if (usage.prompt_cache_miss_tokens !== undefined)
+        metricsUpdate.TIn = usage.prompt_cache_miss_tokens;
     }
   }
 

@@ -12,6 +12,7 @@ import TelegramIcon from '@mui/icons-material/Telegram';
 
 import { SystemPurposeData, SystemPurposeExample, SystemPurposeId, SystemPurposes } from '../../../../data';
 
+import { YouTubeURLInput } from '~/modules/youtube/YouTubeURLInput';
 import { bareBonesPromptMixer } from '~/modules/persona/pmix/pmix';
 
 import type { DConversationId } from '~/common/stores/chat/chat.conversation';
@@ -19,12 +20,11 @@ import { ExpanderControlledBox } from '~/common/components/ExpanderControlledBox
 import { createDMessageTextContent } from '~/common/stores/chat/chat.message';
 import { lineHeightTextareaMd } from '~/common/app.theme';
 import { navigateToPersonas } from '~/common/app.routes';
-import { useChatLLM } from '~/common/stores/llms/llms.hooks';
 import { useChatStore } from '~/common/stores/chat/store-chats';
 import { useChipBoolean } from '~/common/components/useChipBoolean';
+import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 import { useUIPreferencesStore } from '~/common/state/store-ui';
 
-import { YouTubeURLInput } from './YouTubeURLInput';
 import { usePurposeStore } from './store-purposes';
 
 
@@ -148,7 +148,8 @@ export function PersonaSelector(props: {
     hiddenPurposeIDs: state.hiddenPurposeIDs,
     toggleHiddenPurposeId: state.toggleHiddenPurposeId,
   })));
-  const { chatLLM } = useChatLLM();
+  const { domainModelId: chatLLMId } = useModelDomain('primaryChat');
+  const chatLLM = { id: chatLLMId ?? undefined }; // adapter for porting
 
 
   // derived state

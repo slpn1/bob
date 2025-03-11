@@ -1,10 +1,11 @@
 import { findServiceAccessOrThrow } from '~/modules/llms/vendors/vendor.helpers';
 
 import type { DMessage, DMessageGenerator } from '~/common/stores/chat/chat.message';
-import { DLLM, DLLMId, LLM_IF_SPECIAL_OAI_O1Preview } from '~/common/stores/llms/llms.types';
+import { DLLM, DLLMId, LLM_IF_HOTFIX_NoTemperature } from '~/common/stores/llms/llms.types';
 import { apiStream } from '~/common/util/trpc.client';
-import { metricsChatGenerateLgToMd, metricsComputeChatGenerateCostsMd, DMetricsChatGenerate_Lg } from '~/common/stores/metrics/metrics.chatgenerate';
-import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, isErrorPart } from '~/common/stores/chat/chat.fragments';
+import { DMetricsChatGenerate_Lg, metricsChatGenerateLgToMd, metricsComputeChatGenerateCostsMd } from '~/common/stores/metrics/metrics.chatgenerate';
+import { DModelParameterValues, getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
+import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, DMessageVoidFragment, isContentFragment, isErrorPart } from '~/common/stores/chat/chat.fragments';
 import { findLLMOrThrow } from '~/common/stores/llms/store-llms';
 import { getLabsDevMode, getLabsDevNoStreaming } from '~/common/state/store-ux-labs';
 import { metricsStoreAddChatGenerate } from '~/common/stores/metrics/store-metrics';
@@ -13,7 +14,7 @@ import { presentErrorToHumans } from '~/common/util/errorUtils';
 // NOTE: pay particular attention to the "import type", as this is importing from the server-side Zod definitions
 import type { AixAPI_Access, AixAPI_Context_ChatGenerate, AixAPI_Model, AixAPIChatGenerate_Request } from '../server/api/aix.wiretypes';
 
-import { aixCGR_FromDMessagesOrThrow, aixCGR_FromSimpleText, AixChatGenerate_TextMessages, clientHotFixGenerateRequestForO1Preview } from './aix.client.chatGenerateRequest';
+import { aixCGR_ChatSequence_FromDMessagesOrThrow, aixCGR_FromSimpleText, aixCGR_SystemMessage_FromDMessageOrThrow, AixChatGenerate_TextMessages, clientHotFixGenerateRequest_ApplyAll } from './aix.client.chatGenerateRequest';
 import { ContentReassembler } from './ContentReassembler';
 import { ThrottleFunctionCall } from './ThrottleFunctionCall';
 
@@ -28,23 +29,41 @@ export function aixCreateChatGenerateContext(name: AixAPI_Context_ChatGenerate['
 }
 
 export function aixCreateModelFromLLMOptions(
-  llmOptions: Record<string, any> | undefined,
-  llmOptionsOverride: Record<string, any> | undefined,
+  llmInterfaces: DLLM['interfaces'],
+  llmOptions: DModelParameterValues,
+  llmOptionsOverride: Omit<DModelParameterValues, 'llmRef'> | undefined,
   debugLlmId: string,
 ): AixAPI_Model {
-  // model params (llm)
-  let { llmRef, llmTemperature, llmResponseTokens } = llmOptions || {};
-  if (!llmRef || llmTemperature === undefined)
+
+  // destructure input with the overrides
+  const {
+    llmRef, llmTemperature, llmResponseTokens, llmTopP,
+    llmVndAntThinkingBudget, llmVndGeminiShowThoughts, llmVndOaiReasoningEffort, llmVndOaiRestoreMarkdown,
+  } = {
+    ...llmOptions,
+    ...llmOptionsOverride,
+  };
+
+  // llmRef is absolutely required
+  if (!llmRef)
     throw new Error(`AIX: Error in configuration for model ${debugLlmId} (missing ref, temperature): ${JSON.stringify(llmOptions)}`);
 
-  // model params overrides
-  if (llmOptionsOverride?.llmTemperature !== undefined) llmTemperature = llmOptionsOverride.llmTemperature;
-  if (llmOptionsOverride?.llmResponseTokens !== undefined) llmResponseTokens = llmOptionsOverride.llmResponseTokens;
+  // llmTemperature is highly recommended, so we display a note if it's missing
+  if (llmTemperature === undefined)
+    console.warn(`[DEV] AIX: Missing temperature for model ${debugLlmId}, using default.`);
+
+  // Client-side late stage model HotFixes
+  const hotfixOmitTemperature = llmInterfaces.includes(LLM_IF_HOTFIX_NoTemperature);
 
   return {
     id: llmRef,
-    temperature: llmTemperature,
-    ...(llmResponseTokens ? { maxTokens: llmResponseTokens } : {}),
+    ...(hotfixOmitTemperature ? { temperature: null } : llmTemperature !== undefined ? { temperature: llmTemperature } : {}),
+    ...(llmResponseTokens /* null: similar to undefined, will omit the value */ ? { maxTokens: llmResponseTokens } : {}),
+    ...(llmTopP !== undefined ? { topP: llmTopP } : {}),
+    ...(llmVndAntThinkingBudget !== undefined ? { vndAntThinkingBudget: llmVndAntThinkingBudget } : {}),
+    ...(llmVndGeminiShowThoughts ? { vndGeminiShowThoughts: llmVndGeminiShowThoughts } : {}),
+    ...(llmVndOaiReasoningEffort ? { vndOaiReasoningEffort: llmVndOaiReasoningEffort } : {}),
+    ...(llmVndOaiRestoreMarkdown ? { vndOaiRestoreMarkdown: llmVndOaiRestoreMarkdown } : {}),
   };
 }
 
@@ -54,7 +73,7 @@ export function aixCreateModelFromLLMOptions(
  * The object is modified in-place from the lower layers and passed to the callback for efficiency.
  */
 export interface AixChatGenerateContent_DMessage extends Pick<DMessage, 'fragments' | 'generator' | 'pendingIncomplete'> {
-  fragments: DMessageContentFragment[];
+  fragments: (DMessageContentFragment | DMessageVoidFragment)[];
   generator: DMessageGenerator; // Extract<DMessageGenerator, { mgt: 'aix' }>;
   pendingIncomplete: boolean;
 }
@@ -69,20 +88,18 @@ type StreamMessageStatus = {
 interface AixClientOptions {
   abortSignal: AbortSignal | 'NON_ABORTABLE'; // 'NON_ABORTABLE' is a special case for non-abortable operations
   throttleParallelThreads?: number; // 0: disable, 1: default throttle (12Hz), 2+ reduce frequency with the square root
-  llmOptionsOverride?: Partial<{
-    llmTemperature: number,
-    llmResponseTokens: number,
-  }>;
+  llmOptionsOverride?: Omit<DModelParameterValues, 'llmRef'>; // overrides for the LLM options
 }
 
 
 /**
  * Level 3 Generation from an LLM Id + Chat History.
  */
-export async function aixChatGenerateContent_DMessage_FromHistory(
+export async function aixChatGenerateContent_DMessage_FromConversation(
   // chat-inputs -> Partial<DMessage> outputs
   llmId: DLLMId,
-  chatHistory: Readonly<DMessage[]>,
+  chatSystemInstruction: null | Pick<DMessage, 'fragments' | 'metadata' | 'userFlags'>,
+  chatHistoryWithoutSystemMessages: Readonly<DMessage[]>,
   // aix inputs
   aixContextName: AixAPI_Context_ChatGenerate['name'],
   aixContextRef: AixAPI_Context_ChatGenerate['ref'],
@@ -105,7 +122,10 @@ export async function aixChatGenerateContent_DMessage_FromHistory(
   try {
 
     // Aix ChatGenerate Request
-    const aixChatContentGenerateRequest = await aixCGR_FromDMessagesOrThrow(chatHistory, 'complete');
+    const aixChatContentGenerateRequest: AixAPIChatGenerate_Request = {
+      systemMessage: await aixCGR_SystemMessage_FromDMessageOrThrow(chatSystemInstruction),
+      chatSequence: await aixCGR_ChatSequence_FromDMessagesOrThrow(chatHistoryWithoutSystemMessages),
+    };
 
     await aixChatGenerateContent_DMessage(
       llmId,
@@ -171,7 +191,7 @@ interface AixChatGenerateText_Simple {
 export async function aixChatGenerateText_Simple(
   // [V1-like text-only API] text inputs -> string output
   llmId: DLLMId,
-  systemInstruction: string,
+  systemInstruction: null | string,
   aixTextMessages: AixChatGenerate_TextMessages | string, // if string, it's a single user message - maximum simplicity
   // aix inputs
   aixContextName: AixAPI_Context_ChatGenerate['name'],
@@ -188,7 +208,8 @@ export async function aixChatGenerateText_Simple(
   const { transportAccess: aixAccess, vendor: llmVendor, serviceSettings: llmServiceSettings } = findServiceAccessOrThrow<object, AixAPI_Access>(llm.sId);
 
   // Aix Model
-  const aixModel = aixCreateModelFromLLMOptions(llm.options, clientOptions?.llmOptionsOverride, llmId);
+  const llmParameters = getAllModelParameterValues(llm.initialParameters, llm.userParameters);
+  const aixModel = aixCreateModelFromLLMOptions(llm.interfaces, llmParameters, clientOptions?.llmOptionsOverride, llmId);
 
   // Aix ChatGenerate Request
   const aixChatGenerate = aixCGR_FromSimpleText(
@@ -203,12 +224,10 @@ export async function aixChatGenerateText_Simple(
   let aixStreaming = !!onTextStreamUpdate;
 
 
-  // [OpenAI] Apply the hot fix for O1 Preview models; however this is a late-stage emergency hotfix as we expect the caller to be aware of this logic
-  const isO1Preview = llm.interfaces.includes(LLM_IF_SPECIAL_OAI_O1Preview);
-  if (isO1Preview) {
-    clientHotFixGenerateRequestForO1Preview(aixChatGenerate);
+  // Client-side late stage model HotFixes
+  const { shallDisableStreaming } = clientHotFixGenerateRequest_ApplyAll(llm.interfaces, aixChatGenerate, llmParameters.llmRef || llm.id);
+  if (shallDisableStreaming)
     aixStreaming = false;
-  }
 
 
   // Variable to store the final text
@@ -272,7 +291,7 @@ export async function aixChatGenerateText_Simple(
 
   // throw if there are error fragments
   const errorMessage = ll.fragments
-    .filter(f => isErrorPart(f.part))
+    .filter(f => isContentFragment(f) && isErrorPart(f.part))
     .map(f => (f.part as DMessageErrorPart).error).join('\n');
   if (errorMessage)
     throw new Error('AIX: Error in response: ' + errorMessage);
@@ -364,14 +383,14 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   const { transportAccess: aixAccess, vendor: llmVendor, serviceSettings: llmServiceSettings } = findServiceAccessOrThrow<TServiceSettings, TAccess>(llm.sId);
 
   // Aix Model
-  const aixModel = aixCreateModelFromLLMOptions(llm.options, clientOptions?.llmOptionsOverride, llmId);
+  const llmParameters = getAllModelParameterValues(llm.initialParameters, llm.userParameters);
+  const aixModel = aixCreateModelFromLLMOptions(llm.interfaces, llmParameters, clientOptions?.llmOptionsOverride, llmId);
 
-  // [OpenAI] Apply the hot fix for O1 Preview models; however this is a late-stage emergency hotfix as we expect the caller to be aware of this logic
-  const isO1Preview = llm.interfaces.includes(LLM_IF_SPECIAL_OAI_O1Preview);
-  if (isO1Preview) {
-    clientHotFixGenerateRequestForO1Preview(aixChatGenerate);
+  // Client-side late stage model HotFixes
+  const { shallDisableStreaming } = clientHotFixGenerateRequest_ApplyAll(llm.interfaces, aixChatGenerate, llmParameters.llmRef || llm.id);
+  if (shallDisableStreaming)
     aixStreaming = false;
-  }
+
 
   // [OpenAI-only] check for harmful content with the free 'moderation' API, if the user requests so
   // if (aixAccess.dialect === 'openai' && aixAccess.moderationCheck) {
@@ -446,7 +465,8 @@ function _llToDMessage(src: AixChatGenerateContent_LL, dest: AixChatGenerateCont
 
 function _updateGeneratorCostsInPlace(generator: DMessageGenerator, llm: DLLM, debugCostSource: string) {
   // Compute costs
-  const costs = metricsComputeChatGenerateCostsMd(generator.metrics, llm.pricing?.chat, llm.options?.llmRef || llm.id);
+  const llmParameters = getAllModelParameterValues(llm.initialParameters, llm.userParameters);
+  const costs = metricsComputeChatGenerateCostsMd(generator.metrics, llm.pricing?.chat, llmParameters.llmRef || llm.id);
   if (!costs) {
     // FIXME: we shall warn that the costs are missing, as the only way to get pricing is through surfacing missing prices
     return;
@@ -471,7 +491,7 @@ function _updateGeneratorCostsInPlace(generator: DMessageGenerator, llm: DLLM, d
 export interface AixChatGenerateContent_LL {
   // source of truth for any caller
   // - empty array means no content yet, and no error
-  fragments: DMessageContentFragment[];
+  fragments: (DMessageContentFragment | DMessageVoidFragment)[];
 
   // pieces of generator
   genMetricsLg?: DMetricsChatGenerate_Lg;
@@ -535,7 +555,8 @@ async function _aixChatGenerateContent_LL(
     fragments: [],
     /* rest start as undefined (missing in reality) */
   };
-  const contentReassembler = new ContentReassembler(accumulator_LL);
+  const debugDispatchRequestbody = getLabsDevMode() && aixContext.name === 'conversation'; // [DEV] Debugging the conversation request (only)
+  const contentReassembler = new ContentReassembler(accumulator_LL, debugDispatchRequestbody);
 
   // Initialize throttler if throttling is enabled
   const throttler = (onReassemblyUpdate && throttleParallelThreads)
@@ -551,7 +572,7 @@ async function _aixChatGenerateContent_LL(
       chatGenerate: aixChatGenerate,
       context: aixContext,
       streaming: getLabsDevNoStreaming() ? false : aixStreaming, // [DEV] disable streaming if set in the UX (testing)
-      ...(getLabsDevMode() && {
+      ...(debugDispatchRequestbody && {
         connectionOptions: {
           debugDispatchRequestbody: true, // [DEV] Debugging the request without requiring a server restart
         },

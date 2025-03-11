@@ -2,13 +2,13 @@ import { z } from 'zod';
 
 import type { AixAPIChatGenerate_Request } from '~/modules/aix/server/api/aix.wiretypes';
 import { AixClientFunctionCallToolDefinition, aixFunctionCallTool, aixRequireSingleFunctionCallInvocation } from '~/modules/aix/client/aix.client.fromSimpleFunction';
-import { aixCGR_FromDMessagesOrThrow, aixCGR_SystemMessage } from '~/modules/aix/client/aix.client.chatGenerateRequest';
+import { aixCGR_ChatSequence_FromDMessagesOrThrow, aixCGR_SystemMessageText } from '~/modules/aix/client/aix.client.chatGenerateRequest';
 import { aixChatGenerateContent_DMessage, aixCreateChatGenerateContext } from '~/modules/aix/client/aix.client';
 
 import { ConversationsManager } from '~/common/chat-overlay/ConversationsManager';
 import { createDMessageTextContent, messageFragmentsReduceText } from '~/common/stores/chat/chat.message';
 import { createErrorContentFragment, createPlaceholderVoidFragment, createTextContentFragment } from '~/common/stores/chat/chat.fragments';
-import { getLLMIdOrThrow } from '~/common/stores/llms/store-llms';
+import { getDomainModelIdOrThrow } from '~/common/stores/llms/store-llms';
 import { marshallWrapText } from '~/common/stores/chat/chat.tokens';
 import { processPromptTemplate } from '~/common/util/promptUtils';
 import { useChatStore } from '~/common/stores/chat/store-chats';
@@ -43,7 +43,7 @@ interface DumbToolTBD {
 
 
 function _getSystemMessage(tool: DumbToolTBD, variables: Record<string, string>, templateName: string): AixAPIChatGenerate_Request['systemMessage'] {
-  return aixCGR_SystemMessage(processPromptTemplate(tool.sys, { ...variables, functionName: tool.fun.name }, templateName));
+  return aixCGR_SystemMessageText(processPromptTemplate(tool.sys, { ...variables, functionName: tool.fun.name }, templateName));
 }
 
 
@@ -140,9 +140,9 @@ export async function autoChatFollowUps(conversationId: string, assistantMessage
   if (!conversation || conversation.messages.length < 2) return;
 
   // require a valid fast model (only)
-  let llmId;
+  let codeLlmId;
   try {
-    llmId = getLLMIdOrThrow(['fast'], true, false, 'chat-followups');
+    codeLlmId = getDomainModelIdOrThrow(['codeApply'], true, false, 'chat-followups');
   } catch (error) {
     return console.log(`autoSuggestions: ${error}`);
   }
@@ -180,15 +180,15 @@ export async function autoChatFollowUps(conversationId: string, assistantMessage
 
     // Instructions
     const systemMessage = _getSystemMessage(diagramsTool, { personaSystemPrompt }, 'chat-followup-diagram_system');
-    const chatSequence = (await aixCGR_FromDMessagesOrThrow([
+    const chatSequence = await aixCGR_ChatSequence_FromDMessagesOrThrow([
       userMessage,
       assistantMessage,
       createDMessageTextContent('user', processPromptTemplate(diagramsTool.usr, { functionName: diagramsTool.fun.name }, 'chat-followup-diagram_reminder')),
-    ])).chatSequence;
+    ]);
 
     // Strict call to a function
     aixChatGenerateContent_DMessage(
-      llmId,
+      codeLlmId,
       { systemMessage, chatSequence, tools: [aixFunctionCallTool(diagramsTool.fun)], toolsPolicy: { type: 'any' } },
       aixCreateChatGenerateContext('chat-followup-diagram', conversationId),
       false,
@@ -231,15 +231,15 @@ export async function autoChatFollowUps(conversationId: string, assistantMessage
 
     // Instructions
     const systemMessage = _getSystemMessage(uiTool, { personaSystemPrompt }, 'chat-followup-htmlui_system');
-    const chatSequence = (await aixCGR_FromDMessagesOrThrow([
+    const chatSequence = await aixCGR_ChatSequence_FromDMessagesOrThrow([
       userMessage,
       assistantMessage,
       createDMessageTextContent('user', processPromptTemplate(uiTool.usr, { functionName: uiTool.fun.name }, 'chat-followup-htmlui_reminder')),
-    ])).chatSequence;
+    ]);
 
     // Strict call to a function
     aixChatGenerateContent_DMessage(
-      llmId,
+      codeLlmId,
       { systemMessage, chatSequence, tools: [aixFunctionCallTool(uiTool.fun)], toolsPolicy: { type: 'any' } },
       aixCreateChatGenerateContext('chat-followup-htmlui', conversationId),
       false,

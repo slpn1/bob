@@ -317,10 +317,15 @@ export function prettyShortChatModelName(model: string | undefined): string {
   // TODO: fully reform this function to be using information from the DLLM, rather than this manual mapping
 
   // [OpenAI]
+  if (model.endsWith('-o1')) return 'o1';
   if (model.includes('o1-')) {
     if (model.includes('o1-mini')) return 'o1 Mini';
     if (model.includes('o1-preview')) return 'o1 Preview';
     return 'o1';
+  }
+  if (model.includes('o3-')) {
+    if (model.includes('o3-mini')) return 'o3 Mini';
+    return 'o3';
   }
   if (model.includes('chatgpt-4o-latest')) return 'ChatGPT 4o';
   if (model.includes('gpt-4')) {
@@ -340,12 +345,37 @@ export function prettyShortChatModelName(model: string | undefined): string {
   }
   // [LocalAI?]
   if (model.endsWith('.bin')) return model.slice(0, -4);
+  // [Alibaba]
+  if (model.startsWith('alibaba-qwen-') || model.startsWith('qwen-')) {
+    return model
+      .replace('alibaba-', ' ')
+      .replace('qwen', 'Qwen')
+      .replace('max', 'Max')
+      .replace('plus', 'Plus')
+      .replace('turbo', 'Turbo')
+      .replaceAll('-', ' ');
+  }
   // [Anthropic]
   const prettyAnthropic = _prettyAnthropicModelName(model);
   if (prettyAnthropic) return prettyAnthropic;
+  // [Gemini]
+  if (model.includes('gemini-')) {
+    return model.replaceAll('-', ' ')
+      .replace('gemini', 'Gemini')
+      .replace('pro', 'Pro')
+      .replace('flash', 'Flash')
+      .replace('thinking', 'Thinking');
+  }
   // [Deepseek]
-  if (model.includes('deepseek-chat')) return 'Deepseek Chat';
-  if (model.includes('deepseek-coder')) return 'Deepseek Coder';
+  if (model.includes('deepseek-')) {
+    // start past the last /, if any
+    const lastSlashIndex = model.lastIndexOf('/');
+    const modelName = lastSlashIndex === -1 ? model : model.slice(lastSlashIndex + 1);
+    return modelName.replace('deepseek-', ' Deepseek ')
+      .replace('reasoner', 'R1').replace('r1', 'R1')
+      .replaceAll('-', ' ')
+      .trim();
+  }
   // [LM Studio]
   if (model.startsWith('C:\\') || model.startsWith('D:\\'))
     return _prettyLMStudioFileModelName(model).replace('.gguf', '');
@@ -355,7 +385,19 @@ export function prettyShortChatModelName(model: string | undefined): string {
   if (model.includes(':'))
     return model.replace(':latest', '').replaceAll(':', ' ');
   // [xAI]
-  if (model.includes('grok-beta')) return 'Grok Beta';
+  if (model.includes('grok-')) {
+    if (model.includes('grok-3')) return 'Grok 3';
+    if (model.includes('grok-2-vision')) return 'Grok 2 Vision';
+    if (model.includes('grok-2')) return 'Grok 2';
+    if (model.includes('grok-beta')) return 'Grok Beta';
+    if (model.includes('grok-vision-beta')) return 'Grok Vision Beta';
+  }
+  // [FireworksAI]
+  if (model.includes('accounts/')) {
+    const index = model.indexOf('accounts/');
+    const subStr = model.slice(index + 9);
+    return subStr.replaceAll('/models/', ' · ').replaceAll(/[_-]/g, ' ');
+  }
   return model;
 }
 
@@ -364,8 +406,10 @@ function _prettyAnthropicModelName(modelId: string): string | null {
   if (claudeIndex === -1) return null;
 
   const subStr = modelId.slice(claudeIndex);
-  const is35 = subStr.includes('-3-5-');
-  const version = is35 ? '3.5' : '3';
+  const version =
+    subStr.includes('-3-7-') ? '3.7'
+      : subStr.includes('-3-5-') ? '3.5'
+        : '3';
 
   if (subStr.includes(`-opus`)) return `Claude ${version} Opus`;
   if (subStr.includes(`-sonnet`)) return `Claude ${version} Sonnet`;

@@ -21,6 +21,10 @@ export const env = createEnv({
     OPENAI_API_HOST: z.string().optional(),
     OPENAI_API_ORG_ID: z.string().optional(),
 
+    // LLM: Alibaba (OpenAI)
+    ALIBABA_API_HOST: z.string().url().optional(),
+    ALIBABA_API_KEY: z.string().optional(),
+
     // LLM: Azure OpenAI
     AZURE_OPENAI_API_ENDPOINT: z.string().url().optional(),
     AZURE_OPENAI_API_KEY: z.string().optional(),
@@ -108,11 +112,6 @@ export const env = createEnv({
     // Frontend: server to use for PlantUML rendering
     NEXT_PUBLIC_PLANTUML_SERVER_URL: z.string().url().optional(),
 
-  },
-
-  onValidationError: error => {
-    console.error('❌ Invalid environment variables:', error.issues);
-    throw new Error('Invalid environment variable');
   },
 
   // matches user expectations - see https://github.com/enricoros/big-AGI/issues/279

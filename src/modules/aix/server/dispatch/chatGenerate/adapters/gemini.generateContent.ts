@@ -1,7 +1,7 @@
 import type { AixAPI_Model, AixAPIChatGenerate_Request, AixMessages_ChatMessage, AixParts_DocPart, AixTools_ToolDefinition, AixTools_ToolsPolicy } from '../../../api/aix.wiretypes';
 import { GeminiWire_API_Generate_Content, GeminiWire_ContentParts, GeminiWire_Messages, GeminiWire_Safety, GeminiWire_ToolDeclarations } from '../../wiretypes/gemini.wiretypes';
 
-import { inReferenceTo_To_XMLString } from './anthropic.messageCreate';
+import { approxDocPart_To_String, approxInReferenceTo_To_XMLString } from './anthropic.messageCreate';
 
 
 // configuration
@@ -18,15 +18,29 @@ export function aixToGeminiGenerateContent(model: AixAPI_Model, chatGenerate: Ai
   if (chatGenerate.systemMessage?.parts.length) {
     systemInstruction = chatGenerate.systemMessage.parts.reduce((acc, part) => {
       switch (part.pt) {
-        case 'meta_cache_control':
-          // ignore - we implement caching in the Anthropic way for now
-          break;
+
         case 'text':
           acc.parts.push(GeminiWire_ContentParts.TextPart(part.text));
           break;
+
+        case 'doc':
+          acc.parts.push(GeminiWire_ContentParts.TextPart(approxDocPart_To_String(part)));
+          break;
+
+        case 'meta_cache_control':
+          // ignore this breakpoint hint - Anthropic only
+          break;
+
+        default:
+          const _exhaustiveCheck: never = part;
+          throw new Error(`Unsupported part type in System message: ${(part as any).pt}`);
       }
       return acc;
     }, { parts: [] } as Exclude<TRequest['systemInstruction'], undefined>);
+
+    // unset system instruction if empty
+    if (!systemInstruction.parts.length)
+      systemInstruction = undefined;
   }
 
   // Chat Messages
@@ -45,11 +59,23 @@ export function aixToGeminiGenerateContent(model: AixAPI_Model, chatGenerate: Ai
       responseSchema: undefined, // (default, optional) NOTE: for JSON output, we'd take the schema here
       candidateCount: undefined, // (default, optional)
       maxOutputTokens: model.maxTokens !== undefined ? model.maxTokens : undefined,
-      temperature: model.temperature !== undefined ? model.temperature : undefined,
+      ...(model.temperature !== null ? { temperature: model.temperature !== undefined ? model.temperature : undefined, } : {}),
       topP: undefined, // (default, optional)
       topK: undefined, // (default, optional)
     },
   };
+
+  // Top-P instead of temperature
+  if (model.topP !== undefined) {
+    delete payload.generationConfig!.temperature;
+    payload.generationConfig!.topP = model.topP;
+  }
+
+  // Thinking models: add showing the thinking trace
+  if (model.vndGeminiShowThoughts)
+    payload.generationConfig!.thinkingConfig = {
+      includeThoughts: true,
+    };
 
   // Preemptive error detection with server-side payload validation before sending it upstream
   const validated = GeminiWire_API_Generate_Content.Request_schema.safeParse(payload);
@@ -105,12 +131,16 @@ function _toGeminiContents(chatSequence: AixMessages_ChatMessage[]): GeminiWire_
           parts.push(_toApproximateGeminiDocPart(part));
           break;
 
+        case 'ma':
+          // ignore this thinking block - Anthropic only
+          break;
+
         case 'meta_cache_control':
-          // ignore - we implement caching in the Anthropic way for now
+          // ignore this breakpoint hint - Anthropic only
           break;
 
         case 'meta_in_reference_to':
-          const irtXMLString = inReferenceTo_To_XMLString(part);
+          const irtXMLString = approxInReferenceTo_To_XMLString(part);
           if (irtXMLString)
             parts.push(GeminiWire_ContentParts.TextPart(irtXMLString));
           break;
@@ -142,6 +172,7 @@ function _toGeminiContents(chatSequence: AixMessages_ChatMessage[]): GeminiWire_
               parts.push(GeminiWire_ContentParts.ExecutableCodePart('PYTHON', invocation.code));
               break;
             default:
+              const _exhaustiveCheck: never = invocation;
               throw new Error(`Unsupported tool call type in message: ${(part as any).call.type}`);
           }
           break;
@@ -175,11 +206,13 @@ function _toGeminiContents(chatSequence: AixMessages_ChatMessage[]): GeminiWire_
               parts.push(GeminiWire_ContentParts.CodeExecutionResultPart(!part.error ? 'OUTCOME_OK' : 'OUTCOME_FAILED', toolErrorPrefix + part.response.result));
               break;
             default:
+              const _exhaustiveCheck: never = part.response;
               throw new Error(`Unsupported tool response type in message: ${(part as any).response.type}`);
           }
           break;
 
         default:
+          const _exhaustiveCheck: never = part;
           throw new Error(`Unsupported part type in Chat message: ${(part as any).pt}`);
       }
     }
@@ -281,5 +314,6 @@ function _toGeminiSafetySettings(threshold: GeminiWire_Safety.HarmBlockThreshold
 // Approximate conversions - alternative approaches should be tried until we find the best one
 
 function _toApproximateGeminiDocPart(aixPartsDocPart: AixParts_DocPart): GeminiWire_ContentParts.ContentPart {
-  return GeminiWire_ContentParts.TextPart(`\`\`\`${aixPartsDocPart.ref || ''}\n${aixPartsDocPart.data.text}\n\`\`\`\n`);
+  // NOTE: we keep this function because we could use Gemini's different way to represent documents in the future...
+  return GeminiWire_ContentParts.TextPart(approxDocPart_To_String(aixPartsDocPart));
 }

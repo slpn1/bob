@@ -2,7 +2,7 @@ import { defaultSystemPurposeId, SystemPurposeId } from '../../../data';
 
 import { agiUuid } from '~/common/util/idUtils';
 
-import { DMessage, DMessageId, duplicateDMessageNoVoid } from './chat.message';
+import { DMessage, DMessageId, duplicateDMessage } from './chat.message';
 
 
 /// Conversation
@@ -69,7 +69,7 @@ export function createDConversation(systemPurposeId?: SystemPurposeId): DConvers
   };
 }
 
-export function duplicateDConversationNoVoid(conversation: DConversation, lastMessageId?: DMessageId): DConversation {
+export function duplicateDConversation(conversation: DConversation, lastMessageId: undefined | DMessageId, skipVoid: boolean): DConversation {
 
   // cut short messages, if requested
   let messagesToKeep = conversation.messages.length; // By default, include all messages if messageId is null
@@ -87,7 +87,7 @@ export function duplicateDConversationNoVoid(conversation: DConversation, lastMe
 
     messages: conversation.messages
       .slice(0, messagesToKeep)
-      .map(duplicateDMessageNoVoid), // [*] duplicate conversation - see downstream
+      .map(message => duplicateDMessage(message, skipVoid)), // [*] duplicate conversation - see downstream
 
     // userTitle: conversation.userTitle, // undefined
     autoTitle: newTitle,
@@ -118,4 +118,36 @@ function getNextBranchTitle(currentTitle: string): string {
     return currentTitle.replace(numberPrefixRegex, `(${number}) `);
   } else
     return `(1) ${currentTitle}`;
+}
+
+
+// helpers - System Instruction
+
+export function hasSystemMessageInHistory(chatHistory: Readonly<DMessage[]>): boolean {
+  return !!chatHistory?.length && chatHistory[0].role === 'system';
+}
+
+export function isSystemMessageUserEdited(message: DMessage): boolean {
+  // make it explicit that '.updated' is the key to check for
+  return message.role === 'system' && !!message.updated;
+}
+
+export function splitSystemMessageFromHistory(chatHistory: Readonly<DMessage[]>): {
+  chatSystemInstruction: DMessage | null,
+  chatHistory: Readonly<DMessage[]>,
+} {
+  const chatSystemInstruction = hasSystemMessageInHistory(chatHistory) ? chatHistory[0] : null;
+  return {
+    chatSystemInstruction,
+    chatHistory: chatSystemInstruction ? chatHistory.slice(1) : chatHistory,
+  };
+}
+
+export function excludeSystemMessages(messages: Readonly<DMessage[]>, showAll?: boolean): Readonly<DMessage[]> {
+  if (showAll) return messages;
+  return messages.filter(_m => _m.role !== 'system');
+}
+
+export function remapMessagesSysToUsr(messages: Readonly<DMessage[]> | null): DMessage[] {
+  return (messages || []).map(_m => _m.role === 'system' ? { ..._m, role: 'user' as const } : _m); // (MUST: [0] is the system message of the original chat) cast system chat messages to the user role
 }

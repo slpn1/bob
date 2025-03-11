@@ -15,11 +15,12 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
 
 import type { DConversationId } from '~/common/stores/chat/chat.conversation';
-import { CloseableMenu } from '~/common/components/CloseableMenu';
+import { CloseablePopup } from '~/common/components/CloseablePopup';
 import { DFolder, useFolderStore } from '~/common/stores/folders/store-chat-folders';
 import { DebouncedInputMemo } from '~/common/components/DebouncedInput';
 import { FoldersToggleOff } from '~/common/components/icons/FoldersToggleOff';
 import { FoldersToggleOn } from '~/common/components/icons/FoldersToggleOn';
+import { OPTIMA_DRAWER_BACKGROUND } from '~/common/layout/optima/optima.config';
 import { OptimaDrawerHeader } from '~/common/layout/optima/drawer/OptimaDrawerHeader';
 import { OptimaDrawerList } from '~/common/layout/optima/drawer/OptimaDrawerList';
 import { capitalizeFirstLetter } from '~/common/util/textUtils';
@@ -33,7 +34,6 @@ import { ChatFolderList } from './folders/ChatFolderList';
 import { ChatNavGrouping, ChatSearchDepth, ChatSearchSorting, isDrawerSearching, useChatDrawerRenderItems } from './useChatDrawerRenderItems';
 import { ClearFolderText } from '../layout-bar/useFolderDropdown';
 import { useChatDrawerFilters } from '../../store-app-chat';
-import {LogoutButton} from "~/common/components/LogoutButton";
 
 
 // this is here to make shallow comparisons work on the next hook
@@ -380,40 +380,41 @@ function ChatDrawer(props: {
       </Box>
 
       <ListDivider sx={{ my: 0 }} />
-      <LogoutButton></LogoutButton>
+
       {/* Bottom commands */}
-      {/*<Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>*/}
-      {/*  <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>*/}
-      {/*    <ListItemDecorator>*/}
-      {/*      <FileDownloadOutlinedIcon />*/}
-      {/*    </ListItemDecorator>*/}
-      {/*    Import*/}
-      {/*    /!*<OpenAIIcon sx={{  ml: 'auto' }} />*!/*/}
-      {/*  </ListItemButton>*/}
+      <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+        <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>
+          <ListItemDecorator>
+            <FileDownloadOutlinedIcon />
+          </ListItemDecorator>
+          Import
+          {/*<OpenAIIcon sx={{  ml: 'auto' }} />*/}
+        </ListItemButton>
 
-      {/*  <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>*/}
-      {/*    <ListItemDecorator>*/}
-      {/*      <FileUploadOutlinedIcon />*/}
-      {/*    </ListItemDecorator>*/}
-      {/*    Export*/}
-      {/*  </ListItemButton>*/}
-      {/*</Box>*/}
+        <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>
+          <ListItemDecorator>
+            <FileUploadOutlinedIcon />
+          </ListItemDecorator>
+          Export
+        </ListItemButton>
+      </Box>
 
-      {/*<ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>*/}
-      {/*  <ListItemDecorator>*/}
-      {/*    <DeleteOutlineIcon />*/}
-      {/*  </ListItemDecorator>*/}
-      {/*  Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}*/}
-      {/*</ListItemButton>*/}
+      <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
+        <ListItemDecorator>
+          <DeleteOutlineIcon />
+        </ListItemDecorator>
+        Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
+      </ListItemButton>
 
     </OptimaDrawerList>
 
 
     {/* [Menu] Chat Item Folder Change */}
     {!!folderChangeRequest?.anchorEl && (
-      <CloseableMenu
+      <CloseablePopup
+        menu anchorEl={folderChangeRequest.anchorEl} onClose={handleConversationFolderCancel}
         bigIcons
-        open anchorEl={folderChangeRequest.anchorEl} onClose={handleConversationFolderCancel}
+        minWidth={200}
         placement='bottom-start'
         zIndex={themeZIndexOverMobileDrawer /* need to be on top of the Modal on Mobile */}
         sx={{ minWidth: 200 }}
@@ -449,7 +450,8 @@ function ChatDrawer(props: {
             </ListItemButton>
           </ListItem>
         )}
-      </CloseableMenu>
+
+      </CloseablePopup>
     )}
 
   </>;

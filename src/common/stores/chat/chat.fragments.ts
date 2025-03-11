@@ -59,6 +59,7 @@ export type DMessageAttachmentFragment = _DMessageFragmentWrapper<'attachment',
  * Void Fragments: no meaning, pure cosmetic, not stored, not processed
  */
 export type DMessageVoidFragment = _DMessageFragmentWrapper<'void',
+  | DVoidModelAuxPart             // (non submitted) model auxiliary information, from the model itself
   | DVoidPlaceholderPart          // (non submitted) placeholder to be replaced by another part
   | _SentinelPart
 >;
@@ -150,7 +151,16 @@ export type DMessageToolResponsePart = {
 };
 type DMessageToolEnvironment = 'upstream' | 'server' | 'client';
 
-type DVoidPlaceholderPart = { pt: 'ph', pText: string };
+export type DVoidModelAuxPart = {
+  pt: 'ma',
+  aType: 'reasoning', // note, we don't specialize to 'ant-thinking' here, as we can infer it from the presence of textSignature or redactedData
+  aText: string,
+  // [Anthropic] attributes, if present, they imply "Extended Thinking" object(s)
+  textSignature?: string,
+  redactedData?: readonly string[],
+};
+
+type DVoidPlaceholderPart = { pt: 'ph', pText: string, pType?: 'chat-gen-follow-up', /* 2025-02-23: added for non-pure-text placeholders */ };
 
 type _SentinelPart = { pt: '_pt_sentinel' };
 
@@ -192,6 +202,10 @@ export function isVoidFragment(fragment: DMessageFragment) {
   return fragment.ft === 'void';
 }
 
+export function isVoidThinkingFragment(fragment: DMessageFragment): fragment is DMessageVoidFragment & { part: DVoidModelAuxPart } {
+  return fragment.ft === 'void' && fragment.part.pt === 'ma' && fragment.part.aType === 'reasoning';
+}
+
 
 export function isDocPart(part: DMessageContentFragment['part'] | DMessageAttachmentFragment['part']) {
   return part.pt === 'doc';
@@ -211,6 +225,10 @@ export function isErrorPart(part: DMessageContentFragment['part']) {
 
 export function isToolResponseFunctionCallPart(part: DMessageContentFragment['part']): part is DMessageToolResponsePart & { response: { type: 'function_call' } } {
   return part.pt === 'tool_response' && part.response.type === 'function_call';
+}
+
+export function isModelAuxPart(part: DMessageVoidFragment['part']) {
+  return part.pt === 'ma';
 }
 
 export function isPlaceholderPart(part: DMessageVoidFragment['part']) {
@@ -281,8 +299,12 @@ function _createAttachmentFragment(title: string, caption: string, part: DMessag
 
 /// Void Fragments - Creation & Duplication
 
-export function createPlaceholderVoidFragment(placeholderText: string): DMessageVoidFragment {
-  return _createVoidFragment(_create_Placeholder_Part(placeholderText));
+export function createModelAuxVoidFragment(aType: DVoidModelAuxPart['aType'], aText: string, textSignature?: string, redactedData?: string[]): DMessageVoidFragment {
+  return _createVoidFragment(_create_ModelAux_Part(aType, aText, textSignature, redactedData));
+}
+
+export function createPlaceholderVoidFragment(placeholderText: string, placeholderType?: DVoidPlaceholderPart['pType']): DMessageVoidFragment {
+  return _createVoidFragment(_create_Placeholder_Part(placeholderText, placeholderType));
 }
 
 function _createVoidFragment(part: DMessageVoidFragment['part']): DMessageVoidFragment {
@@ -297,8 +319,9 @@ function _createSentinelFragment(): _SentinelFragment {
 }
 
 
-export function duplicateDMessageFragmentsNoVoid(fragments: Readonly<DMessageFragment[]>): DMessageFragment[] {
-  return fragments.map(_duplicateFragment).filter(f => f.ft !== 'void');
+export function duplicateDMessageFragments(fragments: Readonly<DMessageFragment[]>, skipVoid: boolean): DMessageFragment[] {
+  return !skipVoid ? fragments.map(_duplicateFragment)
+    : fragments.map(_duplicateFragment).filter(f => f.ft !== 'void');
 }
 
 function _duplicateFragment(fragment: DMessageFragment): DMessageFragment {
@@ -356,8 +379,16 @@ function _create_CodeExecutionResponse_Part(id: string, error: boolean | string,
   return { pt: 'tool_response', id, error, response: { type: 'code_execution', result, executor }, environment };
 }
 
-function _create_Placeholder_Part(placeholderText: string): DVoidPlaceholderPart {
-  return { pt: 'ph', pText: placeholderText };
+function _create_ModelAux_Part(aType: DVoidModelAuxPart['aType'], aText: string, textSignature?: string, redactedData?: Readonly<string[]>): DVoidModelAuxPart {
+  return {
+    pt: 'ma', aType, aText,
+    ...(textSignature !== undefined ? { textSignature } : undefined),
+    ...(redactedData ? { redactedData: Array.from(redactedData) /* creates a mutable copy of the array */ } : undefined),
+  };
+}
+
+function _create_Placeholder_Part(placeholderText: string, pType?: DVoidPlaceholderPart['pType']): DVoidPlaceholderPart {
+  return { pt: 'ph', pText: placeholderText, ...(pType ? { pType } : undefined) };
 }
 
 function _create_Sentinel_Part(): _SentinelPart {
@@ -367,7 +398,7 @@ function _create_Sentinel_Part(): _SentinelPart {
 function _duplicate_Part<TPart extends (DMessageContentFragment | DMessageAttachmentFragment | DMessageVoidFragment)['part']>(part: TPart): TPart {
   switch (part.pt) {
     case 'doc':
-      const newDocVersion = Number(part.version || 1); // we don't increase the version on duplication (not sure we should?)
+      const newDocVersion = Number(part.version ?? 1); // we don't increase the version on duplication (not sure we should?)
       return _create_Doc_Part(part.vdt, _duplicate_InlineData(part.data), part.ref, part.l1Title, newDocVersion, part.meta ? { ...part.meta } : undefined) as TPart;
 
     case 'error':
@@ -376,8 +407,11 @@ function _duplicate_Part<TPart extends (DMessageContentFragment | DMessageAttach
     case 'image_ref':
       return _create_ImageRef_Part(_duplicate_DataReference(part.dataRef), part.altText, part.width, part.height) as TPart;
 
+    case 'ma':
+      return _create_ModelAux_Part(part.aType, part.aText, part.textSignature, part.redactedData) as TPart;
+
     case 'ph':
-      return _create_Placeholder_Part(part.pText) as TPart;
+      return _create_Placeholder_Part(part.pText, part.pType) as TPart;
 
     case 'text':
       return _create_Text_Part(part.text) as TPart;
@@ -446,6 +480,29 @@ function _duplicate_DataReference(ref: DMessageDataRef): DMessageDataRef {
 
 
 /// Editor Helpers - Fragment Editing
+
+export function splitFragmentsByType(fragments: DMessageFragment[]) {
+  // also see `useFragmentBuckets.ts` which inspired this function
+  return fragments.reduce((acc, frag) => {
+    if (isContentFragment(frag))
+      acc.contentFragments.push(frag);
+    else if (isAttachmentFragment(frag))
+      acc.attachmentFragments.push(frag);
+    else if (isVoidFragment(frag))
+      acc.voidFragments.push(frag);
+    else
+      console.warn('[DEV] splitFragmentsByType: Unexpected fragment type:', frag.ft);
+    return acc;
+  }, {
+    contentFragments: [] as DMessageContentFragment[],
+    attachmentFragments: [] as DMessageAttachmentFragment[],
+    voidFragments: [] as DMessageVoidFragment[],
+  });
+}
+
+export function filterDocAttachmentFragments(fragments: DMessageAttachmentFragment[]) {
+  return fragments.filter(fragment => isDocPart(fragment.part));
+}
 
 /**
  * Updates a fragment with the edited text, ensuring the fragment retains its type and structure.
@@ -536,7 +593,7 @@ export function updateFragmentWithEditedText(
         part.vdt,
         newDataInline,
         part.ref,
-        Number(part.version || 1) + 1, // Increment version as this has been edited - note: we could have used ?? to be more correct, but || is safer
+        Number(part.version ?? 1) + 1, // Increment version as this has been edited - note: we could have used ?? to be more correct, but || is safer
         part.meta,
         liveFileId,
       );

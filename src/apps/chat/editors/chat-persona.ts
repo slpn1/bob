@@ -1,8 +1,8 @@
-import { AixChatGenerateContent_DMessage, aixChatGenerateContent_DMessage_FromHistory } from '~/modules/aix/client/aix.client';
+import { AixChatGenerateContent_DMessage, aixChatGenerateContent_DMessage_FromConversation } from '~/modules/aix/client/aix.client';
 import { autoChatFollowUps } from '~/modules/aifn/auto-chat-follow-ups/autoChatFollowUps';
 import { autoConversationTitle } from '~/modules/aifn/autotitle/autoTitle';
 
-import type { DConversationId } from '~/common/stores/chat/chat.conversation';
+import { DConversationId, splitSystemMessageFromHistory } from '~/common/stores/chat/chat.conversation';
 import type { DLLMId } from '~/common/stores/llms/llms.types';
 import { AudioGenerator } from '~/common/util/audio/AudioGenerator';
 import { ConversationsManager } from '~/common/chat-overlay/ConversationsManager';
@@ -11,7 +11,7 @@ import { getUXLabsHighPerformance } from '~/common/state/store-ux-labs';
 
 import { PersonaChatMessageSpeak } from './persona/PersonaChatMessageSpeak';
 import { getChatAutoAI, getIsNotificationEnabledForModel } from '../store-app-chat';
-import { getInstantAppChatPanesCount } from '../components/panes/usePanesManager';
+import { getInstantAppChatPanesCount } from '../components/panes/store-panes-manager';
 
 
 // configuration
@@ -34,14 +34,19 @@ export async function runPersonaOnConversationHead(
 
   const cHandler = ConversationsManager.getHandler(conversationId);
 
-  const history = cHandler.historyViewHead('runPersonaOnConversationHead') as Readonly<DMessage[]>;
+  const _history = cHandler.historyViewHeadOrThrow('runPersonaOnConversationHead') as Readonly<DMessage[]>;
+  if (_history.length === 0)
+    return false;
+
+  // split pre dynamic-personas
+  let { chatSystemInstruction, chatHistory } = splitSystemMessageFromHistory(_history);
 
   // assistant response placeholder
   const isNotifyEnabled = getIsNotificationEnabledForModel(assistantLlmId);
   const { assistantMessageId } = cHandler.messageAppendAssistantPlaceholder(
     CHATGENERATE_RESPONSE_PLACEHOLDER,
     {
-      purposeId: history[0].purposeId,
+      purposeId: chatSystemInstruction?.purposeId,
       generator: { mgt: 'named', name: assistantLlmId },
       ...(isNotifyEnabled ? { userFlags: [MESSAGE_FLAG_NOTIFY_COMPLETE] } : {}),
     },
@@ -50,7 +55,7 @@ export async function runPersonaOnConversationHead(
   const parallelViewCount = getUXLabsHighPerformance() ? 0 : getInstantAppChatPanesCount();
 
   // ai follow-up operations (fire/forget)
-  const { autoSpeak, autoSuggestDiagrams, autoSuggestHTMLUI, autoSuggestQuestions, autoTitleChat } = getChatAutoAI();
+  const { autoSpeak, autoSuggestDiagrams, autoSuggestHTMLUI, autoSuggestQuestions, autoTitleChat, chatKeepLastThinkingOnly } = getChatAutoAI();
 
   // AutoSpeak
   const autoSpeaker: PersonaProcessorInterface | null = autoSpeak !== 'off' ? new PersonaChatMessageSpeak(autoSpeak) : null;
@@ -60,9 +65,10 @@ export async function runPersonaOnConversationHead(
   cHandler.setAbortController(abortController, 'chat-persona');
 
   // stream the assistant's messages directly to the state store
-  const messageStatus = await aixChatGenerateContent_DMessage_FromHistory(
+  const messageStatus = await aixChatGenerateContent_DMessage_FromConversation(
     assistantLlmId,
-    history,
+    chatSystemInstruction,
+    chatHistory,
     'conversation',
     conversationId,
     { abortSignal: abortController.signal, throttleParallelThreads: parallelViewCount },
@@ -122,6 +128,9 @@ export async function runPersonaOnConversationHead(
 
   if (!hasBeenAborted && (autoSuggestDiagrams || autoSuggestHTMLUI || autoSuggestQuestions))
     void autoChatFollowUps(conversationId, assistantMessageId, autoSuggestDiagrams, autoSuggestHTMLUI, autoSuggestQuestions);
+
+  if (chatKeepLastThinkingOnly)
+    cHandler.historyKeepLastThinkingOnly();
 
   // return true if this succeeded
   return messageStatus.outcome === 'success';

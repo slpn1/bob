@@ -2,7 +2,6 @@ import * as React from 'react';
 
 import { Button, Sheet, Typography } from '@mui/joy';
 
-import { Brand } from '../app.config';
 import { reloadPage } from '../app.routes';
 import { useSingleTabEnforcer } from '../components/useSingleTabEnforcer';
 

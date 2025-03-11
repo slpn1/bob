@@ -1,33 +1,20 @@
 import * as React from 'react';
+import { stringify as csvStringify } from 'csv-stringify/browser/esm/sync';
 
 import type { Pluggable as UnifiedPluggable } from 'unified';
-import { CSVLink } from 'react-csv';
 import { Components as ReactMarkdownComponents, default as ReactMarkdown } from 'react-markdown';
 import { default as rehypeKatex } from 'rehype-katex';
 import { default as remarkGfm } from 'remark-gfm';
 import { default as remarkMath } from 'remark-math';
 import { remarkMark } from 'remark-mark-highlight';
 
-import { Box, Button } from '@mui/joy';
-import DownloadIcon from '@mui/icons-material/Download';
+import { Box, Chip } from '@mui/joy';
 
 import { copyToClipboard } from '~/common/util/clipboardUtils';
+import { downloadBlob } from '~/common/util/downloadUtils';
 
+import { CustomARenderer } from './CustomARenderer';
 import { wrapWithMarkdownSyntax } from './markdown.wrapper';
-
-
-// LinkRenderer adds a target="_blank" to all links
-
-interface LinkRendererProps {
-  node?: any; // an optional field we want to not pass to the <a/> element
-  children: React.ReactNode;
-}
-
-const LinkRenderer = ({ children, node, ...props }: LinkRendererProps) => (
-  <a {...props} target='_blank' rel='noopener'>
-    {children}
-  </a>
-);
 
 
 // DelRenderer adds a strikethrough to the text
@@ -44,9 +31,31 @@ function MarkRenderer({ children }: { children: React.ReactNode }) {
 
 // TableRenderer adds a CSV Download Link and a Copy Markdown Button
 
-const tableButtonsSx = {
-  backgroundColor: 'background.popup',
-  borderRadius: 0,
+const _styles = {
+
+  tableStyle: {
+    borderCollapse: 'collapse',
+    width: '100%',
+    marginBottom: '0.5rem',
+  } as const,
+
+  buttons: {
+    mb: 2,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 1,
+  } as const,
+
+  button: {
+    // backgroundColor: 'background.popup',
+    borderRadius: 0,
+    px: 1.5,
+    py: 0.375,
+    outline: '1px solid',
+    outlineColor: 'neutral.outlinedBorder', // .outlinedBorder
+    // boxShadow: `1px 2px 4px -3px var(--joy-palette-neutral-solidBg)`,
+  } as const,
+
 };
 
 interface TableRendererProps {
@@ -56,51 +65,71 @@ interface TableRendererProps {
 
 function TableRenderer({ children, node, ...props }: TableRendererProps) {
 
-  // Apply custom styles or modifications here
+  // extracts the table data by parsing the DOM
   const tableData = _extractTableData(children);
 
-  // Generate markdown string
-  const markdownString = tableData?.length >= 1 ? generateMarkdownTableFromData(tableData) : '';
+  // handlers
 
-  // Function to copy markdown to clipboard
-  const copyMarkdownToClipboard = React.useCallback(() => {
+  const handleDownloadCsv = React.useCallback(() => {
+    if (!tableData?.length) return;
+
+    // take all rows except the first one
+    const dataRows = tableData.slice(1);
+
+    // convert to CSV
+    const csvString = csvStringify(dataRows, {
+      bom: true,                 // add BOM marker for UTF-8 detection in Excel
+      quoted: true,              // quote all fields
+      quote: '"',                // use double quotes
+      escape: '"',               // escape quotes with double quotes
+      header: true,
+      columns: tableData[0],
+    });
+
+    // create blob and trigger download
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    downloadBlob(blob, 'table.csv');
+  }, [tableData]);
+
+  const handleCopyMarkdown = React.useCallback(() => {
+    if (!tableData?.length) return;
+    const markdownString = generateMarkdownTableFromData(tableData);
     copyToClipboard(markdownString, 'Markdown Table');
-  }, [markdownString]);
+  }, [tableData]);
+
 
   return (
     <>
-      <table style={{ borderCollapse: 'collapse', width: '100%', marginBottom: '0.5rem' }} {...props}>
+      <table style={_styles.tableStyle} {...props}>
         {children}
       </table>
 
       {/* Download CSV link and Copy Markdown Button */}
       {tableData?.length >= 1 && (
-        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CSVLink filename='big-agi-table.csv' data={tableData}>
-            <Button
-              variant='outlined'
-              color='neutral'
-              size='sm'
-              endDecorator={<DownloadIcon />}
-              sx={tableButtonsSx}
-            >
-              Download CSV
-            </Button>
-          </CSVLink>
+        <Box sx={_styles.buttons}>
+          {/* Download button*/}
+          <Chip
+            variant='soft'
+            color='neutral'
+            size='sm'
+            onClick={handleDownloadCsv}
+            // endDecorator={<DownloadIcon />}
+            sx={_styles.button}
+          >
+            Download CSV
+          </Chip>
 
           {/* Button to copy markdown */}
-          {!!markdownString && (
-            <Button
-              variant='outlined'
-              color='neutral'
-              size='sm'
-              onClick={copyMarkdownToClipboard}
-              // endDecorator={<ContentCopyIcon />}
-              sx={tableButtonsSx}
-            >
-              Copy Markdown
-            </Button>
-          )}
+          <Chip
+            variant='soft'
+            color='neutral'
+            size='sm'
+            onClick={handleCopyMarkdown}
+            // endDecorator={<ContentCopyIcon />}
+            sx={_styles.button}
+          >
+            Copy Markdown
+          </Chip>
         </Box>
       )}
     </>
@@ -167,7 +196,7 @@ function generateMarkdownTableFromData(tableData: any[]): string {
 // shared components for the markdown renderer
 
 const reactMarkdownComponents = {
-  a: LinkRenderer, // override the link renderer to add target="_blank"
+  a: CustomARenderer, // override the link renderer to add target="_blank"
   del: DelRenderer, // renders the <del> tag (~~strikethrough~~)
   mark: MarkRenderer, // renders the <mark> tag (==highlight==)
   table: TableRenderer, // override the table renderer to show the download CSV links and Copy Markdown button
@@ -193,8 +222,14 @@ const rehypePluginsStable: UnifiedPluggable[] = [
  */
 const preprocessMarkdown = (markdownText: string) => markdownText
   // Replace LaTeX delimiters with $$...$$
-  .replace(/\s\\\((.*?)\\\)/gs, (_match, p1) => ` $$${p1}$$`) // Replace inline LaTeX delimiters \( and \) with $$
-  .replace(/\s\\\[(.*?)\\]/gs, (_match, p1) => ` $$${p1}$$`) // Replace block LaTeX delimiters \[ and \] with $$
+  // Replace inline LaTeX delimiters \( and \) with $$
+  .replace(/(\s*)\\\((.*?)\\\)/gs, (_match, leadingSpace, mathContent) =>
+    `${leadingSpace}$$${mathContent}$$`
+  )
+  // Replace block LaTeX delimiters \[ and \] with $$
+  .replace(/(\s*)\\\[(.*?)\\]/gs, (_match, leadingSpace, mathContent) =>
+    `${leadingSpace}$$${mathContent}$$`
+  )
   // Replace <mark>...</mark> with ==...==, but not in multiple lines, or if preceded by a backtick (disabled, was (?<!`))
   .replace(/<mark>([\s\S]*?)<\/mark>/g, (_match, p1) => wrapWithMarkdownSyntax(p1, '=='))
   // Replace <del>...</del> with ~~...~~, but not in multiple lines, or if preceded by a backtick (disabled, was (?<!`))

@@ -5,9 +5,19 @@ import { BlocksTextarea } from '~/modules/blocks/BlocksContainers';
 import type { ContentScaling } from '~/common/app.theme';
 import type { DMessageFragmentId } from '~/common/stores/chat/chat.fragments';
 import { ShortcutKey, useGlobalShortcuts } from '~/common/components/shortcuts/useGlobalShortcuts';
+import { useUIPreferencesStore } from '~/common/state/store-ui';
 
 
-const textAreaSlotPropsEnter = {
+// configuration
+
+/**
+ * Note: this will disable the galobal 'shift+enter' shortcut (and the status message) for this component as well.
+ * - #760. set to 'undefined' to follow the user preference
+ */
+const FORCE_ENTER_IS_NEWLINE = true;
+
+
+const _textAreaSlotPropsEnter = {
   textarea: {
     enterKeyHint: 'enter' as const,
   },
@@ -20,12 +30,19 @@ const textAreaSlotPropsEnter = {
   },
 };
 
-const textAreaSlotPropsDone = {
-  ...textAreaSlotPropsEnter,
+const _textAreaSlotPropsDone = {
+  ..._textAreaSlotPropsEnter,
   textarea: {
     enterKeyHint: 'done' as const,
   },
 };
+
+const _styles = {
+  squareTop: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  } as const,
+} as const;
 
 
 /**
@@ -42,6 +59,7 @@ export function BlockEdit_TextFragment(props: {
   // visual
   contentScaling: ContentScaling,
   // endDecorator?: React.ReactNode
+  squareTopBorder?: boolean,
 
   // edited value
   editedText?: string,
@@ -56,7 +74,10 @@ export function BlockEdit_TextFragment(props: {
   // external
   // NOTE: we disabled `useUIPreferencesStore(state => state.enterIsNewline)` on 2024-06-19, as it's
   //       not a good pattern for this kind of editing and we have buttons to take care of Save/Cancel
-  const enterIsNewline = true;
+  //
+  // NOTE2: as per #https://github.com/enricoros/big-AGI/issues/760, this is a UX break of behavior.
+  //        adding a configuration option to quickly
+  const enterIsNewline = useUIPreferencesStore(state => FORCE_ENTER_IS_NEWLINE !== undefined ? FORCE_ENTER_IS_NEWLINE : state.enterIsNewline);
 
   // derived state
   const { fragmentId, setEditedText, onSubmit, onEscapePressed } = props;
@@ -68,12 +89,14 @@ export function BlockEdit_TextFragment(props: {
 
   const handleEditKeyDown = React.useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter') {
-      const shiftOrAlt = e.shiftKey || e.altKey;
       const withControl = e.ctrlKey;
-      if (enterIsNewline ? shiftOrAlt : !shiftOrAlt) {
+      if (enterIsNewline ? e.shiftKey : !e.shiftKey) {
         e.preventDefault();
         if (!withControl || props.enableRestart)
           onSubmit(withControl);
+      } // [Beam] eat up pure Ctrl+Enter, to not restart beams
+      else if (e.ctrlKey) {
+        e.stopPropagation(); // prevents the global shortcut
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
@@ -84,7 +107,7 @@ export function BlockEdit_TextFragment(props: {
   // shortcuts
   const isEdited = props.editedText !== undefined;
   useGlobalShortcuts('TextFragmentEditor', React.useMemo(() => !isFocused ? [] : [
-    { key: ShortcutKey.Enter, shift: true, description: 'Save', disabled: !isEdited && props.enableRestart !== true, level: 3, action: () => onSubmit(false) },
+    ...(!FORCE_ENTER_IS_NEWLINE ? [] : [{ key: ShortcutKey.Enter, shift: true, description: 'Save', disabled: !isEdited && props.enableRestart !== true, level: 3, action: () => null }]),
     ...props.enableRestart ? [{ key: ShortcutKey.Enter, ctrl: true, shift: true, description: 'Save & Retry', disabled: !isEdited, level: 3, action: () => onSubmit(true) }] : [],
     { key: ShortcutKey.Esc, description: 'Cancel', level: 3, action: onEscapePressed },
   ], [isEdited, isFocused, props.enableRestart, onEscapePressed, onSubmit]));
@@ -107,8 +130,9 @@ export function BlockEdit_TextFragment(props: {
       // onBlur={props.disableAutoSaveOnBlur ? undefined : handleEditBlur}
       onChange={handleEditTextChanged}
       onKeyDown={handleEditKeyDown}
-      slotProps={enterIsNewline ? textAreaSlotPropsEnter : textAreaSlotPropsDone}
+      slotProps={enterIsNewline ? _textAreaSlotPropsEnter : _textAreaSlotPropsDone}
       // endDecorator={props.endDecorator}
+      sx={!props.squareTopBorder ? undefined : _styles.squareTop}
     />
   );
 }
