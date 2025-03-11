@@ -23,7 +23,9 @@ export function optimaToggleDrawer(event?: React.MouseEvent) {
 }
 
 export function useOptimaDrawerOpen() {
-  return useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen);
+  //return useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen);
+  // Always return true to keep the drawer permanently open
+  return true;
 }
 
 

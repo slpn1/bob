@@ -1,9 +1,11 @@
 import * as React from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { useSession, signOut } from 'next-auth/react';
 
-import { Box, Button, Dropdown, IconButton, ListDivider, ListItem, ListItemButton, ListItemDecorator, Menu, MenuButton, MenuItem, Tooltip, Typography } from '@mui/joy';
+import { Box, Button, Dropdown, IconButton, ListDivider, ListItem, ListItemButton, ListItemDecorator, Menu, MenuButton, MenuItem, Tooltip, Typography, Avatar } from '@mui/joy';
 import AddIcon from '@mui/icons-material/Add';
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import ClearIcon from '@mui/icons-material/Clear';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -11,7 +13,9 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined';
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import FormatPaintOutlinedIcon from '@mui/icons-material/FormatPaintOutlined';
+import LogoutIcon from '@mui/icons-material/Logout';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SettingsIcon from '@mui/icons-material/Settings';
 import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
 
 import type { DConversationId } from '~/common/stores/chat/chat.conversation';
@@ -20,14 +24,16 @@ import { DFolder, useFolderStore } from '~/common/stores/folders/store-chat-fold
 import { DebouncedInputMemo } from '~/common/components/DebouncedInput';
 import { FoldersToggleOff } from '~/common/components/icons/FoldersToggleOff';
 import { FoldersToggleOn } from '~/common/components/icons/FoldersToggleOn';
+import { LogoutButton } from '~/common/components/LogoutButton';
 import { OPTIMA_DRAWER_BACKGROUND } from '~/common/layout/optima/optima.config';
 import { OptimaDrawerHeader } from '~/common/layout/optima/drawer/OptimaDrawerHeader';
 import { OptimaDrawerList } from '~/common/layout/optima/drawer/OptimaDrawerList';
 import { capitalizeFirstLetter } from '~/common/util/textUtils';
 import { getIsMobile } from '~/common/components/useMatchMedia';
-import { optimaCloseDrawer } from '~/common/layout/optima/useOptima';
+import { optimaCloseDrawer, optimaOpenModels, optimaOpenPreferences } from '~/common/layout/optima/useOptima';
 import { themeScalingMap, themeZIndexOverMobileDrawer } from '~/common/app.theme';
 import { useUIPreferencesStore } from '~/common/state/store-ui';
+import { useIsAdmin } from '~/common/util/auth-utils';
 
 import { ChatDrawerItemMemo, FolderChangeRequest } from './ChatDrawerItem';
 import { ChatFolderList } from './folders/ChatFolderList';
@@ -38,6 +44,77 @@ import { useChatDrawerFilters } from '../../store-app-chat';
 
 // this is here to make shallow comparisons work on the next hook
 const noFolders: DFolder[] = [];
+
+/**
+ * Component to display user info and logout button
+ */
+function UserInfoAndLogout() {
+  const { data: session, status } = useSession();
+  
+  // If not authenticated, show login button
+  if (status === 'unauthenticated') {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Button 
+          variant="soft" 
+          color="primary" 
+          size="sm" 
+          component="a"
+          href="/api/auth/signin"
+        >
+          Sign in
+        </Button>
+      </Box>
+    );
+  }
+  
+  // If loading, show loading state
+  if (status === 'loading') {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <Typography level="body-sm" sx={{ color: 'neutral.500' }}>
+          Loading...
+        </Typography>
+      </Box>
+    );
+  }
+  
+  // If authenticated, show user info and logout button
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+        <Avatar
+          size="sm"
+          variant="soft"
+          color="primary"
+          sx={{ '--Avatar-size': '28px' }}
+        >
+          {session?.user?.name?.[0]?.toUpperCase() || 'U'}
+        </Avatar>
+        <Typography 
+          level="body-sm" 
+          sx={{ 
+            fontWeight: 'md',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {session?.user?.name || 'User'}
+        </Typography>
+      </Box>
+      <Button 
+        variant="soft" 
+        color="neutral" 
+        size="sm" 
+        onClick={() => signOut({ callbackUrl: '/api/auth/signin' })}
+        startDecorator={<LogoutIcon fontSize="small" />}
+      >
+        Sign out
+      </Button>
+    </Box>
+  );
+}
 
 /*
  * Lists folders and returns the active folder
@@ -100,6 +177,8 @@ function ChatDrawer(props: {
   const zenMode = uiComplexityMode === 'minimal';
   const gifMode = uiComplexityMode === 'extra';
 
+  // Use the centralized useIsAdmin hook
+  const isAdmin = useIsAdmin();
 
   // New/Activate/Delete Conversation
 
@@ -254,12 +333,12 @@ function ChatDrawer(props: {
   return <>
 
     {/* Drawer Header */}
-    <OptimaDrawerHeader title='Chats' onClose={optimaCloseDrawer}>
-      <Tooltip title={enableFolders ? 'Hide Folders' : 'Use Folders'}>
+    <OptimaDrawerHeader title='Chats' onClose={() => {}}>
+      {/* <Tooltip title={enableFolders ? 'Hide Folders' : 'Use Folders'}>
         <IconButton size='sm' onClick={toggleEnableFolders}>
           {enableFolders ? <FoldersToggleOn /> : <FoldersToggleOff />}
         </IconButton>
-      </Tooltip>
+      </Tooltip> */}
     </OptimaDrawerHeader>
 
     {/* Folders List (shrink at twice the rate as the Titles) */}
@@ -292,46 +371,81 @@ function ChatDrawer(props: {
     {/* Chats List */}
     <OptimaDrawerList variant='plain' noTopPadding noBottomPadding tallRows>
 
-      {enableFolders && <ListDivider sx={{ mb: 0 }} />}
+      {/* {enableFolders && <ListDivider sx={{ mb: 0 }} />} */}
 
       {/* Search / New Chat */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', m: 2, gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', m: 0, gap: 2 }}>
 
         {/* Search Input Field */}
         <DebouncedInputMemo
           minChars={2}
           onDebounce={setDebouncedSearchQuery}
           debounceTimeout={300}
-          placeholder='Search...'
+          placeholder='Search'
           aria-label='Search'
           endDecorator={groupingComponent}
+          sx={{
+            mt: 4,
+            mx: 4,
+            borderRadius: 20
+          }}  
         />
 
         {/* New Chat Button */}
-        <Button
-          // variant='outlined'
-          variant={disableNewButton ? undefined : 'soft'}
-          disabled={disableNewButton}
-          onClick={handleButtonNew}
-          sx={{
-            // ...PageDrawerTallItemSx,
-            justifyContent: 'flex-start',
-            padding: '0px 0.75rem',
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mt: 2,
+          mb: 1,
+          ml: 4
+        }}>
+          <IconButton
+            variant={disableNewButton ? undefined : 'solid'}
+            color="primary"
+            disabled={disableNewButton}
+            onClick={handleButtonNew}
+            sx={{
+              borderRadius: '50%',
+              width: '2.5rem',
+              height: '2.5rem',
+            }}
+          >
+            <AddIcon />
+          </IconButton>
+          <Typography 
+            level="body-md" 
+            sx={{ 
+              ml: 1.5,
+              fontWeight: 500
+            }}
+          >
+            New chat
+          </Typography>
+        </Box>
 
-            // style
-            border: '1px solid',
-            borderColor: 'neutral.outlinedBorder',
-            borderRadius: 'sm',
-            '--ListItemDecorator-size': 'calc(2.5rem - 1px)', // compensate for the border
-            // backgroundColor: 'background.popup',
-            // boxShadow: (disableNewButton || props.isMobile) ? 'none' : 'xs',
-            // transition: 'box-shadow 0.2s',
+      </Box>
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        mt: 2,
+        mb: 1,
+        gap: 2,
+        ml: 4,
+        mr: 4
+      }}>
+        <Typography 
+          color='primary' 
+          fontWeight={500} 
+          level='body-md'
+          sx={{
+            borderBottom: '1px solid',
+            borderColor: 'primary.main',
+            pb: 0.5,
+            display: 'inline-block'
           }}
         >
-          <ListItemDecorator><AddIcon sx={{ fontSize: '' }} /></ListItemDecorator>
-          New chat
-        </Button>
-
+          Chats
+        </Typography>
       </Box>
 
       {/* Chat Titles List (shrink as half the rate as the Folders List) */}
@@ -349,18 +463,24 @@ function ChatDrawer(props: {
               onConversationFolderChange={handleConversationFolderChange}
             />
           ) : item.type === 'nav-item-group' ? (
-            <Typography key={'nav-divider-' + idx} level='body-xs' sx={{
-              textAlign: 'center',
-              my: 1,
-              // my: 'calc(var(--ListItem-minHeight) / 4)',
-              // keeps the group header sticky to the top
-              position: 'sticky',
-              top: 0,
-              backgroundColor: 'background.popup',
-              zIndex: 1,
-            }}>
-              {item.title}
-            </Typography>
+            // <Typography 
+            //   color='primary'
+            //   key={'nav-divider-' + idx} level='body-sm' sx={{
+            //   textAlign: 'left',
+            //   my: 0,
+            //   mx: 4,
+            //   // my: 'calc(var(--ListItem-minHeight) / 4)',
+            //   // keeps the group header sticky to the top
+            //   position: 'sticky',
+            //   top: 0,
+            //   backgroundColor: OPTIMA_DRAWER_BACKGROUND,
+            //   fontWeight: 500,
+            //   zIndex: 1,
+            //   textDecoration: 'underline',
+            // }}>
+            //   {item.title}
+            // </Typography>
+            <> </>
           ) : item.type === 'nav-item-info-message' ? (
             <Box key={'nav-info-' + idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, ml: 2 }}>
               <Typography level='body-xs' sx={{ color: 'primary.softColor', my: 'calc(var(--ListItem-minHeight) / 4)' }}>
@@ -381,30 +501,63 @@ function ChatDrawer(props: {
 
       <ListDivider sx={{ my: 0 }} />
 
-      {/* Bottom commands */}
-      <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-        <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>
-          <ListItemDecorator>
-            <FileDownloadOutlinedIcon />
-          </ListItemDecorator>
-          Import
-          {/*<OpenAIIcon sx={{  ml: 'auto' }} />*/}
-        </ListItemButton>
+      {/* Admin Panel - Only visible to admin users */}
+      {isAdmin && (
+        <>
+          <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <ListItemButton onClick={props.onConversationsImportDialog} sx={{ flex: 1 }}>
+              <ListItemDecorator>
+                <FileDownloadOutlinedIcon />
+              </ListItemDecorator>
+              Import
+            </ListItemButton>
 
-        <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>
-          <ListItemDecorator>
-            <FileUploadOutlinedIcon />
-          </ListItemDecorator>
-          Export
-        </ListItemButton>
+            <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsExport} sx={{ flex: 1 }}>
+              <ListItemDecorator>
+                <FileUploadOutlinedIcon />
+              </ListItemDecorator>
+              Export
+            </ListItemButton>
+          </Box>
+
+          {/* App Preferences and Configure AI Model buttons */}
+          <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <ListItemButton onClick={() => optimaOpenPreferences()} sx={{ flex: 1 }}>
+              <ListItemDecorator>
+                <SettingsIcon />
+              </ListItemDecorator>
+              App Preferences
+            </ListItemButton>
+
+            <ListItemButton onClick={() => optimaOpenModels()} sx={{ flex: 1 }}>
+              <ListItemDecorator>
+                <BuildCircleIcon />
+              </ListItemDecorator>
+              AI Models
+            </ListItemButton>
+          </Box>
+
+          <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
+            <ListItemDecorator>
+              <DeleteOutlineIcon />
+            </ListItemDecorator>
+            Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
+          </ListItemButton>
+
+          <ListDivider sx={{ my: 1 }} />
+        </>
+      )}
+
+      {/* User info and logout */}
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        px: 2, 
+        py: 1,
+        mb: 1
+      }}>
+        <UserInfoAndLogout />
       </Box>
-
-      <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
-        <ListItemDecorator>
-          <DeleteOutlineIcon />
-        </ListItemDecorator>
-        Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
-      </ListItemButton>
 
     </OptimaDrawerList>
 

@@ -2,9 +2,11 @@ import * as React from 'react';
 
 import type { SxProps } from '@mui/joy/styles/types';
 import { Box, IconButton, Typography } from '@mui/joy';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 
 import { Link } from '~/common/components/Link';
+import { OPTIMA_DRAWER_BACKGROUND } from '../optima.config';
+
+import Image from 'next/image';
 
 
 export const OptimaDrawerHeader = (props: {
@@ -22,7 +24,7 @@ export const OptimaDrawerHeader = (props: {
       px: 1,
 
       // style
-      backgroundColor: 'background.popup',
+      backgroundColor: OPTIMA_DRAWER_BACKGROUND,
       // borderLeft: 'none',
       // borderRight: 'none',
       // borderTop: 'none',
@@ -30,26 +32,17 @@ export const OptimaDrawerHeader = (props: {
 
       // layout
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      alignItems: 'start',
+      justifyContent: 'start',
     }}
   >
 
     {props.children || <IconButton disabled />}
 
-    {props.onTitleClick ? (
-      <Link href='#' color='neutral' onClick={props.onTitleClick}>
-        <Typography level='title-md'>
-          {props.title}
-        </Typography>
-      </Link>) : (
-      <Typography level='title-md'>
-        {props.title}
-      </Typography>
-    )}
+    <Box sx={{ marginTop: '2em' }}>
+      <Image src='/images/sg-logo.png' alt='logo' width={33} height={50} />
+    </Box>
 
-    <IconButton aria-label='Close Drawer' size='sm' onClick={props.onClose}>
-      <CloseRoundedIcon />
-    </IconButton>
+    <IconButton disabled sx={{ visibility: 'hidden' }} />
 
   </Box>;

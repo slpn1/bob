@@ -2,7 +2,7 @@
     --AGI-Nav-width: 52px;
     --AGI-Drawer-width: 320px;
     --AGI-Panel-width: 320px;
-    --AGI-Desktop-Drawer-width: clamp(260px, 18vw, 350px);
+    --AGI-Desktop-Drawer-width: clamp(310px, 22vw, 400px);
     --AGI-Desktop-Panel-width: clamp(260px, 18vw, 350px);
     --AGI-overlay-start-opacity: 0;
 }

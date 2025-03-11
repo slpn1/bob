@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 // API Paths to be restricted.
 const protectedRoutes = ["/"];
-const allowedRoutes = ["/api/auth/", "/auth/", "/login"];
+const allowedRoutes = ["/api/auth/", "/auth/", "/images/", "/login", "/api/auth/", "/_next/", "/manifest.json", "/favicon.ico", "/api/edge/backend.listCapabilities"];
 
 export default async function middleware(request: NextRequest) {
 
@@ -17,6 +17,8 @@ export default async function middleware(request: NextRequest) {
     }
     // Check if the current route is a protected route
     if (protectedRoutes.some((path) => pathname.startsWith(path))) {
+        console.log('Pathname', pathname);
+
         const token = await getToken({ req: request });
 
         // If no token, redirect to the sign-in page

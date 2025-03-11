@@ -47,8 +47,8 @@ export function MobileDrawer(props: { component: React.ElementType, currentApp?:
       id='mobile-drawer'
       component={props.component}
       disableEnforceFocus
-      open={isDrawerOpen}
-      onClose={optimaCloseDrawer}
+      open={true}
+      onClose={() => {}}
       sx={{
         '--Drawer-horizontalSize': 'clamp(var(--AGI-Drawer-width), 30%, 100%)',
         '--Drawer-transitionDuration': '0.2s',

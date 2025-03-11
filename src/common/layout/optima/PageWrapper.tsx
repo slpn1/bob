@@ -48,14 +48,12 @@ export function PageWrapper(props: { component: React.ElementType, currentApp?: 
         // when the drawer is off, compensate with a negative margin
         // NOTE: this will cause a transition on the container as well, meaning when we
         // resize the window, the contents will wobble slightly
-        marginLeft: !isDrawerOpen
-          ? 'calc(-1 * var(--AGI-Desktop-Drawer-width))'
-          : 0,
+        marginLeft: 0, // Always 0 since drawer is always open
         marginRight: !panelShownAsPanel
           ? 'calc(-1 * var(--AGI-Desktop-Panel-width))'
           : 0,
-        transition: 'margin-left 0.42s cubic-bezier(.17,.84,.44,1), margin-right 0.42s cubic-bezier(.17,.84,.44,1)',
-        willChange: 'margin-left, margin-right',
+        transition: 'margin-right 0.42s cubic-bezier(.17,.84,.44,1)',
+        willChange: 'margin-right',
       }}
     >
 

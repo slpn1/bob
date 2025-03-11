@@ -4,6 +4,7 @@ import { Button, Sheet, Typography } from '@mui/joy';
 
 import { reloadPage } from '../app.routes';
 import { useSingleTabEnforcer } from '../components/useSingleTabEnforcer';
+import {Brand} from "~/common/app.config";
 
 
 export const ProviderSingleTab = (props: { children: React.ReactNode }) => {

@@ -28,6 +28,16 @@ export function useChatExecuteMode(capabilityHasT2I: boolean, isMobile: boolean)
     setChatExecuteMode(mode);
   }, [handleMenuHide]);
 
+  // New function to directly set mode to Chat
+  const handleSetChatMode = React.useCallback(() => {
+    setChatExecuteMode('generate-content');
+  }, []);
+
+  // New function to directly set mode to Draw
+  const handleSetDrawMode = React.useCallback(() => {
+    setChatExecuteMode('generate-image');
+  }, []);
+
 
   const chatExecuteMenuComponent = React.useMemo(() => !!chatExecuteModeMenuAnchor && (
     <ExecuteModeMenu
@@ -43,6 +53,8 @@ export function useChatExecuteMode(capabilityHasT2I: boolean, isMobile: boolean)
 
   return {
     chatExecuteMode,
+    setChatMode: handleSetChatMode,
+    setDrawMode: handleSetDrawMode,
     chatExecuteMenuComponent,
     chatExecuteModeSendColor: ExecuteModeItems[chatExecuteMode]?.sendColor || 'primary',
     chatExecuteModeSendLabel: ExecuteModeItems[chatExecuteMode]?.sendText || 'Send',

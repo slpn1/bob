@@ -11,6 +11,7 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import SendIcon from '@mui/icons-material/Send';
 import StopOutlinedIcon from '@mui/icons-material/StopOutlined';
 import TelegramIcon from '@mui/icons-material/Telegram';
+import BrushIcon from '@mui/icons-material/Brush';
 
 import type { AppChatIntent } from '../../AppChat';
 import { useChatAutoSuggestAttachmentPrompts, useChatMicTimeoutMsValue } from '../../store-app-chat';
@@ -124,6 +125,7 @@ export function Composer(props: {
     chatExecuteMode,
     chatExecuteModeSendColor, chatExecuteModeSendLabel,
     chatExecuteMenuComponent, chatExecuteMenuShown, showChatExecuteMenu,
+    setChatMode, setDrawMode,
   } = useChatExecuteMode(props.capabilityHasT2I, props.isMobile);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const micCardRef = React.useRef<HTMLDivElement>(null);
@@ -745,8 +747,8 @@ export function Composer(props: {
         >
 
           {/* [Mobile: top, Desktop: left] */}
-          <Grid xs={12} md={10.5}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
-          <Grid xs={12} md={9}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'stretch' }}>
+          <Grid xs={12} md={12}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
+          <Grid xs={12} md={11}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'stretch' }}>
 
             {/* [Mobile, Col1] Mic, Insert Multi-modal content, and Broadcast buttons */}
             {isMobile && (
@@ -821,7 +823,7 @@ export function Composer(props: {
               display: 'flex',
               flexDirection: 'column',
               gap: 1,
-              minWidth: 200, // flex: enable X-scrolling (resetting any possible minWidth due to the attachment drafts)
+              minWidth: 400, // flex: enable X-scrolling (resetting any possible minWidth due to the attachment drafts)
             }}>
 
               {/* Text Edit + Mic buttons + MicOverlay */}
@@ -1002,18 +1004,40 @@ export function Composer(props: {
                   }}
                 >
                   {!assistantAbortible ? (
-                    <Button
-                      key='composer-act'
-                      fullWidth
-                      disabled={noConversation || noLLM}
-                      loading={sendStarted}
-                      loadingPosition='end'
-                      onClick={handleSendClicked}
-                      endDecorator={sendButtonIcon}
-                      sx={{ '--Button-gap': '1rem' }}
-                    >
-                      {micContinuation && 'Voice '}{sendButtonLabel}
-                    </Button>
+                    <>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+                        <Button
+                          key='composer-chat'
+                          color="primary"
+                          disabled={noConversation || noLLM}
+                          loading={sendStarted && chatExecuteMode === 'generate-content'}
+                          loadingPosition='end'
+                          onClick={() => {
+                            setChatMode();
+                            handleSendAction('generate-content', composeText);
+                          }}
+                          endDecorator={<SendIcon sx={{ fontSize: 18 }} />}
+                          sx={{ '--Button-gap': '0.5rem' }}
+                        >
+                          Chat
+                        </Button>
+                        <Button
+                          key='composer-draw'
+                          color="warning"
+                          disabled={noConversation || noLLM || !props.capabilityHasT2I}
+                          loading={sendStarted && chatExecuteMode === 'generate-image'}
+                          loadingPosition='end'
+                          onClick={() => {
+                            setDrawMode();
+                            handleSendAction('generate-image', composeText);
+                          }}
+                          endDecorator={<BrushIcon sx={{ fontSize: 18 }} />}
+                          sx={{ '--Button-gap': '0.5rem' }}
+                        >
+                          Draw
+                        </Button>
+                      </Box>
+                    </>
                   ) : (
                     <Button
                       key='composer-stop'
@@ -1028,13 +1052,6 @@ export function Composer(props: {
                     </Button>
                   )}
 
-                  {/* [Beam] Open Beam */}
-                  {/*{isText && <Tooltip title='Open Beam'>*/}
-                  {/*  <IconButton variant='outlined' disabled={noConversation || noLLM} onClick={handleSendTextBeamClicked}>*/}
-                  {/*    <ChatBeamIcon />*/}
-                  {/*  </IconButton>*/}
-                  {/*</Tooltip>}*/}
-
                   {/* [Draw] Imagine */}
                   {/* NOTE: disabled: as we have prompt enhancement in the TextArea (Draw Mode) already */}
                   {/*{isDraw && !!composeText && <Tooltip title='Generate an image prompt'>*/}
@@ -1043,14 +1060,7 @@ export function Composer(props: {
                   {/*  </IconButton>*/}
                   {/*</Tooltip>}*/}
 
-                  {/* Mode expander */}
-                  <IconButton
-                    variant={assistantAbortible ? 'soft' : isDraw ? undefined : undefined}
-                    disabled={noConversation || noLLM || chatExecuteMenuShown}
-                    onClick={showChatExecuteMenu}
-                  >
-                    <ExpandLessIcon />
-                  </IconButton>
+                  {/* Mode expander - removed in favor of separate Chat and Draw buttons */}
                 </ButtonGroup>
 {/*
 
@@ -1066,9 +1076,8 @@ export function Composer(props: {
 */}
 
               </Box>
-
-              {/* [desktop] Draw mode N buttons */}
-              {isDesktop && isDraw && <ButtonGroupDrawRepeat drawRepeat={drawRepeat} setDrawRepeat={setDrawRepeat} />}
+            </Box>
+          </Grid>
 
               {/* [desktop] Multicast switch (under the Chat button) */}
               {isDesktop && props.isMulticast !== null && <ButtonMultiChatMemo multiChat={props.isMulticast} onSetMultiChat={props.setIsMulticast} />}

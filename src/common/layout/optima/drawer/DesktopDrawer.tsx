@@ -82,11 +82,14 @@ export function DesktopDrawer(props: { component: React.ElementType, currentApp?
 
 
   // Desktop-only?: close the drawer if the current app doesn't use it
+  // Removed to keep drawer permanently open
+  /*
   const currentAppUsesDrawer = !props.currentApp?.hideDrawer;
   React.useEffect(() => {
     if (!currentAppUsesDrawer)
       optimaCloseDrawer();
   }, [currentAppUsesDrawer]);
+  */
 
   // [special case] remove in the future
   const shallOpenNavForSharedLink = !props.currentApp?.hideDrawer && checkVisibleNav(props.currentApp);
@@ -99,8 +102,7 @@ export function DesktopDrawer(props: { component: React.ElementType, currentApp?
   return (
     <DesktopDrawerFixRoot
       sx={{
-        contain: isDrawerOpen ? undefined : 'strict',
-        pointerEvents: isDrawerOpen ? undefined : 'none',
+        // Always visible and interactive
       }}
     >
 
@@ -108,7 +110,7 @@ export function DesktopDrawer(props: { component: React.ElementType, currentApp?
         ref={drawerPortalRef}
         component={props.component}
         sx={{
-          transform: isDrawerOpen ? 'none' : 'translateX(-100%)',
+          transform: 'none',
           // backgroundColor: hasDrawerContent ? undefined : 'background.surface',
         }}
       >

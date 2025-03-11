@@ -304,7 +304,8 @@ export function ChatMessageList(props: {
   if (!filteredMessages.length)
     return (
       <Box sx={{ ...props.sx }}>
-        <PersonaSelector conversationId={conversationId} isMobile={props.isMobile} runExample={handleRunExample} />
+        {/* Hide the PersonaSelector and "Start here" examples */}
+        {/* <PersonaSelector conversationId={conversationId} isMobile={props.isMobile} runExample={handleRunExample} /> */}
       </Box>
     );
 

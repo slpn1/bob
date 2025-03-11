@@ -62,9 +62,9 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
         },
         // primary [800] > secondary [700 -> 800] > tertiary [600] > icon [500 -> 700]
         text: {
-          primary: '#232323',                               // <IconButton color='neutral' /> text color
-          icon: '#FACDEE',           // <IconButton color='neutral' /> icon color
-          secondary: '#FACDEE',      // increase contrast a bit
+          primary: '#311A35',                               // <IconButton color='neutral' /> text color
+          icon: '#311A35',           // <IconButton color='neutral' /> icon color
+          secondary: '#311A35',      // increase contrast a bit
           // tertiary: 'var(--joy-palette-neutral-700)',       // increase contrast a bit
         },
         // popup [white] > surface [50] > level1 [100] > level2 [200] > level3 [300 -> unused] > body [white -> 300]
@@ -73,6 +73,7 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
           surface: 'var(--joy-palette-neutral-100, #F6F6F6)',
           level1: 'var(--joy-palette-neutral-50, #FFFFFF)',
           level2: 'var(--joy-palette-neutral-200, #DDE7EE)',
+          level3: '#311A35',
           body: 'var(--joy-palette-neutral-300, #CDD7E1)',
           popup: 'var(--joy-palette-neutral-100, #F6F6F6)',
           // Former
@@ -94,6 +95,7 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
           surface: 'var(--joy-palette-neutral-800, #171A1C)',
           level1: 'var(--joy-palette-neutral-900, #0B0D0E)',
           level2: 'var(--joy-palette-neutral-800, #171A1C)',
+          level3: '#311A35',
           body: '#060807',
           // Former: popup > surface [900] > level 1 [black], level 2 [800] > body [black]
         },

@@ -70,7 +70,7 @@ export const useUXLabsStore = create<UXLabsStore>()(
       labsShowCost: true, // release 1.16.0 with this enabled by default
       setLabsShowCost: (labsShowCost: boolean) => set({ labsShowCost }),
 
-      labsShowShortcutBar: true,
+      labsShowShortcutBar: false, // hidden by default
       setLabsShowShortcutBar: (labsShowShortcutBar: boolean) => set({ labsShowShortcutBar }),
 
       // [DEV MODE] - maybe move them from here
@@ -87,11 +87,17 @@ export const useUXLabsStore = create<UXLabsStore>()(
 
       // Migrations:
       // - 1: turn on the screen capture by default
-      version: 1,
+      // - 2: turn off the shortcuts bar by default
+      version: 2,
       migrate: (state: any, fromVersion: number): UXLabsStore => {
         // 0 -> 1: turn on the screen capture by default
         if (state && fromVersion < 1 && !state.labsAttachScreenCapture)
           return { ...state, labsAttachScreenCapture: true };
+        
+        // 1 -> 2: turn off the shortcuts bar by default
+        if (state && fromVersion < 2)
+          return { ...state, labsShowShortcutBar: false };
+          
         return state;
       },
 
