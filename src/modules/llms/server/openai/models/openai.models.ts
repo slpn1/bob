@@ -163,7 +163,7 @@ export const _knownOpenAIChatModels: ManualMappings = [
     hidden: true,
     // copied from symlinked
     contextWindow: 128000,
-    maxCompletionTokens: 16384,
+    maxCompletionTokens: 8000,
     trainingDataCutoff: 'Oct 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_OAI_PromptCaching],
     chatPrice: { input: 0.15, cache: { cType: 'oai-ac', read: 0.075 }, output: 0.6 },
@@ -173,7 +173,7 @@ export const _knownOpenAIChatModels: ManualMappings = [
     idPrefix: 'gpt-4o-mini-2024-07-18',
     label: 'GPT-4o Mini (2024-07-18)',
     description: 'Affordable model for fast, lightweight tasks. GPT-4o Mini is cheaper and more capable than GPT-3.5 Turbo.',
-    contextWindow: 128000,
+    contextWindow: 8000,
     maxCompletionTokens: 16384,
     trainingDataCutoff: 'Oct 2023',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_OAI_PromptCaching],

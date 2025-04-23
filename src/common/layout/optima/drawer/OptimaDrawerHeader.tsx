@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import type { SxProps } from '@mui/joy/styles/types';
 import { Box, IconButton, Typography } from '@mui/joy';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { Link } from '~/common/components/Link';
 import { OPTIMA_DRAWER_BACKGROUND } from '../optima.config';
@@ -11,7 +12,7 @@ import Image from 'next/image';
 
 export const OptimaDrawerHeader = (props: {
   title: string,
-  onClose: () => void,
+  onClose?: () => void,
   onTitleClick?: () => void,
   sx?: SxProps,
   children?: React.ReactNode,
@@ -33,7 +34,7 @@ export const OptimaDrawerHeader = (props: {
       // layout
       display: 'flex',
       alignItems: 'start',
-      justifyContent: 'start',
+      justifyContent: 'space-between',
     }}
   >
 
@@ -43,6 +44,19 @@ export const OptimaDrawerHeader = (props: {
       <Image src='/images/sg-logo.png' alt='logo' width={33} height={50} />
     </Box>
 
-    <IconButton disabled sx={{ visibility: 'hidden' }} />
+    {props.onClose ? (
+      <IconButton 
+        onClick={props.onClose} 
+        size="sm" 
+        sx={{ 
+          mt: 2, 
+          mr: 1 
+        }}
+      >
+        <CloseIcon />
+      </IconButton>
+    ) : (
+      <IconButton disabled sx={{ visibility: 'hidden' }} />
+    )}
 
   </Box>;

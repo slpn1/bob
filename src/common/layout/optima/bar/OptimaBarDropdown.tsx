@@ -21,6 +21,7 @@ export const optimaSelectSlotProps: SelectSlotsAndSlotProps<false>['slotProps'] 
       '&.agi-gone': {
         display: 'none',
       } as const,
+      color: 'white',
     } as const,
   } as const,
 
@@ -30,6 +31,7 @@ export const optimaSelectSlotProps: SelectSlotsAndSlotProps<false>['slotProps'] 
       // these + the ellipsize class will ellipsize the text in the button
       display: 'inline-block',
       maxWidth: 300,
+      color: 'white',
     } as const,
   } as const,
 
@@ -64,16 +66,25 @@ export const optimaSelectSlotProps: SelectSlotsAndSlotProps<false>['slotProps'] 
 
       // v-size: do not exceed the height of the screen
       maxHeight: 'calc(100dvh - 56px - 24px)',
+      backgroundColor: 'grey',
 
       // Option: clip width to 160...360px
       [`& .${optionClasses.root}`]: {
         maxWidth: 'min(360px, calc(100dvw - 1rem))',
         minWidth: 160,
+        color: '#311A35',
+        '&.Mui-selected': {
+          color: 'white',
+        },
       } as const,
 
       // Button styles
       [`& .${listItemButtonClasses.root}`]: {
         minWidth: 160,
+        color: '#311A35',
+        '&.Mui-selected': {
+          color: 'white',
+        },
       } as const,
     } as const,
   } as const,

@@ -69,7 +69,7 @@ const ENABLE_COPY_MESSAGE_OVERLAY: boolean = false;
 
 const messageBodySx: SxProps = {
   display: 'flex',
-  alignItems: 'flex-start', // avatars at the top, and honor 'static' position
+  alignItems: 'flex-end', // avatars at the top, and honor 'static' position
   gap: { xs: 0, md: 1 },
 };
 
@@ -525,16 +525,20 @@ export function ChatMessage(props: {
     '--AGI-overlay-start-opacity': uiComplexityMode === 'extra' ? 0.1 : 0,
 
     // style
-    backgroundColor: backgroundColor,
-    px: { xs: 1, md: themeScalingMap[adjContentScaling]?.chatMessagePadding ?? 2 },
-    py: themeScalingMap[adjContentScaling]?.chatMessagePadding ?? 2,
+    backgroundColor: 'white',
+    px: { xs: 1, md: 2 },
+    py: themeScalingMap[adjContentScaling]?.chatMessagePadding ?? 3,
+    '& .text-message-content, & .markdown-content, & .text-block': {
+      fontSize: '26px !important',
+    },
     // filter: 'url(#agi-futuristic-glow)',
 
-    // style: omit border if set externally
-    ...(!('borderBottom' in (props.sx || {})) && {
-      borderBottom: '1px solid',
-      borderBottomColor: 'divider',
-    }),
+    // // style: omit border if set externally
+    // ...(!('borderBottom' in (props.sx || {})) && {
+    //   borderBottom: '1px solid',
+    //   borderBottomColor: 'divider',
+    // }),
+  
 
     // style: when starred
     ...(isUserStarred && {
@@ -543,6 +547,18 @@ export function ChatMessage(props: {
       boxShadow: 'lg',
       borderRadius: 'lg',
       zIndex: 1,
+    }),
+
+    ...(fromUser && {
+      marginLeft: '40%',
+      marginRight: '20px',
+      marginTop: '20px',
+      marginBottom: '20px', 
+      backgroundColor: 'var(--joy-palette-background-level3)',
+      '& p': {
+        color: 'white !important',
+      },
+      borderRadius: '18px',
     }),
 
     // style: when has a user/automatic breakpoint
@@ -584,6 +600,7 @@ export function ChatMessage(props: {
   // avatar icon & label & tooltip
 
   const zenMode = uiComplexityMode === 'minimal';
+
 
   const showAvatarIcon = !props.hideAvatar && !zenMode;
   const messageGeneratorName = messageGenerator?.name;
@@ -631,9 +648,9 @@ export function ChatMessage(props: {
                     onMouseLeave={props.isMobile ? undefined : () => setIsHovering(false)}
                     sx={personaAvatarOrMenuSx}
                 >
-                  {showAvatarIcon && !isHovering && !opsMenuAnchor ? (
+                  {showAvatarIcon && !isHovering && !opsMenuAnchor && fromUser ? (
                       messageAvatarIcon
-                  ) : (
+                  ) : fromUser ? (
                       <IconButton
                           size='sm'
                           variant={opsMenuAnchor ? 'solid' : (zenMode && fromAssistant) ? 'plain' : 'soft'}
@@ -642,13 +659,13 @@ export function ChatMessage(props: {
                       >
                         <MoreVertIcon />
                       </IconButton>
-                  )}
+                  ) : null}
                 </Box>
 
                 {/* Assistant (llm/function) name */}
                 {fromAssistant && !zenMode && (
                     <TooltipOutlined asLargePane enableInteractive title={messageAvatarTooltip} placement='bottom-start'>
-                      <Typography level='body-xs' sx={messagePendingIncomplete ? messageAvatarLabelAnimatedSx : messageAvatarLabelSx}>
+                      <Typography level='body-sm' sx={messagePendingIncomplete ? messageAvatarLabelAnimatedSx : messageAvatarLabelSx}>
                         {messageAvatarLabel}
                       </Typography>
                     </TooltipOutlined>
@@ -677,14 +694,14 @@ export function ChatMessage(props: {
 
             {/* (optional) Message date */}
             {(props.showBlocksDate === true && !!(messageUpdated || messageCreated)) && (
-                <Typography level='body-sm' sx={{ mx: 1.5, textAlign: fromAssistant ? 'left' : 'right' }}>
+                <Typography level='body-md' sx={{ mx: 1.5, textAlign: fromAssistant ? 'left' : 'right' }}>
                   <TimeAgo date={messageUpdated || messageCreated} />
                 </Typography>
             )}
 
             {/* (special case) System modified warning */}
             {fromSystem && messageHasBeenEdited && (
-                <Typography level='body-sm' color='warning' sx={{ mt: 1, mx: 1.5, textAlign: 'end' }}>
+                <Typography level='body-md' color='warning' sx={{ mt: 1, mx: 1.5, textAlign: 'end' }}>
                   modified by user - auto-update disabled
                 </Typography>
             )}
@@ -805,7 +822,7 @@ export function ChatMessage(props: {
 
               {fromSystem && (
                   <ListItem>
-                    <Typography level='body-sm'>
+                    <Typography level='body-md'>
                       System message
                     </Typography>
                   </ListItem>

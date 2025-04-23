@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { OptimaActions, PreferencesTabId, useLayoutOptimaStore } from './store-layout-optima';
 import { NavItemApp } from '~/common/app.nav';
 import { useOptimaPortalHasInputs } from '~/common/layout/optima/portals/useOptimaPortalHasInputs';
+import { getIsMobile } from '~/common/components/useMatchMedia';
 
 
 // Drawer
@@ -23,9 +24,12 @@ export function optimaToggleDrawer(event?: React.MouseEvent) {
 }
 
 export function useOptimaDrawerOpen() {
-  //return useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen);
-  // Always return true to keep the drawer permanently open
-  return true;
+  const isMobile = getIsMobile();
+  // For desktop, always return true to keep the drawer permanently open
+  // For mobile, use the store value to allow toggling
+  return isMobile 
+    ? useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen)
+    : true;
 }
 
 

@@ -41,6 +41,20 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
     display: themeFontFamilyCss,
     code: themeCodeFontFamilyCss,
   },
+  typography: {
+    'body-xs': {
+      fontSize: '1.75rem', // Change this value to your desired size
+    },
+    'body-sm': {
+      fontSize: '0.75rem', // Change this value to your desired size
+    },
+    'body-md': {
+      fontSize: '0.875rem',
+    },
+    'body-lg': {
+      fontSize: '1.125rem',
+    },
+  },
   colorSchemes: {
     light: {
       palette: {
@@ -70,7 +84,7 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
         // popup [white] > surface [50] > level1 [100] > level2 [200] > level3 [300 -> unused] > body [white -> 300]
         background: {
           // New
-          surface: 'var(--joy-palette-neutral-100, #F6F6F6)',
+          surface: '#FFFFFF',
           level1: 'var(--joy-palette-neutral-50, #FFFFFF)',
           level2: 'var(--joy-palette-neutral-200, #DDE7EE)',
           level3: '#311A35',
@@ -123,6 +137,37 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
       styleOverrides: {
         root: {
           boxShadow: 'none',
+        },
+      },
+    },
+
+    /**
+     * Option
+     * - customize the selected option styles
+     */
+    JoyOption: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: '#311A35', // Your desired background color
+            color: 'white', // Your desired text color
+          },
+        },
+      },
+    },
+
+    JoyChip: {
+      styleOverrides: {
+        root: {
+          '&:hover': {
+            '& .MuiChip-label': {
+              color: 'white',
+            },
+            backgroundColor: '#311A35',
+          },
+        },
+        label: {
+          fontSize: '0.75rem',
         },
       },
     },
@@ -215,7 +260,7 @@ export const themeScalingMap: Record<ContentScaling, ContentScalingOptions> = {
   xs: {
     blockCodeFontSize: '0.75rem',
     blockCodeMarginY: 0.5,
-    blockFontSize: 'xs',
+    blockFontSize: 'md',
     blockImageGap: 1,
     blockLineHeight: 1.666667,
     chatMessagePadding: 1,
@@ -227,7 +272,7 @@ export const themeScalingMap: Record<ContentScaling, ContentScalingOptions> = {
   sm: {
     blockCodeFontSize: '0.75rem',
     blockCodeMarginY: 1,
-    blockFontSize: 'sm',
+    blockFontSize: 'md',
     blockImageGap: 1.5,
     blockLineHeight: 1.714286,
     chatMessagePadding: 1.5,

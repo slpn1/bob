@@ -731,19 +731,29 @@ export function Composer(props: {
   }), [dragContainerSx]);
 
   return (
-    <Box aria-label='User Message' component='section' sx={props.sx}>
+    <Box aria-label='User Message' component='section' sx={{
+      backgroundColor: '#FFFFFF',
+      borderTop: 'none',
+      ...props.sx
+    }}>
 
       {!isMobile && labsShowShortcutBar && <StatusBarMemo toggleMinimized={handleToggleMinimized} isMinimized={isMinimized} />}
 
       {/* This container is here just to let the potential statusbar fill the whole space, so we moved the padding here and not in the parent */}
-      <Box sx={(!isMinimized || isMobile || !labsShowShortcutBar) ? paddingBoxSx : minimizedSx}>
+      <Box sx={{
+        backgroundColor: '#FFFFFF',
+        ...((!isMinimized || isMobile || !labsShowShortcutBar) ? paddingBoxSx : minimizedSx)
+      }}>
 
         <Grid
           container
           onDragEnter={handleContainerDragEnter}
           onDragStart={handleContainerDragStart}
           spacing={{ xs: 1, md: 2 }}
-          sx={stableGridSx}
+          sx={{
+            backgroundColor: '#FFFFFF',
+            ...stableGridSx
+          }}
         >
 
           {/* [Mobile: top, Desktop: left] */}
@@ -819,6 +829,7 @@ export function Composer(props: {
             {/* Top: Textarea & Mic & Overlays, Bottom, Attachment Drafts */}
             <Box sx={{
               flexGrow: 1,
+              backgroundColor: '#FFFFFF',
               // layout
               display: 'flex',
               flexDirection: 'column',
@@ -827,16 +838,16 @@ export function Composer(props: {
             }}>
 
               {/* Text Edit + Mic buttons + MicOverlay */}
-              <Box sx={{ position: 'relative' /* for Mic overlay */, height: '100%' }}>
+              <Box sx={{ position: 'relative' /* for Mic overlay */, height: '100%', backgroundColor: '#FFFFFF' }}>
 
                 {/* Edit box with inner Token Progress bar */}
-                <Box sx={{ position: 'relative' /* for TokenBadge & TokenProgress */, height: '100%' }}>
+                <Box sx={{ position: 'relative' /* for TokenBadge & TokenProgress */, height: '100%', backgroundColor: '#FFFFFF' }}>
 
                   <Textarea
                     variant='outlined'
                     color={isDraw ? 'warning' : isReAct ? 'success' : undefined}
                     autoFocus
-                    minRows={isMobile ? 4 : isDraw ? 4 : agiAttachmentPrompts.hasData ? 3 : showChatInReferenceTo ? 4 : 5}
+                    minRows={isMobile ? 4 : isDraw ? 4 : agiAttachmentPrompts.hasData ? 3 : showChatInReferenceTo ? 4 : 3}
                     maxRows={isMobile ? 8 : 10}
                     placeholder={textPlaceholder}
                     value={composeText}
@@ -872,10 +883,19 @@ export function Composer(props: {
                     sx={{
                       height: '100%',
                       backgroundColor: '#FFFFFF',
-                      fontSize: '0.9em',
-                      '&:focus': { borderColor: 'purple' },
-                      '&:focus-within': { backgroundColor: '#FFFFFF', '.within-composer-focus': { backgroundColor: '#FFFFFF' } },
+                      fontSize: '1.1em',
+                      // '&:focus': { borderColor: 'purple' },
+                      // '&:focus-within': { backgroundColor: '#FFFFFF', '.within-composer-focus': { backgroundColor: '#FFFFFF' } },
                       lineHeight: lineHeightTextareaMd,
+                      borderRadius: '14px',
+                      borderWidth: '3px',
+                      '& .MuiTextarea-root': {
+                        backgroundColor: '#FFFFFF',
+                      },
+                      paddingLeft: '30px',
+                      paddingRight: '30px',
+                      paddingTop: '20px',
+                      paddingBottom: '20px',
                     }} />
 
                   {/*{!showChatInReferenceTo && tokenLimit > 0 && (tokensComposer > 0 || (tokensHistory + tokensResponseMax) > 0) && (*/}
@@ -978,7 +998,7 @@ export function Composer(props: {
 
 
           {/* [Mobile: bottom, Desktop: right] */}
-          <Grid xs={12} md={1}>
+          <Grid xs={12} md={2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' } as const}>
 
               {/* [mobile] This row is here only for the [mobile] bottom-start corner item */}
@@ -1017,7 +1037,7 @@ export function Composer(props: {
                             handleSendAction('generate-content', composeText);
                           }}
                           endDecorator={<SendIcon sx={{ fontSize: 18 }} />}
-                          sx={{ '--Button-gap': '0.5rem' }}
+                          sx={{ '--Button-gap': '0.5rem', borderRadius: '18px' }}
                         >
                           Chat
                         </Button>
@@ -1032,7 +1052,7 @@ export function Composer(props: {
                             handleSendAction('generate-image', composeText);
                           }}
                           endDecorator={<BrushIcon sx={{ fontSize: 18 }} />}
-                          sx={{ '--Button-gap': '0.5rem' }}
+                          sx={{ '--Button-gap': '0.5rem', borderRadius: '18px'  }}
                         >
                           Draw
                         </Button>

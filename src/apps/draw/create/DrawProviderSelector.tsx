@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import type { VariantProp } from '@mui/joy/styles/types';
-import { FormControl, FormLabel, ListItemDecorator, Option, Select } from '@mui/joy';
+import { FormControl, FormLabel, ListItemDecorator, Option, optionClasses, Select } from '@mui/joy';
 import FormatPaintTwoToneIcon from '@mui/icons-material/FormatPaintTwoTone';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 
@@ -36,7 +36,6 @@ export function DrawProviderSelector(props: {
 
   return (
     <FormControl orientation='horizontal' sx={{ justifyContent: 'start', alignItems: 'center' }}>
-
       {!!props.title && (
         <FormLabel sx={hideOnMobile}>
           {props.title}
@@ -53,13 +52,18 @@ export function DrawProviderSelector(props: {
           ...optimaSelectSlotProps,
           button: {
             sx: {
-              // overwrite all properties of the button (we don't need 'agi-ellipsize', max-width, etc.)
               minWidth: '7.5rem',
             },
           },
         }}
-        // startDecorator={<FormatPaintTwoToneIcon sx={{ display: { xs: 'none', sm: 'inherit' } }} />}
-        // sx={{ minWidth: '12rem' /* doesn't work anymore with SlotProps */ }}
+        sx={{
+          minWidth: '12rem',
+          ...(!props.variant ? hideOnMobile : {}),
+          [`& .${optionClasses.root}.Mui-selected`]: {
+            backgroundColor: '#311A35',
+            color: 'white',
+          },
+        }}
       >
         {providerOptions.map(option => (
           <Option key={option.value} value={option.value} disabled={!option.configured}>
@@ -71,7 +75,6 @@ export function DrawProviderSelector(props: {
           </Option>
         ))}
       </Select>
-
     </FormControl>
   );
 }

@@ -32,6 +32,9 @@ export function MobileNavItems(props: { currentApp?: NavItemApp }) {
     // else overflowApps.push(app);
   });
 
+  // Check if Discord link exists
+  const hasDiscordLink = navItems.links && navItems.links.length > 0 && navItems.links[0];
+
   return (
 
     <Sheet variant='solid' invertedColors sx={{
@@ -96,13 +99,15 @@ export function MobileNavItems(props: { currentApp?: NavItemApp }) {
           Models
         </Button>
 
-        {/* HARDCODED: Discord */}
-        <BringTheLove
-          text={navItems.links[0].name}
-          icon={navItems.links[0].icon}
-          link={navItems.links[0].href}
-          sx={{ color: 'text.primary', px: 0, minWidth: 80 }}
-        />
+        {/* HARDCODED: Discord - Only show if link exists */}
+        {hasDiscordLink && (
+          <BringTheLove
+            text={navItems.links[0].name}
+            icon={navItems.links[0].icon}
+            link={navItems.links[0].href}
+            sx={{ color: 'text.primary', px: 0, minWidth: 80 }}
+          />
+        )}
       </Box>
 
     </Sheet>

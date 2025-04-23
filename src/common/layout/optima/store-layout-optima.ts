@@ -31,14 +31,11 @@ interface OptimaState {
 }
 
 function initialDrawerOpen() {
-  // // mobile: closed by default
-  // if (getIsMobile() || !isBrowser)
-  //   return false;
+  // mobile: closed by default
+  if (getIsMobile())
+    return false;
 
-  // // desktop: open by default, unless the route has 'hideDrawer' set - then we boot to closed
-  // const bootNavItem = navItems.apps.find(item => item.route === window.location.pathname);
-  // return bootNavItem ? !bootNavItem.hideDrawer : false;
-  // Always return true to keep the drawer permanently open
+  // desktop: open by default
   return true;
 }
 

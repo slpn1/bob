@@ -74,8 +74,7 @@ function ButtonAttachFiles(props: {
         onClick={handleAttachFilePicker}
         startDecorator={<AttachFileRoundedIcon />}
         sx={buttonAttachSx.desktop}
-      >
-        File
+      >File
       </Button>
     </Tooltip>
   );

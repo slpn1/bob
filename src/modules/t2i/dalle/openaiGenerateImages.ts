@@ -7,6 +7,7 @@ import { findServiceAccessOrThrow } from '~/modules/llms/vendors/vendor.helpers'
 
 import type { T2iCreateImageOutput } from '../t2i.server';
 import { useDalleStore } from './store-module-dalle';
+import { generateDallE3Image } from './dalle3-api';
 
 
 /**
@@ -27,8 +28,16 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
   if (dalleNoRewrite)
     prompt = 'I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS: ' + prompt;
 
+  // Use the new DALL-E 3 endpoint if configured
+  if (dalleModelId === 'dall-e-3' && process.env.DALL_E_3_ENDPOINT && process.env.DALL_E_3_API_KEY) {
+    // DALL-E 3 only supports one image at a time
+    if (count > 1) {
+      throw new Error('DALL-E 3 only supports generating one image at a time');
+    }
+    return [await generateDallE3Image(prompt, dalleQuality, dalleSize as any, dalleStyle)];
+  }
 
-  // Function to generate images in batches
+  // Function to generate images in batches using the standard OpenAI API
   const generateImagesBatch = async (imageCount: number): Promise<T2iCreateImageOutput[]> =>
     apiAsync.llmOpenAI.createImages.mutate({
       access: findServiceAccessOrThrow<{}, OpenAIAccessSchema>(modelServiceId).transportAccess,
@@ -42,7 +51,6 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
         responseFormat: 'b64_json',
       },
     });
-
 
   // Calculate the number of batches required
   const isD3 = dalleModelId === 'dall-e-3';
@@ -58,13 +66,12 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
   // Run all image generation requests in parallel and handle all results
   const imageRefsBatchesResults = await Promise.allSettled(imagePromises);
 
-
   // Throw if ALL promises were rejected
   const allRejected = imageRefsBatchesResults.every(result => result.status === 'rejected');
   if (allRejected) {
     const errorMessages = imageRefsBatchesResults
       .map(result => {
-        const reason = (result as PromiseRejectedResult).reason as any; // TRPCClientError<TRPCErrorShape>;
+        const reason = (result as PromiseRejectedResult).reason as any;
         return reason?.shape?.message || reason?.message || '';
       })
       .filter(message => !!message)
@@ -75,8 +82,8 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
 
   // Take successful results and return as a flat array
   return imageRefsBatchesResults
-    .filter(result => result.status === 'fulfilled') // Only take fulfilled promises
-    .map(result => (result as PromiseFulfilledResult<T2iCreateImageOutput[]>).value) // Get the value
+    .filter(result => result.status === 'fulfilled')
+    .map(result => (result as PromiseFulfilledResult<T2iCreateImageOutput[]>).value)
     .flat();
 }
 

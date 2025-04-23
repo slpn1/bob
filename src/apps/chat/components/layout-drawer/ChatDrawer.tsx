@@ -1,6 +1,5 @@
 import * as React from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { useSession, signOut } from 'next-auth/react';
 
 import { Box, Button, Dropdown, IconButton, ListDivider, ListItem, ListItemButton, ListItemDecorator, Menu, MenuButton, MenuItem, Tooltip, Typography, Avatar } from '@mui/joy';
 import AddIcon from '@mui/icons-material/Add';
@@ -28,6 +27,7 @@ import { LogoutButton } from '~/common/components/LogoutButton';
 import { OPTIMA_DRAWER_BACKGROUND } from '~/common/layout/optima/optima.config';
 import { OptimaDrawerHeader } from '~/common/layout/optima/drawer/OptimaDrawerHeader';
 import { OptimaDrawerList } from '~/common/layout/optima/drawer/OptimaDrawerList';
+import { UserProfileMenu } from '~/common/components/UserProfileMenu';
 import { capitalizeFirstLetter } from '~/common/util/textUtils';
 import { getIsMobile } from '~/common/components/useMatchMedia';
 import { optimaCloseDrawer, optimaOpenModels, optimaOpenPreferences } from '~/common/layout/optima/useOptima';
@@ -44,77 +44,6 @@ import { useChatDrawerFilters } from '../../store-app-chat';
 
 // this is here to make shallow comparisons work on the next hook
 const noFolders: DFolder[] = [];
-
-/**
- * Component to display user info and logout button
- */
-function UserInfoAndLogout() {
-  const { data: session, status } = useSession();
-  
-  // If not authenticated, show login button
-  if (status === 'unauthenticated') {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Button 
-          variant="soft" 
-          color="primary" 
-          size="sm" 
-          component="a"
-          href="/api/auth/signin"
-        >
-          Sign in
-        </Button>
-      </Box>
-    );
-  }
-  
-  // If loading, show loading state
-  if (status === 'loading') {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <Typography level="body-sm" sx={{ color: 'neutral.500' }}>
-          Loading...
-        </Typography>
-      </Box>
-    );
-  }
-  
-  // If authenticated, show user info and logout button
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
-        <Avatar
-          size="sm"
-          variant="soft"
-          color="primary"
-          sx={{ '--Avatar-size': '28px' }}
-        >
-          {session?.user?.name?.[0]?.toUpperCase() || 'U'}
-        </Avatar>
-        <Typography 
-          level="body-sm" 
-          sx={{ 
-            fontWeight: 'md',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          {session?.user?.name || 'User'}
-        </Typography>
-      </Box>
-      <Button 
-        variant="soft" 
-        color="neutral" 
-        size="sm" 
-        onClick={() => signOut({ callbackUrl: '/api/auth/signin' })}
-        startDecorator={<LogoutIcon fontSize="small" />}
-      >
-        Sign out
-      </Button>
-    </Box>
-  );
-}
 
 /*
  * Lists folders and returns the active folder
@@ -333,7 +262,7 @@ function ChatDrawer(props: {
   return <>
 
     {/* Drawer Header */}
-    <OptimaDrawerHeader title='Chats' onClose={() => {}}>
+    <OptimaDrawerHeader title='Chats' onClose={getIsMobile() ? optimaCloseDrawer : undefined}>
       {/* <Tooltip title={enableFolders ? 'Hide Folders' : 'Use Folders'}>
         <IconButton size='sm' onClick={toggleEnableFolders}>
           {enableFolders ? <FoldersToggleOn /> : <FoldersToggleOff />}
@@ -556,7 +485,7 @@ function ChatDrawer(props: {
         py: 1,
         mb: 1
       }}>
-        <UserInfoAndLogout />
+        <UserProfileMenu />
       </Box>
 
     </OptimaDrawerList>

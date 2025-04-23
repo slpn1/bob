@@ -57,7 +57,7 @@ function CenterItemsFallback(props: { currentApp?: NavItemApp }) {
     gap: { xs: 1, md: 2 },
   }}>
 
-    {/* Squircle */}
+    Squircle
     <Link href={ROUTE_INDEX}>
       <BigAgiSquircleIcon inverted sx={{ width: 32, height: 32, color: 'white' }} />
     </Link>

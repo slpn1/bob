@@ -18,7 +18,7 @@ const ADMIN_ROLE_IDS = [
  * Remove this once proper role checking is implemented
  */
 const ADMIN_EMAILS = [
-  'admin@example.com',
+  'simon.newman@asandk.com',
   // Add other admin emails here
 ];
 
