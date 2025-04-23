@@ -40,7 +40,8 @@ import { useLLM } from '~/common/stores/llms/llms.hooks';
 import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 import { useOverlayComponents } from '~/common/layout/overlays/useOverlayComponents';
 import { useRouterQuery } from '~/common/app.routes';
-import { useUXLabsStore } from '~/common/state/store-ux-labs';
+import { useUIComplexityIsMinimal } from '~/common/stores/store-ui';
+import { useUXLabsStore } from '~/common/stores/store-ux-labs';
 
 import { ChatPane } from './components/layout-pane/ChatPane';
 import { ChatBarAltBeam } from './components/layout-bar/ChatBarAltBeam';
@@ -50,6 +51,7 @@ import { ChatBeamWrapper } from './components/ChatBeamWrapper';
 import { ChatDrawerMemo } from './components/layout-drawer/ChatDrawer';
 import { ChatMessageList } from './components/ChatMessageList';
 import { Composer } from './components/composer/Composer';
+import { PaneTitleOverlay } from './components/PaneTitleOverlay';
 import { usePanesManager } from './components/panes/store-panes-manager';
 
 import type { ChatExecuteMode } from './execute-mode/execute-mode.types';
@@ -91,7 +93,8 @@ const chatBeamWrapperSx: SxProps = {
 };
 
 const composerOpenSx: SxProps = {
-  zIndex: 21, // just to allocate a surface, and potentially have a shadow
+  // NOTE: disabled on 2025-03-05: conflicts with the GlobalDragOverlay's
+  // zIndex: 21, // just to allocate a surface, and potentially have a shadow
   minWidth: { md: 480 }, // don't get compresses too much on desktop
   backgroundColor: themeBgAppChatComposer,
   borderTopColor: 'rgba(var(--joy-palette-neutral-mainChannel, 99 107 116) / 0.4)',
@@ -124,6 +127,8 @@ export function AppChat() {
 
   const isMobile = useIsMobile();
   const isTallScreen = useIsTallScreen();
+
+  const isZenMode = useUIComplexityIsMinimal();
 
   const intent = useRouterQuery<Partial<AppChatIntent>>();
 
@@ -158,10 +163,9 @@ export function AppChat() {
   }, [chatPanes]);
 
   const beamsOpens = useAreBeamsOpen(paneBeamStores);
-  const beamOpenStoreInFocusedPane = React.useMemo(() => {
-    const open = focusedPaneIndex !== null ? (beamsOpens?.[focusedPaneIndex] ?? false) : false;
-    return open ? paneBeamStores?.[focusedPaneIndex!] ?? null : null;
-  }, [beamsOpens, focusedPaneIndex, paneBeamStores]);
+  const beamOpenStoreInFocusedPane = focusedPaneIndex === null ? null
+    : !beamsOpens?.[focusedPaneIndex] ? null
+      : paneBeamStores?.[focusedPaneIndex] ?? null;
 
   const {
     // focused
@@ -618,7 +622,7 @@ export function AppChat() {
             order={idx}
             collapsible={chatPanes.length === 2}
             defaultSize={(_panesCount === 3 && idx === 1) ? 34 : Math.round(100 / _panesCount)}
-            minSize={20}
+            // minSize={20 /* IMPORTANT: this forces a reflow even on a simple on hover */}
             onClick={(event) => {
               const setFocus = chatPanes.length < 2 || !event.altKey;
               setFocusedPaneIndex(setFocus ? idx : -1);
@@ -633,14 +637,20 @@ export function AppChat() {
               // for anchoring the scroll button in place
               position: 'relative',
               ...(isMultiPane ? {
+                marginBottom: '1px', // compensates for the -1px in `composerOpenSx` for the Composer offset
                 borderRadius: '0.375rem',
-                border: `2px solid ${_paneIsFocused
+                borderStyle: 'solid',
+                borderColor: _paneIsFocused
                   ? ((willMulticast || !isMultiConversationId) ? theme.palette.primary.solidBg : theme.palette.primary.solidBg)
-                  : ((willMulticast || !isMultiConversationId) ? theme.palette.primary.softActiveBg : theme.palette.background.level1)}`,
+                  : ((willMulticast || !isMultiConversationId) ? theme.palette.primary.softActiveBg : theme.palette.divider),
+                borderWidth: '2px',
+                // borderBottomWidth: '3px',
                 // DISABLED on 2024-03-13, it gets in the way quite a lot
                 // filter: (!willMulticast && !_paneIsFocused)
                 //   ? (!isMultiConversationId ? 'grayscale(66.67%)' /* clone of the same */ : 'grayscale(66.67%)')
                 //   : undefined,
+                // 2025-02-27: didn't try, here's another version
+                // filter: _paneIsFocused ? 'none' : 'brightness(0.94) saturate(0.9)',
               } : {
                 // NOTE: this is a workaround for the 'stuck-after-collapse-close' issue. We will collapse the 'other' pane, which
                 // will get it removed (onCollapse), and somehow this pane will be stuck with a pointerEvents: 'none' style, which de-facto
@@ -651,9 +661,20 @@ export function AppChat() {
               }),
               ...((_paneIsIncognito && {
                 backgroundColor: theme.palette.background.level3,
+                backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.03), rgba(0,0,0,0.03) 10px, transparent 10px, transparent 20px)',
               })),
             }}
           >
+
+            {isMultiPane && !isZenMode && (
+              <PaneTitleOverlay
+                paneIdx={idx}
+                conversationId={_paneConversationId}
+                isFocused={_paneIsFocused}
+                isIncognito={_paneIsIncognito}
+                onConversationDelete={handleDeleteConversations}
+              />
+            )}
 
             <ScrollToBottom
               bootToBottom

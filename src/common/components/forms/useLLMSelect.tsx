@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import type { SxProps } from '@mui/joy/styles/types';
-import { FormControl, IconButton, ListDivider, ListItemDecorator, Option, Select, SvgIconProps } from '@mui/joy';
+import { ColorPaletteProp, FormControl, IconButton, ListDivider, ListItemDecorator, Option, Select, SvgIconProps, VariantProp } from '@mui/joy';
 import AutoModeIcon from '@mui/icons-material/AutoMode';
 
 import type { IModelVendor } from '~/modules/llms/vendors/IModelVendor';
@@ -17,6 +17,7 @@ import { FormLabelStart } from './FormLabelStart';
 
 
 // configuration
+const LLM_SELECT_REDUCE_OPTIONS = 10; // optimization: number of options over which only the selected is kept when closed (we'll have special notes for accessibility)
 const LLM_SELECT_SHOW_REASONING_ICON = false;
 
 
@@ -43,9 +44,11 @@ const _slotProps = {
       '--ListItem-paddingLeft': '1rem',
       '--ListItem-minHeight': '2.5rem',
       // minWidth: '100%',
+      zIndex: 1300, // on top of ScratchChat
     } as const,
   } as const,
   button: {
+    'aria-description': 'Options may be filtered when closed. Open dropdown to see all options.',
     sx: {
       // show the full name on the button
       whiteSpace: 'inherit',
@@ -58,6 +61,9 @@ const _slotProps = {
 
 interface LLMSelectOptions {
   label: string;
+  sx?: SxProps;
+  color?: ColorPaletteProp;
+  variant?: VariantProp;
   larger?: boolean;
   disabled?: boolean;
   placeholder?: string;
@@ -70,13 +76,16 @@ interface LLMSelectOptions {
  *
  * @param llmId (required) the LLM id
  * @param setLlmId (required) the function to set the LLM id
- * @param options (optional) any arrray of options
+ * @param options (optional) any array of options
  */
 export function useLLMSelect(
   llmId: undefined | DLLMId | null, // undefined: not set at all, null: has the meaning of no-llm-wanted here
   setLlmId: (llmId: DLLMId | null) => void,
   options: LLMSelectOptions,
 ): [DLLM | null, React.JSX.Element | null, React.FunctionComponent<SvgIconProps> | undefined] {
+
+  // state
+  const [controlledOpen, setControlledOpen] = React.useState(false);
 
   // external state
   const _filteredLLMs = useVisibleLLMs(llmId);
@@ -89,10 +98,16 @@ export function useLLMSelect(
 
 
   // memo LLM Options
+
+  const optimizeToSingleVisibleId = (!controlledOpen && _filteredLLMs.length > LLM_SELECT_REDUCE_OPTIONS) ? llmId : null; // id to keep visible when optimizing
+
   const optionsArray = React.useMemo(() => {
     // create the option items
     let formerVendor: IModelVendor | null = null;
     return _filteredLLMs.reduce((acc, llm, _index) => {
+
+      if (optimizeToSingleVisibleId && llm.id !== optimizeToSingleVisibleId)
+        return acc;
 
       const vendor = findModelVendor(llm.vId);
       const vendorChanged = vendor !== formerVendor;
@@ -101,7 +116,7 @@ export function useLLMSelect(
 
       // add separators if the vendor changed (and more than one vendor)
       const addSeparator = vendorChanged && formerVendor !== null;
-      if (addSeparator)
+      if (addSeparator && !optimizeToSingleVisibleId)
         acc.push(<ListDivider key={'llm-sep-' + llm.id}>{vendor?.name}</ListDivider>);
 
       // the option component
@@ -115,7 +130,7 @@ export function useLLMSelect(
         >
           {(!noIcons && !!vendor?.Icon) && (
             <ListItemDecorator>
-              <vendor.Icon />
+              {llm.userStarred ? '⭐ ' : <vendor.Icon />}
             </ListItemDecorator>
           )}
           {/*<Tooltip title={llm.description}>*/}
@@ -127,7 +142,7 @@ export function useLLMSelect(
 
       return acc;
     }, [] as React.JSX.Element[]);
-  }, [_filteredLLMs, noIcons]);
+  }, [_filteredLLMs, noIcons, optimizeToSingleVisibleId]);
 
 
   const onSelectChange = React.useCallback((_event: unknown, value: DLLMId | null) => value && setLlmId(value), [setLlmId]);
@@ -138,11 +153,14 @@ export function useLLMSelect(
       {!!label && <FormLabelStart title={label} sx={/*{ mb: '0.25rem' }*/ undefined} />}
       {/*<Box sx={{ display: 'flex', justifyContent: 'space-between' }}>*/}
       <Select
-        variant='outlined'
+        color={options.color}
+        variant={options.variant ?? 'outlined'}
         value={llmId ?? null}
         size={larger ? undefined : 'sm'}
         disabled={disabled}
         onChange={onSelectChange}
+        listboxOpen={controlledOpen}
+        onListboxOpenChange={setControlledOpen}
         placeholder={placeholder}
         slotProps={_slotProps}
         endDecorator={autoRefreshDomain ?
@@ -152,13 +170,13 @@ export function useLLMSelect(
             </IconButton>
           </TooltipOutlined>
           : isReasoning ? '🧠' : undefined}
-        sx={llmSelectSx}
+        sx={options.sx ?? llmSelectSx}
       >
         {optionsArray}
       </Select>
       {/*</Box>*/}
     </FormControl>
-  ), [autoRefreshDomain, disabled, isHorizontal, isReasoning, label, larger, llmId, onSelectChange, optionsArray, placeholder]);
+  ), [autoRefreshDomain, controlledOpen, disabled, isHorizontal, isReasoning, label, larger, llmId, onSelectChange, options.color, options.sx, options.variant, optionsArray, placeholder]);
 
   // Memo the vendor icon for the chat LLM
   const chatLLMVendorIconFC = React.useMemo(() => {

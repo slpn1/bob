@@ -6,7 +6,7 @@ import { default as TurndownService } from 'turndown';
 import { load as cheerioLoad } from 'cheerio';
 
 import { createTRPCRouter, publicProcedure } from '~/server/trpc/trpc.server';
-import { env } from '~/server/env.mjs';
+import { env } from '~/server/env';
 
 import { workerPuppeteerDownloadFileOrThrow } from './browse.files';
 
@@ -97,7 +97,13 @@ export const browseRouter = createTRPCRouter({
               title: '',
               content: undefined,
               file: undefined,
-              error: result.reason?.message || 'Unknown fetch error',
+              error: typeof result.reason === 'string' 
+  ? result.reason
+  : result.reason instanceof Error
+    ? result.reason.message
+    : result.reason 
+      ? JSON.stringify(result.reason)
+      : 'Unknown fetch error',
               stopReason: 'error',
               screenshot: undefined,
             } satisfies FetchPageWorkerOutputSchema;

@@ -46,7 +46,7 @@ function LLMDropdown(props: {
 
 
   // dropdown items - chached
-  const stabilizeLlmOptions = React.useRef<OptimaDropdownItems>();
+  const stabilizeLlmOptions = React.useRef<OptimaDropdownItems>(undefined);
 
   const llmDropdownItems: OptimaDropdownItems = React.useMemo(() => {
     const llmItems: OptimaDropdownItems = {};
@@ -85,6 +85,7 @@ function LLMDropdown(props: {
       // add the model item
       llmItems[llm.id] = {
         title: llm.label,
+        ...(llm.userStarred ? { symbol: '⭐' } : {}),
         // icon: llm.id.startsWith('some vendor') ? <VendorIcon /> : undefined,
       };
     }

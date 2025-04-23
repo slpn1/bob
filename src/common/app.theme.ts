@@ -172,6 +172,20 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
       },
     },
 
+    /**
+     * Badge
+     * - add a 'color-feature' color, to be used with the FeatureBadge component
+     */
+    JoyBadge: {
+      styleOverrides: {
+        badge: ({ ownerState }) =>
+          // HACK: we set this to 'color-feature' to force the theming to our liking
+          (ownerState.color as any) !== 'color-feature' ? undefined : ({
+            backgroundColor: '#0288D1',
+          }),
+      },
+    },
+
     // JoyMenuItem: {
     //   styleOverrides: {
     //     root: {
@@ -226,6 +240,7 @@ export const themeZIndexDesktopDrawer = 26;
 export const themeZIndexDesktopPanel = 27;
 export const themeZIndexDesktopNav = 30;
 export const themeZIndexChatBubble = 50;
+export const themeZIndexDragOverlay = 60;
 export const themeZIndexOverMobileDrawer = 1301;
 
 
