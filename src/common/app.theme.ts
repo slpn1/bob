@@ -43,7 +43,7 @@ export const createAppTheme = (uiComplexityMinimal: boolean) => extendTheme({
   },
   typography: {
     'body-xs': {
-      fontSize: '1.75rem', // Change this value to your desired size
+      fontSize: '0.5rem', // Change this value to your desired size
     },
     'body-sm': {
       fontSize: '0.75rem', // Change this value to your desired size

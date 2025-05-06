@@ -273,7 +273,7 @@ function LLMAttachmentButton(props: {
       {attachmentIcons(draft, props.menuShown, props.onViewImageRefPart)}
 
       {/* Label */}
-      <Typography level='title-sm' sx={{ whiteSpace: 'nowrap' }}>
+      <Typography level='title-sm' sx={{ whiteSpace: 'nowrap', color: 'black' }}>
         {isOutputLoading ? 'Converting... ' : attachmentLabelText(draft)}
       </Typography>
 

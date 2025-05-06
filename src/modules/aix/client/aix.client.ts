@@ -4,14 +4,14 @@ import type { DMessage, DMessageGenerator } from '~/common/stores/chat/chat.mess
 import type { MaybePromise } from '~/common/types/useful.types';
 import { DLLM, DLLMId, LLM_IF_HOTFIX_NoTemperature } from '~/common/stores/llms/llms.types';
 import { apiStream } from '~/common/util/trpc.client';
-import { DMetricsChatGenerate_Lg, metricsChatGenerateLgToMd, metricsComputeChatGenerateCostsMd } from '~/common/stores/metrics/metrics.chatgenerate';
+import { DMetricsChatGenerate_Lg } from '~/common/stores/metrics/metrics.chatgenerate';
 import { DModelParameterValues, getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
 import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, DMessageVoidFragment, isContentFragment, isErrorPart } from '~/common/stores/chat/chat.fragments';
 import { findLLMOrThrow } from '~/common/stores/llms/store-llms';
 import { getLabsDevMode, getLabsDevNoStreaming } from '~/common/stores/store-ux-labs';
-import { metricsStoreAddChatGenerate } from '~/common/stores/metrics/store-metrics';
 import { presentErrorToHumans } from '~/common/util/errorUtils';
 import { webGeolocationCached } from '~/common/util/webGeolocationUtils';
+import { useSession } from 'next-auth/react';
 
 // NOTE: pay particular attention to the "import type", as this is importing from the server-side Zod definitions
 import type { AixAPI_Access, AixAPI_Context_ChatGenerate, AixAPI_Model, AixAPIChatGenerate_Request } from '../server/api/aix.wiretypes';
@@ -121,6 +121,14 @@ interface AixClientOptions {
 
 
 /**
+ * Hook to get the current user's name for OpenAI API calls
+ */
+export function useOpenAIUserName(): string {
+  const { data: session } = useSession();
+  return session?.user?.name || '';
+}
+
+/**
  * Level 3 Generation from an LLM Id + Chat History.
  */
 export async function aixChatGenerateContent_DMessage_FromConversation(
@@ -134,6 +142,7 @@ export async function aixChatGenerateContent_DMessage_FromConversation(
   // others
   clientOptions: AixClientOptions,
   onStreamingUpdate: (update: AixChatGenerateContent_DMessage, isDone: boolean) => MaybePromise<void>,
+  userName?: string,
 ): Promise<StreamMessageStatus> {
 
   let errorMessage: string | undefined;
@@ -165,6 +174,7 @@ export async function aixChatGenerateContent_DMessage_FromConversation(
         lastDMessage = update;
         await onStreamingUpdate(lastDMessage, isDone);
       },
+      userName,
     );
 
   } catch (error: any) {
@@ -304,10 +314,8 @@ export async function aixChatGenerateText_Simple(
   // Mark as complete
   state.isDone = true;
 
-  // LLM Cost computation & Aggregations
+  // Update text
   _llToText(ll, state);
-  _updateGeneratorCostsInPlace(state.generator, llm, `aix_chatgenerate_text-${aixContextName}`);
-
 
   // re-throw the user-initiated abort, as the former function catches it
   if (abortSignal.aborted)
@@ -339,7 +347,7 @@ export async function aixChatGenerateText_Simple(
 function _llToText(src: AixChatGenerateContent_LL, dest: AixChatGenerateText_Simple) {
   // copy over Generator's
   if (src.genMetricsLg)
-    dest.generator.metrics = metricsChatGenerateLgToMd(src.genMetricsLg); // reduce the size to store in DMessage
+    dest.generator.metrics = src.genMetricsLg; // Just copy the metrics as is
   if (src.genModelName)
     dest.generator.name = src.genModelName;
   if (src.genTokenStopReason)
@@ -367,7 +375,6 @@ function _llToText(src: AixChatGenerateContent_LL, dest: AixChatGenerateText_Sim
   }
 }
 
-
 /**
  * Level 1 - Generates chat content using a specified LLM and ChatGenerateRequest (incl. Tools) and returns a DMessage-compatible object.
  *
@@ -379,7 +386,6 @@ function _llToText(src: AixChatGenerateContent_LL, dest: AixChatGenerateText_Sim
  *
  * Features:
  * - Throttling if requrested (decimates the requests based on the square root of the number parllel hints)
- * - computes the costs and metrics for the chat generation
  * - vendor-specific rate limit
  * - 'pendingIncomplete' logic
  * - 'o1-preview' hotfix for OpenAI models
@@ -404,6 +410,7 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   // others
   clientOptions: AixClientOptions,
   onStreamingUpdate?: (update: AixChatGenerateContent_DMessage, isDone: boolean) => MaybePromise<void>,
+  userName?: string,
 ): Promise<AixChatGenerateContent_DMessage> {
 
   // Aix Access
@@ -457,7 +464,7 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   }
 
   // Aix Low-Level Chat Generation
-  const llAccumulator = await _aixChatGenerateContent_LL(aixAccess, aixModel, aixChatGenerate, aixContext, aixStreaming, 'not set', clientOptions.abortSignal, clientOptions.throttleParallelThreads ?? 0,
+  const llAccumulator = await _aixChatGenerateContent_LL(aixAccess, aixModel, aixChatGenerate, aixContext, aixStreaming, userName || 'not set', clientOptions.abortSignal, clientOptions.throttleParallelThreads ?? 0,
     async (ll: AixChatGenerateContent_LL, isDone: boolean) => {
       if (isDone) return; // optimization, as there aren't branches between here and the final update below
       if (onStreamingUpdate) {
@@ -470,9 +477,8 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   // Mark as complete
   dMessage.pendingIncomplete = false;
 
-  // LLM Cost computation & Aggregations
+  // Update message
   _llToDMessage(llAccumulator, dMessage);
-  _updateGeneratorCostsInPlace(dMessage.generator, llm, `aix_chatgenerate_content-${aixContext.name}`);
 
   // final update (could ignore and take the dMessage)
   await onStreamingUpdate?.(dMessage, true);
@@ -484,31 +490,11 @@ function _llToDMessage(src: AixChatGenerateContent_LL, dest: AixChatGenerateCont
   if (src.fragments.length)
     dest.fragments = src.fragments; // Note: this gets replaced once, and then it's the same from that point on
   if (src.genMetricsLg)
-    dest.generator.metrics = metricsChatGenerateLgToMd(src.genMetricsLg); // reduce the size to store in DMessage
+    dest.generator.metrics = src.genMetricsLg; // Just copy the metrics as is
   if (src.genModelName)
     dest.generator.name = src.genModelName;
   if (src.genTokenStopReason)
     dest.generator.tokenStopReason = src.genTokenStopReason;
-}
-
-function _updateGeneratorCostsInPlace(generator: DMessageGenerator, llm: DLLM, debugCostSource: string) {
-  // Compute costs
-  const llmParameters = getAllModelParameterValues(llm.initialParameters, llm.userParameters);
-  const costs = metricsComputeChatGenerateCostsMd(generator.metrics, llm.pricing?.chat, llmParameters.llmRef || llm.id);
-  if (!costs) {
-    // FIXME: we shall warn that the costs are missing, as the only way to get pricing is through surfacing missing prices
-    return;
-  }
-
-  // Add the costs to the generator.metrics object
-  if (generator.metrics)
-    Object.assign(generator.metrics, costs);
-
-  // Run aggregations
-  const m = generator.metrics;
-  const inputTokens = (m?.TIn || 0) + (m?.TCacheRead || 0) + (m?.TCacheWrite || 0);
-  const outputTokens = (m?.TOut || 0) /* + (m?.TOutR || 0) THIS IS A BREAKDOWN, IT'S ALREADY IN */;
-  metricsStoreAddChatGenerate(costs, inputTokens, outputTokens, llm, debugCostSource);
 }
 
 

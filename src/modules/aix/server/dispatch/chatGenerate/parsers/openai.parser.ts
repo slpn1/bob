@@ -92,7 +92,6 @@ export function createOpenAIChatCompletionsChunkParser(): ChatGenerateParseFunct
     if (json.id === '' && json.object === '' && json.model === '')
       return;
 
-
     // -> Stats
     if (json.usage) {
       const metrics = _fromOpenAIUsage(json.usage, parserCreationTimestamp, timeToFirstEvent);

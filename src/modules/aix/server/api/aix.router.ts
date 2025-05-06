@@ -43,9 +43,12 @@ export const aixRouter = createTRPCRouter({
 
       // Intake derived state
       const intakeAbortSignal = ctx.reqSignal;
-      const { access, model, chatGenerate, streaming: aixStreaming, user, connectionOptions } = input;
+      const { access, model, chatGenerate, streaming: aixStreaming, connectionOptions } = input;
       const accessDialect = access.dialect;
       const prettyDialect = serverCapitalizeFirstLetter(accessDialect);
+
+      // Get the user name from the context or input
+      const userName = ctx.user?.name || input.user || '';
 
       // Applies per-model streaming suppression; added for o3 without verification
       const streaming = model.forceNoStream ? false : aixStreaming;
@@ -75,7 +78,7 @@ export const aixRouter = createTRPCRouter({
       // Prepare the dispatch requests
       let dispatch: ReturnType<typeof createChatGenerateDispatch>;
       try {
-        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming, user);
+        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming, userName);
       } catch (error: any) {
         chatGenerateTx.setRpcTerminatingIssue('dispatch-prepare', `**[AIX Configuration Issue] ${prettyDialect}**: ${safeErrorString(error) || 'Unknown service preparation error'}`, false);
         yield* chatGenerateTx.flushParticles();
@@ -153,7 +156,7 @@ export const aixRouter = createTRPCRouter({
 
       // STREAM the response to the client
       const dispatchReader = (dispatchResponse.body || createEmptyReadableStream()).getReader();
-      const dispatchDecoder = new TextDecoder('utf-8', { fatal: false /* malformed data -> “ ” (U+FFFD) */ });
+      const dispatchDecoder = new TextDecoder('utf-8', { fatal: false /* malformed data -> " " (U+FFFD) */ });
       const dispatchDemuxer = AixDemuxers.createStreamDemuxer(dispatch.demuxerFormat);
       const dispatchParser = dispatch.chatGenerateParse;
 

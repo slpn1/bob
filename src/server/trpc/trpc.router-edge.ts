@@ -1,4 +1,4 @@
-import { createTRPCRouter } from './trpc.server';
+import { createTRPCRouter, publicProcedure } from './trpc.server';
 
 import { aixRouter } from '~/modules/aix/server/api/aix.router';
 import { backendRouter } from '~/modules/backend/backend.router';

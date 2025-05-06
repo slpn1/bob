@@ -107,11 +107,19 @@ StyledMenuItem.displayName = 'StyledMenuItem';
 /**
  * A styled header for the menu that displays user email or other information
  */
-export const StyledMenuHeader = styled('div')(({ theme }) => ({
-  padding: '12px 16px',
-  paddingRight: '36px', // Make room for the close button
-  borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-  color: 'white',
-  fontSize: '0.875rem',
-  fontWeight: 'bold',
-})); 
+export const StyledMenuHeader = ({ children, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    {...props}
+    style={{
+      padding: '12px 16px',
+      paddingRight: '36px', // Make room for the close button
+      borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+      color: 'white',
+      fontSize: '0.875rem',
+      fontWeight: 'bold',
+      ...props.style
+    }}
+  >
+    {children}
+  </div>
+); 

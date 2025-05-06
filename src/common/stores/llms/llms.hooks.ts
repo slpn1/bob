@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { DLLM, DLLMId } from './llms.types';
 import type { DModelsServiceId } from './llms.service.types';
 import { useModelsStore } from './store-llms';
+import { HIDDEN_MODELS, HIDDEN_MODEL_NAMES } from './llms.config';
 
 
 export function useLLM(llmId: undefined | DLLMId | null): DLLM | undefined {
@@ -23,7 +24,10 @@ export function useLLMsByService(serviceId: false | DModelsServiceId): DLLM[] {
 
 export function useVisibleLLMs(includeLlmId: undefined | DLLMId | null): ReadonlyArray<DLLM> {
   return useModelsStore(useShallow(
-    ({ llms }) => llms.filter(llm => !llm.hidden || (includeLlmId && llm.id === includeLlmId)),
+    ({ llms }) => llms.filter(llm => 
+      (!llm.hidden && !HIDDEN_MODEL_NAMES.includes(llm.label)) || 
+      (includeLlmId && llm.id === includeLlmId)
+    ),
   ));
 }
 

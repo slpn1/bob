@@ -384,53 +384,40 @@ function ChatDrawer(props: {
 
       {/* Chat Titles List (shrink as half the rate as the Folders List) */}
       <Box sx={{ flexGrow: 1, flexShrink: 1, flexBasis: '20rem', overflowY: 'auto', ...themeScalingMap[contentScaling].chatDrawerItemSx }}>
-        {renderNavItems.map((item, idx) => item.type === 'nav-item-chat-data' ? (
-            <ChatDrawerItemMemo
-              key={'nav-chat-' + item.conversationId}
-              item={item}
-              showSymbols={!showPersonaIcons ? false : zenMode ? false : gifMode ? 'gif' : true}
-              bottomBarBasis={filteredChatsBarBasis}
-              onConversationActivate={handleConversationActivate}
-              onConversationBranch={onConversationBranch}
-              onConversationDeleteNoConfirmation={handleConversationDeleteNoConfirmation}
-              onConversationExport={onConversationsExportDialog}
-              onConversationFolderChange={handleConversationFolderChange}
-            />
-          ) : item.type === 'nav-item-group' ? (
-            // <Typography 
-            //   color='primary'
-            //   key={'nav-divider-' + idx} level='body-sm' sx={{
-            //   textAlign: 'left',
-            //   my: 0,
-            //   mx: 4,
-            //   // my: 'calc(var(--ListItem-minHeight) / 4)',
-            //   // keeps the group header sticky to the top
-            //   position: 'sticky',
-            //   top: 0,
-            //   backgroundColor: OPTIMA_DRAWER_BACKGROUND,
-            //   fontWeight: 500,
-            //   zIndex: 1,
-            //   textDecoration: 'underline',
-            // }}>
-            //   {item.title}
-            // </Typography>
-            <> </>
-          ) : item.type === 'nav-item-info-message' ? (
-            <Box key={'nav-info-' + idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, ml: 2 }}>
-              <Typography level='body-xs' sx={{ color: 'primary.softColor', my: 'calc(var(--ListItem-minHeight) / 4)' }}>
-                {filterHasStars && <StarOutlineRoundedIcon sx={{ color: 'primary.softColor', fontSize: 'xl', mb: -0.5, mr: 1 }} />}
-                {item.message}
-              </Typography>
-              {(filterHasStars || filterHasImageAssets || filterHasDocFragments || filterIsArchived) && (
-                <Tooltip title='Clear Filters'>
-                  <IconButton size='sm' color='primary' onClick={clearFilters}>
-                    <ClearIcon />
-                  </IconButton>
-                </Tooltip>
-              )}
-            </Box>
-          ) : null,
-        )}
+        {renderNavItems.map((item, idx) => {
+          if (item.type === 'nav-item-chat-data') {
+            return (
+              <ChatDrawerItemMemo
+                key={'nav-chat-' + item.conversationId}
+                item={item}
+                showSymbols={!showPersonaIcons ? false : zenMode ? false : gifMode ? 'gif' : true}
+                bottomBarBasis={filteredChatsBarBasis}
+                onConversationActivate={handleConversationActivate}
+                onConversationBranch={onConversationBranch}
+                onConversationDeleteNoConfirmation={handleConversationDeleteNoConfirmation}
+                onConversationExport={onConversationsExportDialog}
+                onConversationFolderChange={handleConversationFolderChange}
+              />
+            );
+          } else if (item.type === 'nav-item-info-message') {
+            return (
+              <Box key={'nav-info-' + idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, ml: 2 }}>
+                <Typography level='body-xs' sx={{ color: 'primary.softColor', my: 'calc(var(--ListItem-minHeight) / 4)' }}>
+                  {filterHasStars && <StarOutlineRoundedIcon sx={{ color: 'primary.softColor', fontSize: 'xl', mb: -0.5, mr: 1 }} />}
+                  {item.message}
+                </Typography>
+                {(filterHasStars || filterHasImageAssets || filterHasDocFragments || filterIsArchived) && (
+                  <Tooltip title='Clear Filters'>
+                    <IconButton size='sm' color='primary' onClick={clearFilters}>
+                      <ClearIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+            );
+          }
+          return null;
+        })}
       </Box>
 
       <ListDivider sx={{ my: 0 }} />

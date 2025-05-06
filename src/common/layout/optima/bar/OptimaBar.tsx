@@ -167,7 +167,7 @@ export function OptimaBar(props: { component: React.ElementType, currentApp?: Na
       <CenterItemsPortal currentApp={props.currentApp} />
 
       {/* (PREVIEW) Preview Menu */}
-      {!props.isMobile && (
+      {false && !props.isMobile && (
         <Dropdown>
           <MenuButton
             aria-label='Notifications Menu'

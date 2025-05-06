@@ -48,6 +48,10 @@ useLogicSherpaStore.setState((state) => ({ usageCount: (state.usageCount || 0) +
 /// News Navigation
 
 export function shallRedirectToNews() {
+  // Always return false to prevent automatic news display
+  return false;
+
+  /* Original code - commented out to prevent automatic news display
   const { lastSeenNewsVersion, usageCount } = useLogicSherpaStore.getState();
 
   // first time user - ignore the news up to the next refresh
@@ -59,6 +63,7 @@ export function shallRedirectToNews() {
   // if the news is outdated and the user has used the app a few times, show the news
   const isNewsOutdated = (lastSeenNewsVersion || 0) < Release.Monotonics.NewsVersion;
   return isNewsOutdated && usageCount >= 3;
+  */
 }
 
 export function markNewsAsSeen() {

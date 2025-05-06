@@ -40,8 +40,8 @@ export const OptimaDrawerHeader = (props: {
 
     {props.children || <IconButton disabled />}
 
-    <Box sx={{ marginTop: '2em' }}>
-      <Image src='/images/sg-logo.png' alt='logo' width={33} height={50} />
+    <Box sx={{ marginTop: '3em' }}>
+      <Image src='/images/sg-logo.png' alt='logo' width={136} height={27} />
     </Box>
 
     {props.onClose ? (

@@ -575,6 +575,7 @@ export function ChatMessage(props: {
     py: themeScalingMap[adjContentScaling]?.chatMessagePadding ?? 3,
     '& .text-message-content, & .markdown-content, & .text-block': {
       fontSize: '26px !important',
+      color: 'black !important',
     },
     // filter: 'url(#agi-futuristic-glow)',
 

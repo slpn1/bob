@@ -128,7 +128,7 @@ export function DocAttachmentFragmentButton(props: {
         </Box>
       )}
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingX: '0.5rem' }}>
-        <Box sx={{ whiteSpace: 'nowrap', fontWeight: 'md', minWidth: 48 }}>
+      <Box sx={{ whiteSpace: 'nowrap', fontWeight: 'md', minWidth: 48, color: 'black' }}>
           {buttonText}
         </Box>
         {/*<Box sx={{ fontSize: 'xs', fontWeight: 'sm' }}>*/}

@@ -10,6 +10,23 @@ import CloseIcon from '@mui/icons-material/Close';
 import { optimaOpenPreferences } from '~/common/layout/optima/useOptima';
 import { StyledMenu, StyledMenuItem, StyledMenuHeader } from './StyledMenu';
 
+// Custom MenuButtonRoot component that filters out ownerState
+const MenuButtonRoot = React.forwardRef<HTMLDivElement, any>(({ ownerState, ...props }, ref) => (
+  <Box
+    ref={ref}
+    {...props}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1,
+      cursor: 'pointer',
+      width: '100%',
+      ...props.sx
+    }}
+  />
+));
+MenuButtonRoot.displayName = 'MenuButtonRoot';
+
 /**
  * A reusable user profile menu component that displays user info and provides
  * a dropdown menu with Settings and Log Out options.
@@ -60,10 +77,7 @@ export function UserProfileMenu() {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden', position: 'relative' }}>
       <Dropdown open={open} onOpenChange={(_, isOpen) => setOpen(isOpen)}>
-        <MenuButton
-          slots={{ root: Box }}
-          slotProps={{ root: { sx: { display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', width: '100%' } } }}
-        >
+        <MenuButton slots={{ root: MenuButtonRoot }}>
           <Avatar
             size="sm"
             variant="soft"

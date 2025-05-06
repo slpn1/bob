@@ -17,6 +17,7 @@ import { isDeepEqual } from '~/common/util/hooks/useDeep';
 import { optimaActions, optimaOpenModels } from '~/common/layout/optima/useOptima';
 import { useAllLLMs } from '~/common/stores/llms/hooks/useAllLLMs';
 import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
+import { HIDDEN_MODEL_NAMES } from '~/common/stores/llms/llms.config';
 
 
 function LLMDropdown(props: {
@@ -62,8 +63,10 @@ function LLMDropdown(props: {
       if (lcFilterString && !llm.label.toLowerCase().includes(lcFilterString))
         return false;
 
-      // filter-out hidden models from the dropdown
-      return lcFilterString ? true : !llm.hidden;
+      // filter-out hidden models and models with hidden names from the dropdown
+      const displayName = llm.userLabel || llm.label;
+      console.log('displayName', displayName);
+      return lcFilterString ? true : !llm.hidden && !HIDDEN_MODEL_NAMES.includes(displayName);
     });
 
 
@@ -170,13 +173,13 @@ function LLMDropdown(props: {
     {/*  </ListItemButton>*/}
     {/*)}*/}
 
-    <ListItemButton key='menu-llms' onClick={optimaOpenModels} sx={{ backgroundColor: 'background.surface' }}>
+    {/* <ListItemButton key='menu-llms' onClick={optimaOpenModels} sx={{ backgroundColor: 'background.surface' }}>
       <ListItemDecorator><BuildCircleIcon color='success' /></ListItemDecorator>
       <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'space-between', gap: 1 }}>
         Models
         <KeyStroke variant='outlined' combo='Ctrl + Shift + M' sx={{ ml: 2 }} />
       </Box>
-    </ListItemButton>
+    </ListItemButton> */}
 
   </>, []);
 

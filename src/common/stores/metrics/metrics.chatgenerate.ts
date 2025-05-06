@@ -152,8 +152,14 @@ export function metricsChatGenerateLgToMd(metrics: DMetricsChatGenerate_Lg): DMe
 const USD_TO_CENTS = 100;
 
 export function metricsComputeChatGenerateCostsMd(metrics?: Readonly<DMetricsChatGenerate_Md>, pricing?: DPricingChatGenerate | undefined, logLlmRefId?: string): MetricsChatGenerateCost_Md | undefined {
-  if (!metrics)
+  console.log(`[Metrics Costs] Starting cost calculation for model ${logLlmRefId || 'unknown'}`);
+  
+  if (!metrics) {
+    console.log('[Metrics Costs] No metrics provided, returning undefined');
     return undefined;
+  }
+  
+  console.log('[Metrics Costs] Input metrics:', JSON.stringify(metrics));
 
   // metrics: token presence
   const inNewTokens = metrics.TIn || 0;
@@ -161,56 +167,76 @@ export function metricsComputeChatGenerateCostsMd(metrics?: Readonly<DMetricsCha
   const inCacheWriteTokens = metrics.TCacheWrite || 0;
   const sumInputTokens = inNewTokens + inCacheReadTokens + inCacheWriteTokens;
   const outTokens = metrics.TOut || 0;
+  
+  console.log(`[Metrics Costs] Token counts: inNew=${inNewTokens}, inCacheRead=${inCacheReadTokens}, inCacheWrite=${inCacheWriteTokens}, sumInput=${sumInputTokens}, out=${outTokens}`);
 
   // usage: presence
-  if (!sumInputTokens && !outTokens)
+  if (!sumInputTokens && !outTokens) {
+    console.log('[Metrics Costs] No tokens found in metrics, returning "no-tokens" code');
     return { $code: 'no-tokens' };
+  }
 
   // pricing: presence
-  if (!pricing)
+  if (!pricing) {
+    console.log('[Metrics Costs] No pricing data available, returning "no-pricing" code');
     return { $code: 'no-pricing' };
+  }
+  
+  console.log('[Metrics Costs] Pricing data available:', pricing ? 'yes' : 'no');
 
   // pricing: bail if free
-  if (isModelPricingFree(pricing))
+  if (isModelPricingFree(pricing)) {
+    console.log('[Metrics Costs] Model has free pricing, returning "free" code');
     return { $code: 'free' };
-
+  }
 
   // partial pricing
   const isPartialMessage = metrics.TsR === 'pending' || metrics.TsR === 'aborted';
+  console.log(`[Metrics Costs] Is partial message: ${isPartialMessage}, TsR: ${metrics.TsR || 'undefined'}`);
 
   // Calculate costs
   const tierTokens = sumInputTokens;
   const $inNew = getLlmCostForTokens(tierTokens, inNewTokens, pricing.input);
   const $out = getLlmCostForTokens(tierTokens, outTokens, pricing.output);
+  console.log(`[Metrics Costs] Calculated costs: inNew=$${$inNew}, out=$${$out}`);
+  
   if ($inNew === undefined || $out === undefined) {
+    console.log('[Metrics Costs] Missing price information, returning "partial-price" code');
     // many llms don't have pricing information, so the cost computation ends here
     return { $code: 'partial-price' };
   }
 
-
   // Standard price
   const $noCacheRounded = Math.round(($inNew + $out) * USD_TO_CENTS * 10000) / 10000;
-  if (!inCacheReadTokens && !inCacheWriteTokens)
-    return { $c: $noCacheRounded, ...(isPartialMessage && { $code: 'partial-msg' }) };
-
+  console.log(`[Metrics Costs] Standard price (no cache): $${$noCacheRounded}`);
+  
+  if (!inCacheReadTokens && !inCacheWriteTokens) {
+    const result = { $c: $noCacheRounded, ...(isPartialMessage && { $code: 'partial-msg' }) };
+    console.log(`[Metrics Costs] No cache used, returning result:`, JSON.stringify(result));
+    return result;
+  }
 
   // Price with Caching
   const cachePricing = pricing.cache;
   if (!cachePricing) {
-    console.log(`No cache pricing for ${logLlmRefId}`);
+    console.log(`[Metrics Costs] No cache pricing for ${logLlmRefId}, using standard price`);
     return { $c: $noCacheRounded, $code: 'partial-price' };
   }
 
   // 2024-08-22: DEV Note: we put this here to break in case we start having tiered price with cache,
   // for which we don't know if the tier discriminator is the input tokens level, or the equivalent
   // tokens level (input + cache)
-  if (Array.isArray(cachePricing.read) || ('write' in cachePricing && Array.isArray(cachePricing.write)))
+  if (Array.isArray(cachePricing.read) || ('write' in cachePricing && Array.isArray(cachePricing.write))) {
+    console.error('[Metrics Costs] Tiered pricing with cache is not supported');
     throw new Error('Tiered pricing with cache is not supported');
+  }
 
   // compute the input cache read costs
   const $cacheRead = getLlmCostForTokens(tierTokens, inCacheReadTokens, cachePricing.read);
+  console.log(`[Metrics Costs] Cache read cost: $${$cacheRead}`);
+  
   if ($cacheRead === undefined) {
-    console.log(`Missing cache read pricing for ${logLlmRefId}`);
+    console.log(`[Metrics Costs] Missing cache read pricing for ${logLlmRefId}, using standard price`);
     return { $c: $noCacheRounded, $code: 'partial-price' };
   }
 
@@ -224,24 +250,31 @@ export function metricsComputeChatGenerateCostsMd(metrics?: Readonly<DMetricsCha
       $cacheWrite = 0;
       break;
     default:
+      console.error(`[Metrics Costs] Unknown cache type: ${(cachePricing as any).cType}`);
       throw new Error('computeChatGenerationCosts: Unknown cache type');
   }
+  console.log(`[Metrics Costs] Cache write cost: $${$cacheWrite}, cache type: ${cachePricing.cType}`);
+  
   if ($cacheWrite === undefined) {
-    console.log(`Missing cache write pricing for ${logLlmRefId}`);
+    console.log(`[Metrics Costs] Missing cache write pricing for ${logLlmRefId}, using standard price`);
     return { $c: $noCacheRounded, $code: 'partial-price' };
   }
 
   // compute the cost for this call
   const $c = Math.round(($inNew + $cacheRead + $cacheWrite + $out) * USD_TO_CENTS * 10000) / 10000;
+  console.log(`[Metrics Costs] Total cost with cache: $${$c} (inNew=$${$inNew}, cacheRead=$${$cacheRead}, cacheWrite=$${$cacheWrite}, out=$${$out})`);
 
   // compute the advantage from caching
   const $inAsIfNoCache = getLlmCostForTokens(tierTokens, sumInputTokens, pricing.input)!;
   const $cdCache = Math.round(($inAsIfNoCache - $inNew - $cacheRead - $cacheWrite) * USD_TO_CENTS * 10000) / 10000;
+  console.log(`[Metrics Costs] Cache savings: $${$cdCache} (would cost $${$inAsIfNoCache} without cache)`);
 
   // mark the costs as partial if the message was not completely received - i.e. the server did not tell us the final tokens count
-  return {
+  const result = {
     $c,
     $cdCache,
     ...(isPartialMessage && { $code: 'partial-msg' }),
   };
+  console.log(`[Metrics Costs] Final result:`, JSON.stringify(result));
+  return result;
 }
