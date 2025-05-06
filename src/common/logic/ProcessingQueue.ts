@@ -152,8 +152,18 @@ export type QueuedItem<TItem> = {
 
 type QueueState<TItem> = ReturnType<typeof ProcessingQueue<TItem>['prototype']['getQueueState']>;
 
+// Polyfill for CustomEvent in non-browser environments
+const CustomEventPolyfill = typeof window !== 'undefined' ? window.CustomEvent : class CustomEventPolyfill<T> {
+  readonly type: string;
+  readonly detail: T;
+  constructor(type: string, options?: { detail: T }) {
+    this.type = type;
+    this.detail = options?.detail as T;
+  }
+};
+
 // set to the return type of the getQueueState method of ProcessingQueue
-class QueueUpdatedEvent<TItem> extends CustomEvent<QueueState<TItem>> {
+class QueueUpdatedEvent<TItem> extends CustomEventPolyfill<QueueState<TItem>> {
   constructor(detail: QueueState<TItem>) {
     super('queueUpdated', { detail });
   }

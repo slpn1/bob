@@ -26,9 +26,10 @@ export const ModelDomainsRegistry: Record<DModelDomainId, ModelDomainSpec> = {
     label: 'Primary Chat',
     confLabel: 'Chat',
     confTooltip: 'Default model for new Chats',
-    description: 'Main conversational model',
+    description: 'The main chat interface for general conversations.',
     requiredInterfaces: [],
     autoStrategy: 'topVendorTopLlm',
+    recommended: 'azure-gpt-4.1',
   },
   codeApply: {
     label: 'Code Editor',

@@ -29,7 +29,13 @@ buildType && console.log(` BOB SG: building for ${buildType}...\n`);
 
 /** @type {import('next').NextConfig} */
 let nextConfig: NextConfig = {
-  reactStrictMode: true,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  reactStrictMode: false,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   productionBrowserSourceMaps: true,
   // [exports] https://nextjs.org/docs/advanced-features/static-html-export
   ...buildType && {

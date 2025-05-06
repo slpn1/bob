@@ -126,7 +126,6 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
   if (hotFixRemoveStreamOptions)
     payload = _fixRemoveStreamOptions(payload);
 
-  console.log('AIX: OpenAI-dispatch payload:', payload);
 
   // Preemptive error detection with server-side payload validation before sending it upstream
   const validated = OpenAIWire_API_Chat_Completions.Request_schema.safeParse(payload);

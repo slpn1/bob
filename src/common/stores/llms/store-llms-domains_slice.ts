@@ -186,14 +186,39 @@ export function llmsHeuristicUpdateAssignments(allLlms: ReadonlyArray<DLLM>, exi
 
 // Private - Strategies
 
-function _autoModelConfiguration(domainId: DModelDomainId, llms: ReadonlyArray<DLLM>): DModelConfiguration | undefined {
-  const domainSpec = ModelDomainsRegistry[domainId] ?? undefined;
+function _autoModelConfiguration(domainId: DModelDomainId, allLlms: ReadonlyArray<DLLM>): DModelConfiguration | undefined {
+  const domainSpec = ModelDomainsRegistry[domainId];
+  if (!domainSpec)
+    return undefined;
+
+  // First try to find the recommended model if specified
+  if (domainSpec.recommended) {
+    const recommendedModel = allLlms.find(llm => llm.id === domainSpec.recommended);
+    if (recommendedModel)
+      return createDModelConfiguration(domainId, recommendedModel.id);
+  }
+
+  // Fall back to the auto strategy if no recommended model found
+  switch (domainSpec.autoStrategy) {
+    case 'topVendorTopLlm':
+      return _autoModelConfigurationTopVendorTopLlm(domainId, allLlms);
+    case 'topVendorLowestCost':
+      return _autoModelConfigurationTopVendorLowestCost(domainId, allLlms);
+    default:
+      return undefined;
+  }
+}
+
+function _autoModelConfigurationTopVendorTopLlm(domainId: DModelDomainId, allLlms: ReadonlyArray<DLLM>): DModelConfiguration | undefined {
+  const domainSpec = ModelDomainsRegistry[domainId];
+  if (!domainSpec)
+    return undefined;
 
   // Filter LLMs based on required interfaces, but relax the filter if none matches
-  let filteredLlms = llms;
+  let filteredLlms = allLlms;
   if (domainSpec.requiredInterfaces?.length) {
     const reqIfs = domainSpec.requiredInterfaces;
-    const subset = llms.filter(llm => reqIfs.every(reqIf => llm.interfaces.includes(reqIf)));
+    const subset = allLlms.filter(llm => reqIfs.every(reqIf => llm.interfaces.includes(reqIf)));
     // only apply filter if we have at least one matching model
     if (subset.length > 0)
       filteredLlms = subset;
@@ -203,25 +228,38 @@ function _autoModelConfiguration(domainId: DModelDomainId, llms: ReadonlyArray<D
   const vendors = _groupLlmsByVendorRankedByElo(filteredLlms);
 
   // Students: The rest is the existing strategy logic
-  switch (domainSpec?.autoStrategy) {
+  const topRankedLLMId = _strategyTopQuality(vendors);
+  if (topRankedLLMId)
+    return createDModelConfiguration(domainId, topRankedLLMId);
 
-    case 'topVendorTopLlm':
-      const topRankedLLMId = _strategyTopQuality(vendors);
-      if (topRankedLLMId)
-        return createDModelConfiguration(domainId, topRankedLLMId);
-      break;
+  // console.log('[DEV] cannot auto-assign for domain', domainId, allLlms.length, filteredLlms.length);
+  return undefined;
+}
 
-    case 'topVendorLowestCost':
-      const lowCostLLMId = _strategyTopVendorLowestCost(vendors);
-      if (lowCostLLMId)
-        return createDModelConfiguration(domainId, lowCostLLMId);
-      break;
+function _autoModelConfigurationTopVendorLowestCost(domainId: DModelDomainId, allLlms: ReadonlyArray<DLLM>): DModelConfiguration | undefined {
+  const domainSpec = ModelDomainsRegistry[domainId];
+  if (!domainSpec)
+    return undefined;
 
-    default:
-      console.log('[DEV] unknown strategy for LLM domain', domainId);
+  // Filter LLMs based on required interfaces, but relax the filter if none matches
+  let filteredLlms = allLlms;
+  if (domainSpec.requiredInterfaces?.length) {
+    const reqIfs = domainSpec.requiredInterfaces;
+    const subset = allLlms.filter(llm => reqIfs.every(reqIf => llm.interfaces.includes(reqIf)));
+    // only apply filter if we have at least one matching model
+    if (subset.length > 0)
+      filteredLlms = subset;
   }
 
-  // console.log('[DEV] cannot auto-assign for domain', domainId, llms.length, filteredLlms.length);
+  // Now group the final chosen set
+  const vendors = _groupLlmsByVendorRankedByElo(filteredLlms);
+
+  // Students: The rest is the existing strategy logic
+  const lowCostLLMId = _strategyTopVendorLowestCost(vendors, false);
+  if (lowCostLLMId)
+    return createDModelConfiguration(domainId, lowCostLLMId);
+
+  // console.log('[DEV] cannot auto-assign for domain', domainId, allLlms.length, filteredLlms.length);
   return undefined;
 }
 

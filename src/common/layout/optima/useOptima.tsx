@@ -25,10 +25,11 @@ export function optimaToggleDrawer(event?: React.MouseEvent) {
 
 export function useOptimaDrawerOpen() {
   const isMobile = getIsMobile();
-  const drawerIsOpen = useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen);
   // For desktop, always return true to keep the drawer permanently open
   // For mobile, use the store value to allow toggling
-  return isMobile ? drawerIsOpen : true;
+  return isMobile 
+    ? useLayoutOptimaStore(({ drawerIsOpen }) => drawerIsOpen)
+    : true;
 }
 
 

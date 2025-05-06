@@ -65,7 +65,7 @@ function LLMDropdown(props: {
 
       // filter-out hidden models and models with hidden names from the dropdown
       const displayName = llm.userLabel || llm.label;
-      console.log('displayName', displayName);
+
       return lcFilterString ? true : !llm.hidden && !HIDDEN_MODEL_NAMES.includes(displayName);
     });
 

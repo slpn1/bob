@@ -88,7 +88,6 @@ function ModelItem(props: {
   const handleLLMConfigure = React.useCallback((event: React.MouseEvent) => {
     event.stopPropagation();
     if (event.shiftKey) {
-      console.log('llm', llm);
       return;
     }
     onModelClicked(llm.id);

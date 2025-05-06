@@ -28,11 +28,6 @@ export const createTRPCFetchContext = async ({ req }: FetchCreateContextFnOption
   // Get the user's token (note: `req` is a Fetch Request)
   const token = await getToken({req:  nextRequest as any  }); // No need for res or authOptions
 
-  console.log('[TRPC Context] Creating tRPC context', {
-    host: req.headers?.get('host'),
-    hasUserToken: !!token,
-    userId: token?.sub || null
-  });
 
   return {
     // only used by Backend Analytics
