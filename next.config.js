@@ -17,6 +17,9 @@ const nextConfig = {
       type: 'webassembly/async',
     });
 
+    // Set target to modern environment
+    config.target = isServer ? 'node18' : ['web', 'es2020'];
+
     return config;
   },
 };
