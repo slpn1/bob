@@ -45,9 +45,15 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
 
   const hasProdiaModels = useProdiaStore(state => !!state.prodiaModelId);
 
+  // LOGGING: before providers is populated
+  console.log('[T2I] useCapabilityTextToImage llmsModelServices:', llmsModelServices);
+  console.log('[T2I] useCapabilityTextToImage hasProdiaModels:', hasProdiaModels);
+
   // derived state
   const providers = React.useMemo(() => {
-    return getTextToImageProviders(llmsModelServices, hasProdiaModels);
+    const result = getTextToImageProviders(llmsModelServices, hasProdiaModels);
+    console.log('[T2I] useCapabilityTextToImage providers (inside useMemo):', result);
+    return result;
   }, [hasProdiaModels, llmsModelServices]);
 
   // [Effect] Auto-select the first correctly configured provider
@@ -60,6 +66,11 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
     if (autoSelectProvider)
       setActiveProviderId(autoSelectProvider.providerId);
   }, [activeProviderId, providers, setActiveProviderId]);
+
+  // LOGGING for debugging Draw button state
+  console.log('[T2I] useCapabilityTextToImage providers:', providers);
+  console.log('[T2I] useCapabilityTextToImage activeProviderId:', activeProviderId);
+  console.log('[T2I] useCapabilityTextToImage mayWork:', providers.some(p => p.configured));
 
   return {
     mayWork: providers.some(p => p.configured),
@@ -180,7 +191,7 @@ interface T2ILlmsModelServices {
 }
 
 function getLlmsModelServices(llms: DLLM[], services: DModelsService[]) {
-  return services.filter(s => (s.vId === 'openai' || (T2I_ENABLE_LOCALAI && s.vId === 'localai'))).map((s): T2ILlmsModelServices => ({
+  return services.filter(s => (s.vId === 'openai' || s.vId === 'azure' || (T2I_ENABLE_LOCALAI && s.vId === 'localai'))).map((s): T2ILlmsModelServices => ({
     label: s.label,
     modelVendorId: s.vId,
     modelServiceId: s.id,
@@ -193,6 +204,9 @@ function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasP
 
   // Check for Azure DALL-E 3 configuration
   const isDallE3Configured = !!clientEnv.DALL_E_3_ENDPOINT && !!clientEnv.DALL_E_3_API_KEY;
+
+  console.log('isDallE3Configured', isDallE3Configured);
+  console.log('agggg,', llmsModelServices);
 
   // add OpenAI and/or LocalAI providers
   for (const { modelVendorId, modelServiceId, label, hasAnyModels } of llmsModelServices) {
@@ -217,6 +231,18 @@ function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasP
           description: 'OpenAI\'s DALL·E models',
           configured: isDallE3Configured,
           vendor: 'openai',
+        });
+        break;
+
+      case 'azure':
+        // For Azure, also use the DALL-E 3 configuration
+        providers.push({
+          providerId: modelServiceId,
+          label: label,
+          painter: 'DALL·E',
+          description: 'Azure DALL·E models',
+          configured: isDallE3Configured,
+          vendor: 'openai', // Use 'openai' as the vendor to reuse the same generator
         });
         break;
 

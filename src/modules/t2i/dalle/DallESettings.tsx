@@ -47,6 +47,10 @@ export function DallESettings() {
   // Check if DALL-E 3 is configured
   const isDallE3Configured = !!clientEnv.DALL_E_3_ENDPOINT && !!clientEnv.DALL_E_3_API_KEY;
 
+  console.log('[DALL-E 3] DallESettings clientEnv.DALL_E_3_ENDPOINT:', clientEnv.DALL_E_3_ENDPOINT);
+  console.log('[DALL-E 3] DallESettings clientEnv.DALL_E_3_API_KEY:', clientEnv.DALL_E_3_API_KEY);
+  console.log('[DALL-E 3] DallESettings isDallE3Configured:', isDallE3Configured);
+
   // Force DALL-E 3 if configured
   React.useEffect(() => {
     if (isDallE3Configured && dalleModelId !== 'dall-e-3') {

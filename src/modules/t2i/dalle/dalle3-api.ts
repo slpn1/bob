@@ -23,7 +23,12 @@ export async function generateDallE3Image(prompt: string, quality: 'standard' | 
   const endpoint = process.env.DALL_E_3_ENDPOINT;
   const apiKey = process.env.DALL_E_3_API_KEY;
 
+  console.log('[DALL-E 3] generateDallE3Image called');
+  console.log('[DALL-E 3] endpoint:', endpoint);
+  console.log('[DALL-E 3] apiKey:', apiKey);
+
   if (!endpoint || !apiKey) {
+    console.log('[DALL-E 3] Missing endpoint or apiKey');
     throw new Error('DALL-E 3 configuration is missing');
   }
 
