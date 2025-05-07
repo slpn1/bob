@@ -24,6 +24,7 @@ import { GoodModal } from '~/common/components/modals/GoodModal';
 import { Is } from '~/common/util/pwaUtils';
 import { optimaActions } from '~/common/layout/optima/useOptima';
 import { useIsMobile } from '~/common/components/useMatchMedia';
+import { useIsAdmin } from '~/common/util/auth-utils';
 
 import { AppChatSettingsAI } from './AppChatSettingsAI';
 import { AppChatSettingsUI } from './settings-ui/AppChatSettingsUI';
@@ -195,6 +196,7 @@ export function SettingsModal(props: {
 
   // external state
   const isMobile = useIsMobile();
+  const isAdmin = useIsAdmin();
 
   // handlers
 
@@ -217,7 +219,7 @@ export function SettingsModal(props: {
       open={props.open} onClose={props.onClose}
       startButton={
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-          {!isToolsTab && <DarkModeToggleButton hasText />}
+          {!isToolsTab && isAdmin && <DarkModeToggleButton hasText />}
           {!isMobile && !isToolsTab && <Button variant='soft' color='neutral' onClick={props.onOpenShortcuts} startDecorator={<KeyboardCommandKeyOutlinedIcon color='primary' />} sx={darkModeToggleButtonSx}>
             Shortcuts
           </Button>}
@@ -245,39 +247,43 @@ export function SettingsModal(props: {
           disableUnderline
           sx={_styles.tabsList}
         >
-          <Tab value='chat' disableIndicator sx={_styles.tabsListTab}>Chat</Tab>
-          <Tab value='voice' disableIndicator sx={_styles.tabsListTab}>Voice</Tab>
+          {isAdmin && <Tab value='chat' disableIndicator sx={_styles.tabsListTab}>Chat</Tab>}
+          {isAdmin && <Tab value='voice' disableIndicator sx={_styles.tabsListTab}>Voice</Tab>}
           <Tab value='draw' disableIndicator sx={_styles.tabsListTab}>Draw</Tab>
-          <Tab value='tools' disableIndicator sx={_styles.tabsListTab}>Tools</Tab>
+          {isAdmin && <Tab value='tools' disableIndicator sx={_styles.tabsListTab}>Tools</Tab>}
         </TabList>
 
-        <TabPanel value='chat' variant='outlined' sx={_styles.tabPanel}>
-          <Topics>
-            <Topic>
-              <AppChatSettingsUI />
-            </Topic>
-            <Topic icon={<AutoAwesomeIcon />} title={
-              'Chat AI'
-              // <>Chat AI <WarningRoundedIcon sx={{ ml: 1, color: 'orangered' }} /></>
-            } startCollapsed>
-              <AppChatSettingsAI />
-            </Topic>
-            <Topic icon={<ScienceIcon />} title='Labs' startCollapsed>
-              <UxLabsSettings />
-            </Topic>
-          </Topics>
-        </TabPanel>
+        {isAdmin && (
+          <TabPanel value='chat' variant='outlined' sx={_styles.tabPanel}>
+            <Topics>
+              <Topic>
+                <AppChatSettingsUI />
+              </Topic>
+              <Topic icon={<AutoAwesomeIcon />} title={
+                'Chat AI'
+                // <>Chat AI <WarningRoundedIcon sx={{ ml: 1, color: 'orangered' }} /></>
+              } startCollapsed>
+                <AppChatSettingsAI />
+              </Topic>
+              <Topic icon={<ScienceIcon />} title='Labs' startCollapsed>
+                <UxLabsSettings />
+              </Topic>
+            </Topics>
+          </TabPanel>
+        )}
 
-        <TabPanel value='voice' variant='outlined' sx={_styles.tabPanel}>
-          <Topics>
-            <Topic icon={/*'🎙️'*/ <MicIcon />} title='Microphone'>
-              <VoiceSettings />
-            </Topic>
-            <Topic icon={/*'📢'*/ <RecordVoiceOverIcon />} title='ElevenLabs API'>
-              <ElevenlabsSettings />
-            </Topic>
-          </Topics>
-        </TabPanel>
+        {isAdmin && (
+          <TabPanel value='voice' variant='outlined' sx={_styles.tabPanel}>
+            <Topics>
+              <Topic icon={/*'🎙️'*/ <MicIcon />} title='Microphone'>
+                <VoiceSettings />
+              </Topic>
+              <Topic icon={/*'📢'*/ <RecordVoiceOverIcon />} title='ElevenLabs API'>
+                <ElevenlabsSettings />
+              </Topic>
+            </Topics>
+          </TabPanel>
+        )}
 
         <TabPanel value='draw' variant='outlined' sx={_styles.tabPanel}>
           <Topics>
@@ -287,23 +293,27 @@ export function SettingsModal(props: {
             <Topic icon='🖍️️' title='OpenAI DALL·E'>
               <DallESettings />
             </Topic>
-            <Topic icon='🖍️️' title='Prodia API' startCollapsed>
-              <ProdiaSettings noSkipKey />
-            </Topic>
+            {isAdmin && (
+              <Topic icon='🖍️️' title='Prodia API' startCollapsed>
+                <ProdiaSettings noSkipKey />
+              </Topic>
+            )}
           </Topics>
         </TabPanel>
 
-        <TabPanel value='tools' variant='outlined' sx={_styles.tabPanel}>
-          <Topics>
-            <Topic icon={<LanguageRoundedIcon />} title='Browse Web Pages'>
-              <BrowseSettings />
-            </Topic>
-            <Topic icon={<SearchIcon />} title='Web Search · Google API' startCollapsed>
-              <GoogleSearchSettings />
-            </Topic>
-            {/*<Topic icon='🛠' title='Other tools...' />*/}
-          </Topics>
-        </TabPanel>
+        {isAdmin && (
+          <TabPanel value='tools' variant='outlined' sx={_styles.tabPanel}>
+            <Topics>
+              <Topic icon={<LanguageRoundedIcon />} title='Browse Web Pages'>
+                <BrowseSettings />
+              </Topic>
+              <Topic icon={<SearchIcon />} title='Web Search · Google API' startCollapsed>
+                <GoogleSearchSettings />
+              </Topic>
+              {/*<Topic icon='🛠' title='Other tools...' />*/}
+            </Topics>
+          </TabPanel>
+        )}
       </Tabs>
 
       {/*<Divider />*/}

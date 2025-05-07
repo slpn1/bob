@@ -699,7 +699,7 @@ export function Composer(props: {
   }, [props.capabilityHasT2I]);
 
   let textPlaceholder: string =
-    isDraw ? 'Describe what you would like to see...'
+    isDraw ? 'YOU ARE IN DRAW MODE. Click \'Chat\' if you would like to return to chat mode, otherwise please describe what you would like to see...'
       : isReAct ? 'Ask a multi-step reasoning question...'
         : isTextBeam ? 'Combine insights from multiple AI models...'
           : showChatInReferenceTo ? 'Chat about this...'
@@ -1052,6 +1052,8 @@ export function Composer(props: {
                         >
                           Draw
                         </Button>
+                        {/* Place Image Settings button directly underneath both buttons regardless of mode */}
+                        {isDesktop && isDraw && <ButtonOptionsDraw onClick={handleDrawOptionsClicked} sx={{ mt: 1 }} />}
                       </Box>
                     </>
                   ) : (
@@ -1067,29 +1069,7 @@ export function Composer(props: {
                       Stop
                     </Button>
                   )}
-
-                  {/* [Draw] Imagine */}
-                  {/* NOTE: disabled: as we have prompt enhancement in the TextArea (Draw Mode) already */}
-                  {/*{isDraw && !!composeText && <Tooltip title='Generate an image prompt'>*/}
-                  {/*  <IconButton variant='outlined' disabled={noConversation || noLLM} onClick={handleTextImagineClicked}>*/}
-                  {/*    <AutoAwesomeIcon />*/}
-                  {/*  </IconButton>*/}
-                  {/*</Tooltip>}*/}
-
-                  {/* Mode expander - removed in favor of separate Chat and Draw buttons */}
                 </ButtonGroup>
-{/*
-
-                 [desktop] secondary-top buttons
-                {isDesktop && showChatExtras && !assistantAbortible && (
-                  <ButtonBeamMemo
-                    color={beamButtonColor}
-                    disabled={noConversation || noLLM}
-                    hasContent={!!composeText}
-                    onClick={handleSendTextBeamClicked}
-                  />
-                )}
-*/}
 
               </Box>
             </Box>
@@ -1100,13 +1080,10 @@ export function Composer(props: {
 
               {/* [desktop] secondary bottom-buttons (aligned to bottom for now, and mutually exclusive) */}
               {isDesktop && <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
-
                 {/* [desktop] Call secondary button */}
                 {/*{showChatExtras && <ButtonCallMemo disabled={noConversation || noLLM || assistantAbortible} onClick={handleCallClicked} />}*/}
 
-                {/* [desktop] Draw Options secondary button */}
-                {isDraw && <ButtonOptionsDraw onClick={handleDrawOptionsClicked} />}
-
+                {/* Image Settings button moved inside the Chat/Draw button group */}
               </Box>}
 
             </Box>

@@ -5,6 +5,7 @@ import { Alert } from '@mui/joy';
 import { FormChipControl } from '~/common/components/forms/FormChipControl';
 import { FormRadioOption } from '~/common/components/forms/FormRadioControl';
 import { useCapabilityTextToImage } from '~/common/components/useCapabilities';
+import { useIsAdmin } from '~/common/util/auth-utils';
 
 
 export function T2ISettings() {
@@ -17,6 +18,7 @@ export function T2ISettings() {
     setActiveProviderId,
   } = useCapabilityTextToImage();
 
+  const isAdmin = useIsAdmin();
 
   // derived state
   const providerOptions = React.useMemo(() => {
@@ -47,7 +49,7 @@ export function T2ISettings() {
         title='Text-to-Image'
         description='Active Service'
         // tooltip='Select the service to use for text-to-image generation.'
-        disabled={!mayWork}
+        disabled={!mayWork || !isAdmin}
         options={providerOptions}
         value={activeProviderId ?? undefined} onChange={setActiveProviderId}
       />
