@@ -8,12 +8,12 @@
  */
 export const Brand = {
   Title: {
-    Base: 'Bob',
-    Common: (process.env.NODE_ENV === 'development' ? '' : '') + 'SGs AI Assistant - Bob',
+    Base: 'Lumina',
+    Common: (process.env.NODE_ENV === 'development' ? '' : '') + 'SGs AI Assistant - Lumina',
   },
   Meta: {
     Description: 'Launch big-AGI to unlock the full potential of AI, with precise control over your data and models. Voice interface, AI personas, advanced features, and fun UX.',
-    SiteName: 'Bob | Precision AI for The Scientific Group',
+    SiteName: 'Lumina | Precision AI for The Scientific Group',
     ThemeColor: '#4695e5',
     TwitterSite: '@enricoros',
   },

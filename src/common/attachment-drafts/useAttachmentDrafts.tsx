@@ -17,7 +17,7 @@ import type { AttachmentDraftsStoreApi } from './store-attachment-drafts_slice';
 
 
 // enable to debug operations
-const ATTACHMENTS_DEBUG_INTAKE = false;
+const ATTACHMENTS_DEBUG_INTAKE = true;
 
 
 /**

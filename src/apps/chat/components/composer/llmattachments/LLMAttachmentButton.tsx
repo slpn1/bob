@@ -17,6 +17,8 @@ import TextFieldsIcon from '@mui/icons-material/TextFields';
 import TextureIcon from '@mui/icons-material/Texture';
 import WarningRoundedIcon from '@mui/icons-material/WarningRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
+import TableViewIcon from '@mui/icons-material/TableView';
+import GridOnIcon from '@mui/icons-material/GridOn';
 
 import { RenderImageRefDBlob } from '~/modules/blocks/image/RenderImageRefDBlob';
 import { RenderImageURL } from '~/modules/blocks/image/RenderImageURL';
@@ -103,6 +105,8 @@ const converterTypeToIconMap: { [key in AttachmentDraftConverterType]: React.Com
   'pdf-images': PermMediaOutlinedIcon,
   'pdf-text-and-images': PermMediaOutlinedIcon,
   'docx-to-html': DescriptionOutlinedIcon,
+  'xlsx-to-text': TableViewIcon,
+  'xlsx-to-html': GridOnIcon,
   'url-page-text': TextFieldsIcon, // was LanguageIcon
   'url-page-markdown': CodeIcon, // was LanguageIcon
   'url-page-html': HtmlIcon, // was LanguageIcon

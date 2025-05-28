@@ -296,6 +296,12 @@ export function attachmentDefineConverters(source: AttachmentDraftSource, input:
       converters.push({ id: 'docx-to-html', name: 'DOCX to HTML' });
       break;
 
+    // Excel (XLS/XLSX)
+    case input.mimeType === 'application/vnd.ms-excel' || input.mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+      converters.push({ id: 'xlsx-to-text', name: 'Excel to Text', isActive: true });
+      converters.push({ id: 'xlsx-to-html', name: 'Excel to HTML Table' });
+      break;
+
     // URL: custom converters because of a custom input structure with multiple inputs
     case input.mimeType === INT_MIME_VND_AGI_WEBPAGE:
       const pageData = input.data as DraftWebInputData;
@@ -693,6 +699,35 @@ export async function attachmentPerformConversion(
         }
         break;
 
+      // Excel to text
+      case 'xlsx-to-text':
+        if (!(input.data instanceof ArrayBuffer)) {
+          console.log('Expected ArrayBuffer for Excel text converter, got:', typeof input.data);
+          break;
+        }
+        try {
+          const { convertExcelToText } = await import('./file-converters/ExcelToText');
+          const { text } = await convertExcelToText(input.data);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(text, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        } catch (error) {
+          console.error('Error in Excel to Text conversion:', error);
+        }
+        break;
+
+      // Excel to HTML
+      case 'xlsx-to-html':
+        if (!(input.data instanceof ArrayBuffer)) {
+          console.log('Expected ArrayBuffer for Excel HTML converter, got:', typeof input.data);
+          break;
+        }
+        try {
+          const { convertExcelToHTML } = await import('./file-converters/ExcelToText');
+          const { html } = await convertExcelToHTML(input.data);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.VndAgiCode, createDMessageDataInlineText(html, 'text/html'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        } catch (error) {
+          console.error('Error in Excel to HTML conversion:', error);
+        }
+        break;
 
       // url page text
       case 'url-page-text':
