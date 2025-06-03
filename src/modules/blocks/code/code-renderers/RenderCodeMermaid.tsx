@@ -2,7 +2,7 @@ import * as React from 'react';
 import { create as createStoreForReactiveGlobals } from 'zustand';
 import { useQuery } from '@tanstack/react-query';
 
-import { Box, Typography } from '@mui/joy';
+import { Box, Typography, useColorScheme } from '@mui/joy';
 
 import { isBrowser } from '~/common/util/pwaUtils';
 import { themeCodeFontFamilyCss, themeFontFamilyCss } from '~/common/app.theme';
@@ -58,7 +58,7 @@ function _loadMermaidFromCDN() {
     script.defer = true;
     script.onload = () => {
       useMermaidStore.setState({
-        mermaidAPI: _initializeMermaid(window.mermaid),
+        mermaidAPI: _initializeMermaid(window.mermaid, false), // Default to light mode initially
         loadingError: null,
       });
     };
@@ -77,7 +77,116 @@ function _loadMermaidFromCDN() {
  * - code: "'__JetBrains_Mono_dc2b2d', '__JetBrains_Mono_Fallback_dc2b2d', monospace",
  * - text: "'__Inter_1870e5', '__Inter_Fallback_1870e5', Helvetica, Arial, sans-serif"
  */
-function _initializeMermaid(mermaidAPI: MermaidAPI): MermaidAPI {
+function _initializeMermaid(mermaidAPI: MermaidAPI, isDarkMode: boolean = false): MermaidAPI {
+  // Create custom theme variables based on app's color scheme
+  const customThemeVariables = isDarkMode ? {
+    // Dark mode theme variables
+    primaryColor: '#311A35',
+    primaryTextColor: '#FFFFFF',
+    primaryBorderColor: '#311A35',
+    lineColor: '#9FA6AD',
+    sectionBkgColor: '#171A1C',
+    altSectionBkgColor: '#311A35',
+    gridColor: '#636B74',
+    secondaryColor: '#636B74',
+    tertiaryColor: '#9FA6AD',
+    background: '#0B0D0E',
+    mainBkg: '#171A1C',
+    secondBkg: '#311A35',
+    tertiaryBkg: '#636B74',
+    textColor: '#FFFFFF',
+    errorBkgColor: '#da3633',
+    errorTextColor: '#FFFFFF',
+    // Flowchart specific
+    nodeBkg: '#171A1C',
+    nodeBorder: '#311A35',
+    clusterBkg: '#311A35',
+    clusterBorder: '#636B74',
+    defaultLinkColor: '#9FA6AD',
+    titleColor: '#FFFFFF',
+    edgeLabelBackground: '#171A1C',
+    // Git graph specific
+    git0: '#311A35',
+    git1: '#636B74',
+    git2: '#9FA6AD',
+    git3: '#F6F6F6',
+    git4: '#FFFFFF',
+    gitBranchLabel0: '#FFFFFF',
+    gitBranchLabel1: '#FFFFFF',
+    gitBranchLabel2: '#FFFFFF',
+    gitBranchLabel3: '#311A35',
+    gitBranchLabel4: '#311A35',
+    // Sequence diagram specific
+    actorBkg: '#171A1C',
+    actorBorder: '#311A35',
+    actorTextColor: '#FFFFFF',
+    actorLineColor: '#636B74',
+    signalColor: '#FFFFFF',
+    signalTextColor: '#FFFFFF',
+    labelBoxBkgColor: '#311A35',
+    labelBoxBorderColor: '#636B74',
+    labelTextColor: '#FFFFFF',
+    loopTextColor: '#FFFFFF',
+    noteBkgColor: '#636B74',
+    noteBorderColor: '#9FA6AD',
+    noteTextColor: '#FFFFFF',
+    activationBkgColor: '#311A35',
+    activationBorderColor: '#636B74',
+  } : {
+    // Light mode theme variables
+    primaryColor: '#311A35',
+    primaryTextColor: '#311A35',
+    primaryBorderColor: '#311A35',
+    lineColor: '#636B74',
+    sectionBkgColor: '#F6F6F6',
+    altSectionBkgColor: '#311A35',
+    gridColor: '#9FA6AD',
+    secondaryColor: '#9FA6AD',
+    tertiaryColor: '#636B74',
+    background: '#FFFFFF',
+    mainBkg: '#FFFFFF',
+    secondBkg: '#F6F6F6',
+    tertiaryBkg: '#9FA6AD',
+    textColor: '#311A35',
+    errorBkgColor: '#da3633',
+    errorTextColor: '#FFFFFF',
+    // Flowchart specific
+    nodeBkg: '#FFFFFF',
+    nodeBorder: '#311A35',
+    clusterBkg: '#F6F6F6',
+    clusterBorder: '#636B74',
+    defaultLinkColor: '#311A35',
+    titleColor: '#311A35',
+    edgeLabelBackground: '#FFFFFF',
+    // Git graph specific
+    git0: '#311A35',
+    git1: '#636B74',
+    git2: '#9FA6AD',
+    git3: '#F6F6F6',
+    git4: '#FFFFFF',
+    gitBranchLabel0: '#311A35',
+    gitBranchLabel1: '#311A35',
+    gitBranchLabel2: '#311A35',
+    gitBranchLabel3: '#311A35',
+    gitBranchLabel4: '#311A35',
+    // Sequence diagram specific
+    actorBkg: '#FFFFFF',
+    actorBorder: '#311A35',
+    actorTextColor: '#311A35',
+    actorLineColor: '#636B74',
+    signalColor: '#311A35',
+    signalTextColor: '#311A35',
+    labelBoxBkgColor: '#311A35',
+    labelBoxBorderColor: '#636B74',
+    labelTextColor: '#FFFFFF',
+    loopTextColor: '#311A35',
+    noteBkgColor: '#F6F6F6',
+    noteBorderColor: '#636B74',
+    noteTextColor: '#311A35',
+    activationBkgColor: '#F6F6F6',
+    activationBorderColor: '#311A35',
+  };
+
   mermaidAPI.initialize({
     startOnLoad: false,
 
@@ -88,7 +197,8 @@ function _initializeMermaid(mermaidAPI: MermaidAPI): MermaidAPI {
     // style configuration
     htmlLabels: true,
     securityLevel: 'loose',
-    theme: 'forest',
+    theme: 'base', // Use base theme to allow custom variables
+    themeVariables: customThemeVariables,
 
     // per-chart configuration
     mindmap: { useMaxWidth: false },
@@ -107,11 +217,17 @@ function _initializeMermaid(mermaidAPI: MermaidAPI): MermaidAPI {
 
 function useMermaidLoader() {
   const { mermaidAPI } = useMermaidStore();
+  const { mode: colorMode } = useColorScheme();
+  const isDarkMode = colorMode === 'dark';
 
   React.useEffect(() => {
     if (!mermaidAPI)
       _loadMermaidFromCDN();
-  }, [mermaidAPI]);
+    else {
+      // Re-initialize when color mode changes
+      _initializeMermaid(mermaidAPI, isDarkMode);
+    }
+  }, [mermaidAPI, isDarkMode]);
 
   return { mermaidAPI, isSuccess: !!mermaidAPI, hasStartedLoading: loadingStarted, error: loadingError };
 }
@@ -128,11 +244,12 @@ export function RenderCodeMermaid(props: { mermaidCode: string, fitScreen: boole
 
   // external state
   const { mermaidAPI, error: mermaidLoadError } = useMermaidLoader();
+  const { mode: colorMode } = useColorScheme();
 
   // [effect] re-render on code changes
   const { data } = useQuery<MermaidResult>({
     enabled: !!mermaidAPI && !!props.mermaidCode,
-    queryKey: ['mermaid', props.mermaidCode],
+    queryKey: ['mermaid', props.mermaidCode, colorMode],
     queryFn: async (): Promise<MermaidResult> => {
       try {
         const elementId = `mermaid-${Math.random().toString(36).substring(2, 9)}`;

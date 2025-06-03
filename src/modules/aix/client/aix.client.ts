@@ -6,7 +6,7 @@ import { DLLM, DLLMId, LLM_IF_HOTFIX_NoTemperature } from '~/common/stores/llms/
 import { apiStream } from '~/common/util/trpc.client';
 import { DMetricsChatGenerate_Lg } from '~/common/stores/metrics/metrics.chatgenerate';
 import { DModelParameterValues, getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
-import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, DMessageVoidFragment, isContentFragment, isErrorPart } from '~/common/stores/chat/chat.fragments';
+import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, DMessageVoidFragment, isContentFragment, isErrorPart, createTextContentFragment } from '~/common/stores/chat/chat.fragments';
 import { findLLMOrThrow } from '~/common/stores/llms/store-llms';
 import { getLabsDevMode, getLabsDevNoStreaming } from '~/common/stores/store-ux-labs';
 import { presentErrorToHumans } from '~/common/util/errorUtils';
@@ -241,6 +241,28 @@ export async function aixChatGenerateText_Simple(
     userName?: string,
 ): Promise<string> {
 
+  // Special handling for Knowledge Central Chat  
+  if (llmId === 'knowledge-central-chat') {
+    console.log('[KC] Intercepting Knowledge Central in aixChatGenerateText_Simple');
+    // Convert to the format needed by _handleKnowledgeCentralChat
+    const aixChatGenerate = aixCGR_FromSimpleText(
+      systemInstruction,
+      typeof aixTextMessages === 'string' ? [{ role: 'user', text: aixTextMessages }] : aixTextMessages,
+    );
+    
+    const result = await _handleKnowledgeCentralChat(aixChatGenerate, undefined);
+    
+    // Extract text from fragments
+    let text = '';
+    for (const fragment of result.fragments) {
+      if (isContentFragment(fragment) && fragment.part.pt === 'text') {
+        text += (fragment.part as any).text;
+      }
+    }
+    
+    return text || 'No response from Knowledge Central';
+  }
+
   // Aix Access
   const llm = findLLMOrThrow(llmId);
   const { transportAccess: aixAccess, vendor: llmVendor, serviceSettings: llmServiceSettings } = findServiceAccessOrThrow<object, AixAPI_Access>(llm.sId);
@@ -415,6 +437,13 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
 
   // Aix Access
   const llm = findLLMOrThrow(llmId);
+  
+  // Special handling for Knowledge Central Chat
+  if (llmId === 'knowledge-central-chat') {
+    console.log('[KC] Intercepting Knowledge Central chat request');
+    return _handleKnowledgeCentralChat(aixChatGenerate, onStreamingUpdate);
+  }
+
   const { transportAccess: aixAccess, vendor: llmVendor, serviceSettings: llmServiceSettings } = findServiceAccessOrThrow<TServiceSettings, TAccess>(llm.sId);
 
   // Aix Model
@@ -677,4 +706,76 @@ async function _aixChatGenerateContent_LL(
 
   // return the final accumulated message
   return accumulator_LL;
+}
+
+/**
+ * Special handler for Knowledge Central Chat calls
+ */
+async function _handleKnowledgeCentralChat(
+  aixChatGenerate: AixAPIChatGenerate_Request,
+  onStreamingUpdate?: (update: AixChatGenerateContent_DMessage, isDone: boolean) => MaybePromise<void>,
+): Promise<AixChatGenerateContent_DMessage> {
+  
+  // Get the latest user message as chat_input
+  const lastUserMessage = aixChatGenerate.chatSequence
+    .filter(msg => msg.role === 'user')
+    .pop();
+  
+  let chatInput = '';
+  if (lastUserMessage) {
+    // Extract text from the message parts
+    chatInput = lastUserMessage.parts
+      .filter(part => part.pt === 'text')
+      .map(part => (part as any).text)
+      .join('\n');
+  }
+
+  // Create the response message
+  const dMessage: AixChatGenerateContent_DMessage = {
+    fragments: [],
+    generator: {
+      mgt: 'named',
+      name: 'knowledge-central-chat',
+    },
+    pendingIncomplete: true,
+  };
+
+  // Initial streaming notification
+  await onStreamingUpdate?.(dMessage, false);
+
+  try {
+    // Make the REST call to Knowledge Central via the server API
+    const response = await fetch('/api/knowledge-central', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_input: chatInput,
+        chat_history: []
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Knowledge Central API error: ${response.status} ${response.statusText}`);
+    }
+
+    const responseData = await response.text();
+    
+    // Add the response as a text fragment
+    dMessage.fragments.push(createTextContentFragment(responseData));
+    dMessage.pendingIncomplete = false;
+    
+  } catch (error: any) {
+    console.error('[KC] Error in Knowledge Central handler:', error);
+    // Add error as an error fragment
+    dMessage.fragments.push(createErrorContentFragment(`Knowledge Central Error: ${error.message}`));
+    dMessage.pendingIncomplete = false;
+    dMessage.generator.tokenStopReason = 'issue';
+  }
+
+  // Final streaming notification
+  await onStreamingUpdate?.(dMessage, true);
+
+  return dMessage;
 }

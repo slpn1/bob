@@ -18,6 +18,8 @@ import { optimaActions, optimaOpenModels } from '~/common/layout/optima/useOptim
 import { useAllLLMs } from '~/common/stores/llms/hooks/useAllLLMs';
 import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 import { HIDDEN_MODEL_NAMES } from '~/common/stores/llms/llms.config';
+import { LLM_IF_OAI_Chat } from '~/common/stores/llms/llms.types';
+import { useModelsStore } from '~/common/stores/llms/store-llms';
 
 
 function LLMDropdown(props: {
@@ -38,7 +40,9 @@ function LLMDropdown(props: {
   const showFilter = llmsCount >= 50;
 
   const handleChatLLMChange = React.useCallback((value: DLLMId | null) => {
-    value && setChatLlmId(value);
+    if (value) {
+      setChatLlmId(value);
+    }
   }, [setChatLlmId]);
 
   const handleOpenLLMOptions = React.useCallback(() => {
@@ -68,7 +72,6 @@ function LLMDropdown(props: {
 
       return lcFilterString ? true : !llm.hidden && !HIDDEN_MODEL_NAMES.includes(displayName);
     });
-
 
     for (const llm of filteredLLMs) {
       // add separators when changing services
@@ -205,6 +208,33 @@ export function useChatLLMDropdown(dropdownRef: React.Ref<OptimaBarControlMethod
   const llms = useAllLLMs();
   const { domainModelId: chatLLMId, assignDomainModelId: setChatLLMId } = useModelDomain('primaryChat');
 
+  // Ensure Knowledge Central model exists in the store
+  React.useEffect(() => {
+    const kcModelExists = llms.some(llm => llm.id === 'knowledge-central-chat');
+    if (!kcModelExists) {
+      const { updateLLM } = useModelsStore.getState();
+      
+      const kcModel: DLLM = {
+        id: 'knowledge-central-chat',
+        label: 'Knowledge Central Chat',
+        created: Date.now(),
+        description: 'Knowledge Central chat model',
+        hidden: false,
+        contextTokens: 32000,
+        maxOutputTokens: 4000,
+        interfaces: [LLM_IF_OAI_Chat],
+        parameterSpecs: [],
+        initialParameters: {},
+        sId: 'knowledge-central' as any,
+        vId: 'knowledge-central' as any,
+      };
+      
+      // Add the model to the store
+      useModelsStore.setState(state => ({
+        llms: [...state.llms, kcModel]
+      }));
+    }
+  }, [llms]);
 
   const chatLLMDropdown = React.useMemo(() => {
     return <LLMDropdown dropdownRef={dropdownRef} llms={llms} chatLlmId={chatLLMId} setChatLlmId={setChatLLMId} />;

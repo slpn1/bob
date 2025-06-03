@@ -68,6 +68,11 @@ export const env = createEnv({
     // LLM: xAI
     XAI_API_KEY: z.string().optional(),
 
+    
+    // LLM: Knowledge Central
+    KC_ENDPOINT: z.string().url().optional(),
+    KC_API_KEY: z.string().optional(),
+
 
     // Helicone - works on both OpenAI and Anthropic vendors
     HELICONE_API_KEY: z.string().optional(),
