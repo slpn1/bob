@@ -663,8 +663,8 @@ export function ChatMessage(props: {
           component='li'
           role='chat-message'
           tabIndex={-1 /* for shortcuts navigation */}
-          onMouseUp={(ENABLE_BUBBLE && !fromSystem /*&& !isAssistantError*/) ? handleBlocksMouseUp : undefined}
-          onTouchEnd={(ENABLE_BUBBLE && !fromSystem /*&& !isAssistantError*/) ? handleBlocksTouchEnd : undefined}
+          // onMouseUp={(ENABLE_BUBBLE && !fromSystem /*&& !isAssistantError*/) ? handleBlocksMouseUp : undefined}
+          // onTouchEnd={(ENABLE_BUBBLE && !fromSystem /*&& !isAssistantError*/) ? handleBlocksTouchEnd : undefined}
       sx={listItemSx}
           // className={messagePendingIncomplete ? 'agi-border-4' /* CSS Effect while in progress */ : undefined}
       >

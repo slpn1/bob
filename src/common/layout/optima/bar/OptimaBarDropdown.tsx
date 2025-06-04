@@ -66,15 +66,19 @@ export const optimaSelectSlotProps: SelectSlotsAndSlotProps<false>['slotProps'] 
 
       // v-size: do not exceed the height of the screen
       maxHeight: 'calc(100dvh - 56px - 24px)',
-      backgroundColor: 'grey',
+      backgroundColor: 'white',
 
       // Option: clip width to 160...360px
       [`& .${optionClasses.root}`]: {
         maxWidth: 'min(360px, calc(100dvw - 1rem))',
         minWidth: 160,
-        color: '#311A35',
+        color: '#333333',
         '&.Mui-selected': {
           color: 'white',
+          backgroundColor: '#663399',
+        },
+        '&:hover': {
+          backgroundColor: '#f5f5f5',
         },
       } as const,
 
@@ -86,9 +90,13 @@ export const optimaSelectSlotProps: SelectSlotsAndSlotProps<false>['slotProps'] 
       // Button styles
       [`& .${listItemButtonClasses.root}`]: {
         minWidth: 160,
-        color: '#311A35',
+        color: '#333333',
         '&.Mui-selected': {
           color: 'white',
+          backgroundColor: '#663399',
+        },
+        '&:hover': {
+          backgroundColor: '#f5f5f5',
         },
       } as const,
     } as const,

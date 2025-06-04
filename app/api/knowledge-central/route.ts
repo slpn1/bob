@@ -40,10 +40,14 @@ export async function POST(request: NextRequest) {
       throw new Error(`Knowledge Central API error: ${response.status} ${response.statusText}`);
     }
 
-    const responseData = await response.text();
-    console.log('[KC API] Response data received, length:', responseData.length);
+    const responseData = await response.json();
+    console.log('[KC API] Response data received:', responseData);
     
-    return new NextResponse(responseData, {
+    // Extract the chat_output from the response
+    const chatOutput = responseData.chat_output || '';
+    console.log('[KC API] Extracted chat_output, length:', chatOutput.length);
+    
+    return new NextResponse(chatOutput, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain',
