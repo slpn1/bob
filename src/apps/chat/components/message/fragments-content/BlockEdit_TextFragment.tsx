@@ -130,8 +130,8 @@ export function BlockEdit_TextFragment(props: {
       startDecorator={props.inputLabel ? <small>{props.inputLabel}</small> : undefined}
       placeholder={'Edit the message...'}
       minRows={1.5} // unintuitive
-      // onFocus={() => setIsFocused(true)}
-      // onBlur={() => setIsFocused(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
       // onBlur={props.disableAutoSaveOnBlur ? undefined : handleEditBlur}
       onChange={handleEditTextChanged}
       onKeyDown={handleEditKeyDown}

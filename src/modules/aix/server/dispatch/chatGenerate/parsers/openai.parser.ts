@@ -391,6 +391,9 @@ function _fromOpenAIUsage(usage: OpenAIWire_API_Chat_Completions.Response['usage
   if (!usage)
     return undefined;
 
+  // Debug logging for Azure token usage (temporary)
+  console.log('[DEBUG] AIX: OpenAI usage object received:', JSON.stringify(usage, null, 2));
+
   // Require at least the completion tokens, or issue a DEV warning otherwise
   if (usage.completion_tokens === undefined) {
     // Warn, so we may adjust this usage parsing for Non-OpenAI APIs

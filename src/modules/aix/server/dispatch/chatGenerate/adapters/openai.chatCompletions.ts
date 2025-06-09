@@ -34,7 +34,7 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
   // Dialect incompatibilities -> Hotfixes
   const hotFixAlternateUserAssistantRoles = openAIDialect === 'deepseek' || openAIDialect === 'perplexity';
   const hotFixRemoveEmptyMessages = openAIDialect === 'perplexity';
-  const hotFixRemoveStreamOptions = openAIDialect === 'azure' || openAIDialect === 'mistral';
+  const hotFixRemoveStreamOptions = openAIDialect === 'mistral'; // Azure now supports stream_options since 2024-09-01-preview
   const hotFixSquashMultiPartText = openAIDialect === 'deepseek';
   const hotFixThrowCannotFC = openAIDialect === 'openrouter' /* OpenRouter FC support is not good (as of 2024-07-15) */ || openAIDialect === 'perplexity';
   const hotFixVndORIncludeReasoning = openAIDialect === 'openrouter'; // [OpenRouter, 2025-01-24] has a special `include_reasoning` field to show the chain of thought
