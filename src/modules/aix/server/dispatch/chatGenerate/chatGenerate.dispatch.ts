@@ -23,11 +23,22 @@ import { createOpenAIChatCompletionsChunkParser, createOpenAIChatCompletionsPars
  */
 export type ChatGenerateParseFunction = (partTransmitter: IParticleTransmitter, eventData: string, eventName?: string) => void;
 
+export interface UserContext {
+  email?: string | null;
+  name?: string | null;
+}
 
 /**
  * Specializes to the correct vendor a request for chat generation
  */
-export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, streaming: boolean, user = ""): {
+export function createChatGenerateDispatch(
+  access: AixAPI_Access, 
+  model: AixAPI_Model, 
+  chatGenerate: AixAPIChatGenerate_Request, 
+  streaming: boolean, 
+  user = "",
+  userContext?: UserContext | null
+): {
   request: { url: string, headers: HeadersInit, body: object },
   demuxerFormat: AixDemuxers.StreamDemuxerFormat;
   chatGenerateParse: ChatGenerateParseFunction;
@@ -76,7 +87,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
         // demuxerFormat: streaming ? 'json-nl' : null,
         demuxerFormat: streaming ? 'fast-sse' : null,
         // chatGenerateParse: createDispatchParserOllama(),
-        chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser() : createOpenAIChatCompletionsParserNS(),
+        chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser(userContext) : createOpenAIChatCompletionsParserNS(userContext),
       };
 
     case 'alibaba':
@@ -98,7 +109,7 @@ export function createChatGenerateDispatch(access: AixAPI_Access, model: AixAPI_
           body: aixToOpenAIChatCompletions(access.dialect, model, chatGenerate, false, streaming, user),
         },
         demuxerFormat: streaming ? 'fast-sse' : null,
-        chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser() : createOpenAIChatCompletionsParserNS(),
+        chatGenerateParse: streaming ? createOpenAIChatCompletionsChunkParser(userContext) : createOpenAIChatCompletionsParserNS(userContext),
       };
   }
 }

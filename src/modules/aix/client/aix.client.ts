@@ -3,7 +3,7 @@ import { findServiceAccessOrThrow } from '~/modules/llms/vendors/vendor.helpers'
 import type { DMessage, DMessageGenerator } from '~/common/stores/chat/chat.message';
 import type { MaybePromise } from '~/common/types/useful.types';
 import { DLLM, DLLMId, LLM_IF_HOTFIX_NoTemperature } from '~/common/stores/llms/llms.types';
-import { apiStream } from '~/common/util/trpc.client';
+import { apiStreamNode } from '~/common/util/trpc.client';
 import { DMetricsChatGenerate_Lg } from '~/common/stores/metrics/metrics.chatgenerate';
 import { DModelParameterValues, getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
 import { createErrorContentFragment, DMessageContentFragment, DMessageErrorPart, DMessageVoidFragment, isContentFragment, isErrorPart, createTextContentFragment } from '~/common/stores/chat/chat.fragments';
@@ -636,7 +636,7 @@ async function _aixChatGenerateContent_LL(
   try {
 
     // tRPC Aix Chat Generation (streaming) API - inside the try block for deployment path errors
-    const particles = await apiStream.aix.chatGenerateContent.mutate({
+    const particles = await apiStreamNode.aix.chatGenerateContent.mutate({
       access: aixAccess,
       model: aixModel,
       chatGenerate: aixChatGenerate,

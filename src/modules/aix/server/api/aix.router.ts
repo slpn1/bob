@@ -78,7 +78,10 @@ export const aixRouter = createTRPCRouter({
       // Prepare the dispatch requests
       let dispatch: ReturnType<typeof createChatGenerateDispatch>;
       try {
-        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming, userName);
+        // Extract user context for token logging
+        const userContext = ctx.user ? { email: ctx.user.email, name: ctx.user.name } : null;
+        
+        dispatch = createChatGenerateDispatch(access, model, chatGenerate, streaming, userName, userContext);
       } catch (error: any) {
         chatGenerateTx.setRpcTerminatingIssue('dispatch-prepare', `**[AIX Configuration Issue] ${prettyDialect}**: ${safeErrorString(error) || 'Unknown service preparation error'}`, false);
         yield* chatGenerateTx.flushParticles();

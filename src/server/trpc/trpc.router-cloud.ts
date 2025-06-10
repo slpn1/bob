@@ -1,5 +1,6 @@
 import { createTRPCRouter } from './trpc.server';
 
+import { aixRouter } from '~/modules/aix/server/api/aix.router';
 import { browseRouter } from '~/modules/browse/browse.router';
 import { tradeRouter } from '~/modules/trade/server/trade.router';
 
@@ -8,6 +9,7 @@ import { tradeRouter } from '~/modules/trade/server/trade.router';
  * NOTE: at the time of writing, the location is aws|us-east-1
  */
 export const appRouterCloud = createTRPCRouter({
+  aix: aixRouter,
   browse: browseRouter,
   trade: tradeRouter,
 });

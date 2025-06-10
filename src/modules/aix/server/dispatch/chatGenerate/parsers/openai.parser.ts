@@ -1,5 +1,6 @@
 import { safeErrorString } from '~/server/wire';
 import { serverSideId } from '~/server/trpc/trpc.nanoid';
+import { logTokenUsage } from '~/server/services/tokenUsageLogger';
 
 import type { AixWire_Particles } from '../../../api/aix.wiretypes';
 import type { ChatGenerateParseFunction } from '../chatGenerate.dispatch';
@@ -30,7 +31,7 @@ import { OpenAIWire_API_Chat_Completions } from '../../wiretypes/openai.wiretype
  *    - the temporal order of the chunks implies the beginning/end of a tool call.
  * - There's no explicit end in this data protocol, but it's handled in the caller with a sse:[DONE] event.
  */
-export function createOpenAIChatCompletionsChunkParser(): ChatGenerateParseFunction {
+export function createOpenAIChatCompletionsChunkParser(userContext?: { email?: string | null; name?: string | null } | null): ChatGenerateParseFunction {
   const parserCreationTimestamp = Date.now();
   let hasBegun = false;
   let hasWarned = false;
@@ -94,7 +95,7 @@ export function createOpenAIChatCompletionsChunkParser(): ChatGenerateParseFunct
 
     // -> Stats
     if (json.usage) {
-      const metrics = _fromOpenAIUsage(json.usage, parserCreationTimestamp, timeToFirstEvent);
+      const metrics = _fromOpenAIUsage(json.usage, parserCreationTimestamp, timeToFirstEvent, userContext, json.model);
       if (metrics)
         pt.updateMetrics(metrics);
       // [OpenAI] Expected correct case: the last object has usage, but an empty choices array
@@ -250,7 +251,7 @@ export function createOpenAIChatCompletionsChunkParser(): ChatGenerateParseFunct
 
 /// OpenAI non-streaming ChatCompletions
 
-export function createOpenAIChatCompletionsParserNS(): ChatGenerateParseFunction {
+export function createOpenAIChatCompletionsParserNS(userContext?: { email?: string | null; name?: string | null } | null): ChatGenerateParseFunction {
   const parserCreationTimestamp = Date.now();
   let progressiveCitationNumber = 1;
 
@@ -276,7 +277,7 @@ export function createOpenAIChatCompletionsParserNS(): ChatGenerateParseFunction
 
     // -> Stats
     if (json.usage) {
-      const metrics = _fromOpenAIUsage(json.usage, parserCreationTimestamp, undefined);
+      const metrics = _fromOpenAIUsage(json.usage, parserCreationTimestamp, undefined, userContext, json.model);
       if (metrics)
         pt.updateMetrics(metrics);
     }
@@ -385,14 +386,17 @@ function _fromOpenAIFinishReason(finish_reason: string | null | undefined) {
   return null;
 }
 
-function _fromOpenAIUsage(usage: OpenAIWire_API_Chat_Completions.Response['usage'], parserCreationTimestamp: number, timeToFirstEvent: number | undefined) {
+function _fromOpenAIUsage(
+  usage: OpenAIWire_API_Chat_Completions.Response['usage'], 
+  parserCreationTimestamp: number, 
+  timeToFirstEvent: number | undefined,
+  userContext?: { email?: string | null; name?: string | null } | null,
+  modelName?: string
+) {
 
   // -> Stats only in some packages
   if (!usage)
     return undefined;
-
-  // Debug logging for Azure token usage (temporary)
-  console.log('[DEBUG] AIX: OpenAI usage object received:', JSON.stringify(usage, null, 2));
 
   // Require at least the completion tokens, or issue a DEV warning otherwise
   if (usage.completion_tokens === undefined) {
@@ -408,6 +412,23 @@ function _fromOpenAIUsage(usage: OpenAIWire_API_Chat_Completions.Response['usage
     // dtInner: openAI is not reporting the time as seen by the servers
     dtAll: Date.now() - parserCreationTimestamp,
   };
+
+  // Log token usage to database (non-blocking)
+  if (userContext?.email && modelName && usage.completion_tokens !== undefined) {
+    const inputTokens = usage.prompt_tokens ?? 0;
+    const outputTokens = usage.completion_tokens;
+    
+    // Log asynchronously without blocking the response
+    logTokenUsage(
+      userContext.email,
+      modelName,
+      inputTokens,
+      outputTokens,
+      'chat'
+    ).catch(error => {
+      console.error('Failed to log token usage:', error);
+    });
+  }
 
   // Input Metrics
 
