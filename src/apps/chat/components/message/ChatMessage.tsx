@@ -707,7 +707,10 @@ export function ChatMessage(props: {
                         <MoreVertIcon />
                       </IconButton>
                   ) : null} */}
-                  <IconButton
+                  {!fromUser ? (
+                     null
+                  ) : fromUser ? (
+                      <IconButton
                           size='sm'
                           variant={opsMenuAnchor ? 'solid' : (zenMode && fromAssistant) ? 'plain' : 'soft'}
                           color={(fromAssistant || fromSystem) ? 'neutral' : 'primary'}
@@ -715,6 +718,7 @@ export function ChatMessage(props: {
                       >
                         <MoreVertIcon />
                       </IconButton>
+                  ) : null}
                 </Box>
 
                 {/* Assistant (llm/function) name */}
@@ -1018,7 +1022,7 @@ export function ChatMessage(props: {
                     <Switch checked={showDiff} onChange={handleOpsToggleShowDiff} sx={{ ml: 'auto' }} />
                   </MenuItem>
               )}
-              {/* Beam/Restart
+              {/* Beam/Restart */}
               {(!!props.onMessageAssistantFrom || !!props.onMessageBeam) && <ListDivider />}
               {!!props.onMessageAssistantFrom && (
                   <MenuItem disabled={fromSystem} onClick={handleOpsAssistantFrom}>
@@ -1030,7 +1034,7 @@ export function ChatMessage(props: {
                             : <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'space-between', gap: 1 }}>Retry<KeyStroke variant='outlined' combo='Ctrl + Shift + Z' /></Box>}
                   </MenuItem>
               )}
-              {!!props.onMessageBeam && (
+              {/* {!!props.onMessageBeam && (
                   <MenuItem disabled={fromSystem} onClick={handleOpsBeamFrom}>
                     <ListItemDecorator>
                       <ChatBeamIcon color={fromSystem ? undefined : 'primary'} />
