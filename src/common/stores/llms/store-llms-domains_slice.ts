@@ -193,7 +193,19 @@ function _autoModelConfiguration(domainId: DModelDomainId, allLlms: ReadonlyArra
 
   // First try to find the recommended model if specified
   if (domainSpec.recommended) {
-    const recommendedModel = allLlms.find(llm => llm.id === domainSpec.recommended);
+    // Try exact match first
+    let recommendedModel = allLlms.find(llm => llm.id === domainSpec.recommended);
+    
+    // If no exact match, try to find a model that contains the recommended model name
+    if (!recommendedModel) {
+      // Extract the base model name (e.g., "gpt-4.1" from "gpt-4.1-2025-04-14")
+      const baseModelName = domainSpec.recommended.split('-').slice(0, 2).join('-'); // Gets "gpt-4.1"
+      recommendedModel = allLlms.find(llm => 
+        llm.id.toLowerCase().includes(baseModelName.toLowerCase()) ||
+        llm.label.toLowerCase().includes(baseModelName.toLowerCase())
+      );
+    }
+    
     if (recommendedModel)
       return createDModelConfiguration(domainId, recommendedModel.id);
   }
