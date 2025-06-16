@@ -94,8 +94,8 @@ export async function checkAndUpdateAzureEndpoint() {
       const { llms } = llmsStoreState();
       const serviceModels = llms.filter(llm => llm.sId === service.id);
       
-      // Try to find GPT-4 Turbo first, then any GPT-4 model, then fall back to first available model
-      const defaultModel = serviceModels.find(m => m.label.toLowerCase().includes('gpt-4-turbo')) || 
+      // Try to find GPT-4.1 first, then any GPT-4 model, then fall back to first available model
+      const defaultModel = serviceModels.find(m => m.label.toLowerCase().includes('gpt-4.1')) || 
                          serviceModels.find(m => m.label.toLowerCase().includes('gpt-4')) ||
                          serviceModels[0];
 
