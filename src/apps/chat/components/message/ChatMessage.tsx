@@ -695,7 +695,7 @@ export function ChatMessage(props: {
                     onMouseLeave={props.isMobile ? undefined : () => setIsHovering(false)}
                     sx={personaAvatarOrMenuSx}
                 >
-                  {showAvatarIcon && !isHovering && !opsMenuAnchor && fromUser ? (
+                  {/* {showAvatarIcon && !isHovering && !opsMenuAnchor && fromUser ? (
                       messageAvatarIcon
                   ) : fromUser ? (
                       <IconButton
@@ -706,7 +706,15 @@ export function ChatMessage(props: {
                       >
                         <MoreVertIcon />
                       </IconButton>
-                  ) : null}
+                  ) : null} */}
+                  <IconButton
+                          size='sm'
+                          variant={opsMenuAnchor ? 'solid' : (zenMode && fromAssistant) ? 'plain' : 'soft'}
+                          color={(fromAssistant || fromSystem) ? 'neutral' : 'primary'}
+                          sx={avatarIconSx}
+                      >
+                        <MoreVertIcon />
+                      </IconButton>
                 </Box>
 
                 {/* Assistant (llm/function) name */}
@@ -1010,7 +1018,7 @@ export function ChatMessage(props: {
                     <Switch checked={showDiff} onChange={handleOpsToggleShowDiff} sx={{ ml: 'auto' }} />
                   </MenuItem>
               )}
-              {/* Beam/Restart */}
+              {/* Beam/Restart
               {(!!props.onMessageAssistantFrom || !!props.onMessageBeam) && <ListDivider />}
               {!!props.onMessageAssistantFrom && (
                   <MenuItem disabled={fromSystem} onClick={handleOpsAssistantFrom}>
@@ -1033,7 +1041,7 @@ export function ChatMessage(props: {
                             ? <>Beam Edit</>
                             : <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'space-between', gap: 1 }}>Beam Edit<KeyStroke variant='outlined' combo='Ctrl + Shift + B' /></Box>}
                   </MenuItem>
-              )}
+              )} */}
             </CloseablePopup>
         )}
 
