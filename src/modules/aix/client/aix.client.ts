@@ -13,6 +13,7 @@ import { presentErrorToHumans } from '~/common/util/errorUtils';
 import { webGeolocationCached } from '~/common/util/webGeolocationUtils';
 import { useSession } from 'next-auth/react';
 
+
 // NOTE: pay particular attention to the "import type", as this is importing from the server-side Zod definitions
 import type { AixAPI_Access, AixAPI_Context_ChatGenerate, AixAPI_Model, AixAPIChatGenerate_Request } from '../server/api/aix.wiretypes';
 
@@ -434,6 +435,8 @@ export async function aixChatGenerateContent_DMessage<TServiceSettings extends o
   onStreamingUpdate?: (update: AixChatGenerateContent_DMessage, isDone: boolean) => MaybePromise<void>,
   userName?: string,
 ): Promise<AixChatGenerateContent_DMessage> {
+
+
 
   // Aix Access
   const llm = findLLMOrThrow(llmId);

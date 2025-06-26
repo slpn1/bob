@@ -10,6 +10,7 @@ import { ChatGenerateTransmitter } from '../dispatch/chatGenerate/ChatGenerateTr
 import { PerformanceProfiler } from '../dispatch/PerformanceProfiler';
 import { createChatGenerateDispatch } from '../dispatch/chatGenerate/chatGenerate.dispatch';
 import { heartbeatsWhileAwaiting } from '../dispatch/heartbeatsWhileAwaiting';
+import { logQuestion } from '~/server/services/questionLogger';
 
 
 /**
@@ -40,6 +41,26 @@ export const aixRouter = createTRPCRouter({
     }))
     .mutation(async function* ({ input, ctx }): AsyncGenerator<AixWire_Particles.ChatGenerateOp> {
 
+      // Log the user question to the database
+      try {
+        const lastUserMessage = input.chatGenerate.chatSequence
+          .filter(msg => msg.role === 'user')
+          .pop();
+        
+        if (lastUserMessage) {
+          const questionText = lastUserMessage.parts
+            .filter(part => part.pt === 'text')
+            .map(part => (part as any).text)
+            .join('\n');
+          
+          if (questionText.trim()) {
+            await logQuestion(questionText);
+          }
+        }
+      } catch (error) {
+        console.error('Error logging question:', error);
+        // Don't fail the chat generation if logging fails
+      }
 
       // Intake derived state
       const intakeAbortSignal = ctx.reqSignal;

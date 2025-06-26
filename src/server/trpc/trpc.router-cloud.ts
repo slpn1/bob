@@ -2,6 +2,7 @@ import { createTRPCRouter } from './trpc.server';
 
 import { aixRouter } from '~/modules/aix/server/api/aix.router';
 import { browseRouter } from '~/modules/browse/browse.router';
+import { reportsRouter } from '~/modules/reports/reports.router';
 import { tradeRouter } from '~/modules/trade/server/trade.router';
 
 /**
@@ -11,6 +12,7 @@ import { tradeRouter } from '~/modules/trade/server/trade.router';
 export const appRouterCloud = createTRPCRouter({
   aix: aixRouter,
   browse: browseRouter,
+  reports: reportsRouter,
   trade: tradeRouter,
 });
 
