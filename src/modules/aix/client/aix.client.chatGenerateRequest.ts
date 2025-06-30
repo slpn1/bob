@@ -1,10 +1,11 @@
-import { getImageAsset } from '~/modules/dblobs/dblobs.images';
+import { getImageAsset } from '~/common/stores/blob/dblobs-portability';
 
 import { DLLM, LLM_IF_HOTFIX_NoStream, LLM_IF_HOTFIX_StripImages, LLM_IF_HOTFIX_StripSys0, LLM_IF_HOTFIX_Sys0ToUsr0 } from '~/common/stores/llms/llms.types';
 import { DMessage, DMessageRole, DMetaReferenceItem, MESSAGE_FLAG_AIX_SKIP, MESSAGE_FLAG_VND_ANT_CACHE_AUTO, MESSAGE_FLAG_VND_ANT_CACHE_USER, messageHasUserFlag } from '~/common/stores/chat/chat.message';
 import { DMessageFragment, DMessageImageRefPart, isAttachmentFragment, isContentOrAttachmentFragment, isDocPart, isTextContentFragment, isToolResponseFunctionCallPart, isVoidThinkingFragment } from '~/common/stores/chat/chat.fragments';
 import { Is } from '~/common/util/pwaUtils';
-import { LLMImageResizeMode, resizeBase64ImageIfNeeded } from '~/common/util/imageUtils';
+import { convert_Base64WithMimeType_To_Blob, convert_Blob_To_Base64 } from '~/common/util/blobUtils';
+import { imageBlobResizeIfNeeded, LLMImageResizeMode } from '~/common/util/imageUtils';
 
 // NOTE: pay particular attention to the "import type", as this is importing from the server-side Zod definitions
 import type { AixAPIChatGenerate_Request, AixMessages_ModelMessage, AixMessages_ToolMessage, AixMessages_UserMessage, AixParts_InlineImagePart, AixParts_MetaCacheControl, AixParts_MetaInReferenceToPart, AixParts_ModelAuxPart } from '../server/api/aix.wiretypes';
@@ -15,6 +16,7 @@ import type { AixAPIChatGenerate_Request, AixMessages_ModelMessage, AixMessages_
 // configuration
 const MODEL_IMAGE_RESCALE_MIMETYPE = !Is.Browser.Safari ? 'image/webp' : 'image/jpeg';
 const MODEL_IMAGE_RESCALE_QUALITY = 0.90;
+const IGNORE_CGR_NO_IMAGE_DEREFERENCE = true; // set to false to raise an exception, otherwise the CGR will continue skipping the part
 
 
 // AIX <> Simple Text API helpers
@@ -138,7 +140,12 @@ export async function aixCGR_ChatSequence_FromDMessagesOrThrow(
 
           case 'image_ref':
             // note, we don't resize, as the user image is resized following the user's preferences
-            uMsg.parts.push(await _convertImageRefToInlineImageOrThrow(uFragment.part, false));
+            try {
+              uMsg.parts.push(await aixConvertImageRefToInlineImageOrThrow(uFragment.part, false));
+            } catch (error: any) {
+              if (IGNORE_CGR_NO_IMAGE_DEREFERENCE) console.warn(`Image from the user missing in the chat generation request because: ${error?.message || error?.toString() || 'Unknown error'} - continuing without`);
+              else throw error;
+            }
             break;
 
           case 'doc':
@@ -223,7 +230,12 @@ export async function aixCGR_ChatSequence_FromDMessagesOrThrow(
              */
             const isLastAssistantMessage = _index === lastAssistantMessageIndex;
             const resizeMode = isLastAssistantMessage ? false : 'openai-low-res';
-            modelMessage.parts.push(await _convertImageRefToInlineImageOrThrow(aFragment.part, resizeMode));
+            try {
+              modelMessage.parts.push(await aixConvertImageRefToInlineImageOrThrow(aFragment.part, resizeMode));
+            } catch (error: any) {
+              if (IGNORE_CGR_NO_IMAGE_DEREFERENCE) console.warn(`Image from the assistant missing in the chat generation request because: ${error?.message || error?.toString() || 'Unknown error'} - continuing without`);
+              else throw error;
+            }
             break;
 
           case 'tool_response':
@@ -291,7 +303,7 @@ export async function aixCGR_ChatSequence_FromDMessagesOrThrow(
 
 /// Parts that differ from DMessage*Part to AIX
 
-async function _convertImageRefToInlineImageOrThrow(imageRefPart: DMessageImageRefPart, resizeMode: LLMImageResizeMode | false): Promise<AixParts_InlineImagePart> {
+export async function aixConvertImageRefToInlineImageOrThrow(imageRefPart: DMessageImageRefPart, resizeMode: LLMImageResizeMode | false): Promise<AixParts_InlineImagePart> {
 
   // validate
   const { dataRef } = imageRefPart;
@@ -307,13 +319,24 @@ async function _convertImageRefToInlineImageOrThrow(imageRefPart: DMessageImageR
     throw new Error('Image asset not found');
   }
 
-  // convert if requested
+  // base64 -> blob conversion
   let { mimeType, base64: base64Data } = imageAsset.data;
+
+  // convert if requested (with intermediate Blob transformation)
   if (resizeMode) {
-    const resizedData = await resizeBase64ImageIfNeeded(mimeType, base64Data, resizeMode, MODEL_IMAGE_RESCALE_MIMETYPE, MODEL_IMAGE_RESCALE_QUALITY).catch(() => null);
-    if (resizedData) {
-      base64Data = resizedData.base64;
-      mimeType = resizedData.mimeType as any;
+    try {
+      // convert base64 -> Blob
+      const imageBlob = await convert_Base64WithMimeType_To_Blob(base64Data, mimeType, 'aixConvertImageRefToInlineImage');
+      // resize Blob
+      const resizedOp = await imageBlobResizeIfNeeded(imageBlob, resizeMode, MODEL_IMAGE_RESCALE_MIMETYPE, MODEL_IMAGE_RESCALE_QUALITY);
+      if (resizedOp) {
+        // if resized, convert resized Blob back to base64
+        base64Data = await convert_Blob_To_Base64(resizedOp.blob, 'aixConvertImageRefToInlineImage');
+        mimeType = resizedOp.blob.type as any;
+      }
+    } catch (resizeError) {
+      console.warn('[DEV] aixConvertImageRefToInlineImageOrThrow: Error resizing image:', resizeError);
+      // continue without resizing, as this is not critical
     }
   }
 

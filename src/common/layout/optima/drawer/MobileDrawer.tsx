@@ -5,6 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 import type { NavItemApp } from '~/common/app.nav';
 
+import { MobileNavItems } from '../nav/MobileNavItems';
 import { OPTIMA_DRAWER_BACKGROUND, OPTIMA_DRAWER_MOBILE_RADIUS } from '../optima.config';
 import { optimaCloseDrawer, optimaOpenDrawer, useOptimaDrawerOpen } from '../useOptima';
 import { useOptimaPortalOutRef } from '../portals/useOptimaPortalOutRef';
@@ -16,9 +17,16 @@ function DrawerContentPortal() {
     <Box
       ref={drawerPortalRef}
       sx={{
+        // make this compressible
+        overflow: 'hidden',
+        // expand to fix - note: relies on contents being scrollable
         flex: 1,
+        // layout: column
         display: 'flex',
         flexDirection: 'column',
+        // (optional) style: cast shadow to the nav items
+        // zIndex: 1,
+        // boxShadow: '0 2px 4px rgb(var(--joy-palette-neutral-darkChannel) / 14%)',
       }}
     />
   );
@@ -43,58 +51,44 @@ export function MobileDrawer(props: { component: React.ElementType, currentApp?:
    * See also `windowUtils.useDocumentFocusDebugger` for debugging focus issues.
    */
   return (
-    <>
-      {/* Toggle button - only visible when drawer is closed */}
-      {!isDrawerOpen && (
-        <IconButton
-          onClick={optimaOpenDrawer}
-          size="md"
-          variant="solid"
-          color="primary"
-          sx={{
-            position: 'fixed',
-            top: '1rem',
-            left: '1rem',
-            zIndex: 1100,
-            borderRadius: '50%',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-      )}
-      
-      <Drawer
-        id='mobile-drawer'
-        component={props.component}
-        disableEnforceFocus
-        open={isDrawerOpen}
-        onClose={optimaCloseDrawer}
-        sx={{
-          '--Drawer-horizontalSize': 'min(300px, 80%)',
-          '--Drawer-transitionDuration': '0.3s',
-          zIndex: 1200,
-        }}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backdropFilter: 'blur(4px)',
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            }
+    <Drawer
+      id='mobile-drawer'
+      component={props.component}
+      disableEnforceFocus
+      open={isDrawerOpen}
+      onClose={optimaCloseDrawer}
+      sx={{
+        '--Drawer-horizontalSize': 'round(clamp(30%, var(--AGI-Mobile-Drawer-width), 100%), 1px)',
+        '--Drawer-transitionDuration': '0.2s',
+        // '& .MuiDrawer-paper': {
+        //   width: 256,
+        //   boxSizing: 'border-box',
+        // },
+      }}
+      slotProps={{
+        backdrop: {
+          sx: {
+            backdropFilter: 'none',
           },
-          content: {
-            sx: {
-              // style: round the right drawer corners
-              backgroundColor: OPTIMA_DRAWER_BACKGROUND,
-              borderTopRightRadius: OPTIMA_DRAWER_MOBILE_RADIUS,
-              borderBottomRightRadius: OPTIMA_DRAWER_MOBILE_RADIUS,
-              boxShadow: '0 0 20px rgba(0,0,0,0.3)',
-            },
+        },
+        content: {
+          sx: {
+            // style: round the right drawer corners
+            backgroundColor: OPTIMA_DRAWER_BACKGROUND,
+            borderTopRightRadius: OPTIMA_DRAWER_MOBILE_RADIUS,
+            borderBottomRightRadius: OPTIMA_DRAWER_MOBILE_RADIUS,
+            // boxShadow: 'none',
           },
-        }}
-      >
-        <DrawerContentPortal />
-      </Drawer>
-    </>
+        },
+      }}
+    >
+
+      {/* Insertion point for the Drawer - expands even if empty */}
+      <DrawerContentPortal />
+
+      {/* [Mobile] Nav Items */}
+      <MobileNavItems currentApp={props.currentApp} />
+
+    </Drawer>
   );
 }

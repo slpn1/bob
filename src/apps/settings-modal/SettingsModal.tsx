@@ -290,7 +290,7 @@ export function SettingsModal(props: {
             <Topic>
               <T2ISettings />
             </Topic>
-            <Topic icon='🖍️️' title='OpenAI DALL·E'>
+            <Topic icon='🖍️️' title='OpenAI'>
               <DallESettings />
             </Topic>
             {isAdmin && (

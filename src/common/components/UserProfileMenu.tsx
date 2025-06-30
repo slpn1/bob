@@ -90,7 +90,7 @@ export function UserProfileMenu() {
             {userInitial || <PersonIcon />}
           </Avatar>
           <Typography 
-            level="body-sm" 
+            level="body-md" 
             sx={{ 
               fontWeight: 'md',
               overflow: 'hidden',

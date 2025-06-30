@@ -121,6 +121,10 @@ const antCachePromptOnSx: SxProps = {
 };
 
 
+export interface ChatMessageFunctionsHandle {
+  beginEditTextContent: () => void;
+}
+
 export type ChatMessageTextPartEditState = { [fragmentId: DMessageFragmentId]: string };
 
 export const ChatMessageMemo = React.memo(ChatMessage);
@@ -134,6 +138,7 @@ export const ChatMessageMemo = React.memo(ChatMessage);
  *
  */
 export function ChatMessage(props: {
+  actionsRef?: React.Ref<ChatMessageFunctionsHandle>,
   message: DMessage,
   diffPreviousText?: string,
   fitScreen: boolean,
@@ -224,6 +229,11 @@ export function ChatMessage(props: {
   const couldDiagram = textSubject.length >= 100 && !isSpecialT2I;
   const couldImagine = textSubject.length >= 3 && !isSpecialT2I;
   const couldSpeak = couldImagine;
+
+  const userCommandApprox = !fromUser ? false
+    : fragmentFlattenedText.startsWith('/draw ') ? 'draw'
+      : fragmentFlattenedText.startsWith('/react ') ? 'react'
+        : false;
 
 
   // TODO: fix the diffing
@@ -522,6 +532,15 @@ export function ChatMessage(props: {
   }, [closeBubble]);
 
 
+  // Expose actions handle for parent components
+  React.useImperativeHandle(props.actionsRef, () => ({
+    beginEditTextContent: () => {
+      if (!isEditingText && props.onMessageFragmentReplace && !messagePendingIncomplete)
+        handleEditsBegin();
+    },
+  }), [handleEditsBegin, isEditingText, messagePendingIncomplete, props.onMessageFragmentReplace]);
+
+
   // Blocks renderer
 
   const handleBlocksContextMenu = React.useCallback((event: React.MouseEvent) => {
@@ -563,7 +582,7 @@ export function ChatMessage(props: {
 
 
   // style
-  const backgroundColor = messageBackground(messageRole, messageHasBeenEdited, false /*isAssistantError && !errorMessage*/);
+  const backgroundColor = messageBackground(messageRole, userCommandApprox, messageHasBeenEdited, false /*isAssistantError && !errorMessage*/);
 
   const listItemSx: SxProps = React.useMemo(() => ({
     // vars
@@ -640,7 +659,7 @@ export function ChatMessage(props: {
     display: 'block', // this is Needed, otherwise there will be a horizontal overflow
 
     ...props.sx,
-  }), [adjContentScaling, backgroundColor, isEditingText, isUserMessageSkipped, isUserStarred, isVndAndCacheAuto, isVndAndCacheUser, props.sx, uiComplexityMode]);
+  }), [adjContentScaling, backgroundColor, isEditingText, isUserMessageSkipped, isUserStarred, isVndAndCacheAuto, isVndAndCacheUser, props.isBottom, props.sx, uiComplexityMode]);
 
 
   // avatar icon & label & tooltip
@@ -770,16 +789,16 @@ export function ChatMessage(props: {
                 <InReferenceToList items={messageMetadata.inReferenceTo} />
             )}
 
-            {/* Image Attachment Fragments - just for a prettier display on top of the message */}
-            {imageAttachments.length >= 1 && (
-                <ImageAttachmentFragments
-                    imageAttachments={imageAttachments}
-                    contentScaling={adjContentScaling}
-                    messageRole={messageRole}
-                    disabled={isEditingText}
-                    onFragmentDelete={handleFragmentDelete}
-                />
-            )}
+          {/* Image Attachment Fragments - just for a prettier display on top of the message */}
+          {imageAttachments.length >= 1 && (
+            <ImageAttachmentFragments
+              imageAttachments={imageAttachments}
+              contentScaling={adjContentScaling}
+              messageRole={messageRole}
+              disabled={isEditingText}
+              onFragmentDelete={!props.onMessageFragmentDelete ? undefined : handleFragmentDelete}
+            />
+          )}
 
           {/* Void Fragments */}
           {voidFragments.length >= 1 && (
@@ -812,29 +831,29 @@ export function ChatMessage(props: {
                 onEditsApply={handleApplyAllEdits}
                 onEditsCancel={handleEditsCancel}
 
-                onFragmentBlank={handleFragmentNew}
-                onFragmentDelete={handleFragmentDelete}
-                onFragmentReplace={!props.onMessageFragmentReplace ? undefined : handleFragmentReplace}
-                onMessageDelete={props.onMessageDelete ? handleOpsDelete : undefined}
+            onFragmentAddBlank={!props.onMessageFragmentAppend ? undefined : handleFragmentNew}
+            onFragmentDelete={!props.onMessageFragmentDelete ? undefined : handleFragmentDelete}
+            onFragmentReplace={!props.onMessageFragmentReplace ? undefined : handleFragmentReplace}
+            onMessageDelete={!props.onMessageDelete ? undefined : handleOpsDelete}
 
                 onContextMenu={(props.onMessageFragmentReplace && ENABLE_CONTEXT_MENU) ? handleBlocksContextMenu : undefined}
                 onDoubleClick={(props.onMessageFragmentReplace /*&& doubleClickToEdit disabled, as we may have shift too */) ? handleBlocksDoubleClick : undefined}
             />
 
-            {/* Document Fragments */}
-            {nonImageAttachments.length >= 1 && (
-                <DocumentAttachmentFragments
-                    attachmentFragments={nonImageAttachments}
-                    messageRole={messageRole}
-                    contentScaling={adjContentScaling}
-                    isMobile={props.isMobile}
-                    zenMode={zenMode}
-                    allowSelection={!isEditingText}
-                    disableMarkdownText={disableMarkdown}
-                    onFragmentDelete={handleFragmentDelete}
-                    onFragmentReplace={handleFragmentReplace}
-                />
-            )}
+          {/* Document Fragments */}
+          {nonImageAttachments.length >= 1 && (
+            <DocumentAttachmentFragments
+              attachmentFragments={nonImageAttachments}
+              messageRole={messageRole}
+              contentScaling={adjContentScaling}
+              isMobile={props.isMobile}
+              zenMode={zenMode}
+              allowSelection={!isEditingText}
+              disableMarkdownText={disableMarkdown}
+              onFragmentDelete={!props.onMessageFragmentDelete ? undefined : handleFragmentDelete}
+              onFragmentReplace={!props.onMessageFragmentReplace ? undefined : handleFragmentReplace}
+            />
+          )}
 
             {/* Continue... */}
             {props.isBottom && messageGenerator?.tokenStopReason === 'out-of-tokens' && !!props.onMessageContinue && (

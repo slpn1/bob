@@ -15,7 +15,7 @@ export function LogoutButton() {
     }}>
         <Box sx={{ position: 'absolute', mx: 0.75, mt: 0 }}>
             <Typography sx={{
-                fontSize: 12,
+                fontSize: 14,
                 color: '#291A2D',
                 mb: -0.5,
             }}>Welcome {session?.user?.name}.</Typography> <Link sx={{

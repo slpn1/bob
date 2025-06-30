@@ -41,7 +41,7 @@ export function LogEntryDetails(props: {
 
   return (
     <Card variant='outlined' sx={{ backgroundColor: 'background.popup' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography level='title-md'>{entry.message}</Typography>
         <Button
           size='sm'
@@ -63,7 +63,13 @@ export function LogEntryDetails(props: {
         <Box fontWeight='bold'>Source:</Box>
         <div>{entry.source}</div>
         <Box fontWeight='bold'>Time:</Box>
-        <div style={{ gridColumn: 'span 2' }}>{_formatTime(entry.timestamp)}</div>
+        <div>{_formatTime(entry.timestamp)}</div>
+        {entry.repetitionCount && (
+          <>
+            <Box fontWeight='bold'>Repetitions:</Box>
+            <div>{entry.repetitionCount} times</div>
+          </>
+        )}
       </Box>
 
       {/* Log Details */}

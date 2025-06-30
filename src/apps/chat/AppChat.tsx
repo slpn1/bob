@@ -2,7 +2,7 @@ import * as React from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 
 import type { SxProps } from '@mui/joy/styles/types';
-import { useTheme } from '@mui/joy';
+import { Box, useTheme } from '@mui/joy';
 
 import { DEV_MODE_SETTINGS } from '../settings-modal/UxLabsSettings';
 import { DiagramConfig, DiagramsModal } from '~/modules/aifn/digrams/DiagramsModal';
@@ -18,6 +18,7 @@ import type { DConversation, DConversationId } from '~/common/stores/chat/chat.c
 import type { OptimaBarControlMethods } from '~/common/layout/optima/bar/OptimaBarDropdown';
 import { ConfirmationModal } from '~/common/components/modals/ConfirmationModal';
 import { ConversationsManager } from '~/common/chat-overlay/ConversationsManager';
+import { ErrorBoundary } from '~/common/components/ErrorBoundary';
 import { LLM_IF_ANT_PromptCaching, LLM_IF_OAI_Vision } from '~/common/stores/llms/llms.types';
 import { OptimaDrawerIn, OptimaPanelIn, OptimaToolbarIn } from '~/common/layout/optima/portals/OptimaPortalsIn';
 import { PanelResizeInset } from '~/common/components/panes/GoodPanelResizeHandler';
@@ -27,13 +28,13 @@ import { ScrollToBottomButton } from '~/common/scroll-to-bottom/ScrollToBottomBu
 import { ShortcutKey, useGlobalShortcuts } from '~/common/components/shortcuts/useGlobalShortcuts';
 import { WorkspaceIdProvider } from '~/common/stores/workspace/WorkspaceIdProvider';
 import { addSnackbar, removeSnackbar } from '~/common/components/snackbar/useSnackbarsStore';
+import { themeBgAppChatComposer } from '~/common/app.theme';
 import { createDMessageFromFragments, createDMessagePlaceholderIncomplete, DMessageMetadata, duplicateDMessageMetadata } from '~/common/stores/chat/chat.message';
 import { createErrorContentFragment, createTextContentFragment, DMessageAttachmentFragment, DMessageContentFragment, duplicateDMessageFragments } from '~/common/stores/chat/chat.fragments';
 import { gcChatImageAssets } from '~/common/stores/chat/chat.gc';
 import { getChatLLMId } from '~/common/stores/llms/store-llms';
 import { getConversation, getConversationSystemPurposeId, useConversation } from '~/common/stores/chat/store-chats';
 import { optimaActions, optimaOpenModels, optimaOpenPreferences } from '~/common/layout/optima/useOptima';
-import { themeBgAppChatComposer } from '~/common/app.theme';
 import { useFolderStore } from '~/common/stores/folders/store-chat-folders';
 import { useIsMobile, useIsTallScreen } from '~/common/components/useMatchMedia';
 import { useLLM } from '~/common/stores/llms/llms.hooks';
@@ -52,6 +53,7 @@ import { ChatDrawerMemo } from './components/layout-drawer/ChatDrawer';
 import { ChatMessageList } from './components/ChatMessageList';
 import { Composer } from './components/composer/Composer';
 import { PaneTitleOverlay } from './components/PaneTitleOverlay';
+import { useComposerAutoHide } from './components/composer/useComposerAutoHide';
 import { usePanesManager } from './components/panes/store-panes-manager';
 
 import type { ChatExecuteMode } from './execute-mode/execute-mode.types';
@@ -89,6 +91,8 @@ const chatMessageListSx: SxProps = {
 
 const chatBeamWrapperSx: SxProps = {
   flexGrow: 1,
+  // we added these after removing the minSize={20} (%) from the containing panel.
+  minWidth: '18rem',
   // minHeight: 'calc(100vh - 69px - var(--AGI-Nav-width))',
 };
 
@@ -99,12 +103,20 @@ const composerOpenSx: SxProps = {
   backgroundColor: themeBgAppChatComposer,
   borderTopColor: 'rgba(var(--joy-palette-neutral-mainChannel, 99 107 116) / 0.4)',
   // hack: eats the bottom of the last message (as it has a 1px divider)
-  mt: '-1px',
-};
+  // NOTE: commented on 2024-05-13, as other content was stepping on the border due to it and missing zIndex
+  // mt: '-1px',
+} as const;
 
-const composerClosedSx: SxProps = {
-  display: 'none',
-};
+const composerOpenMobileSx: SxProps = {
+  zIndex: 21, // allocates the surface, possibly enables shadow if we like
+  pt: 0.5, // have some breathing room
+  // boxShadow: '0px -1px 8px -2px rgba(0, 0, 0, 0.4)',
+  ...composerOpenSx,
+} as const;
+
+// const composerClosedSx: SxProps = {
+//   display: 'none',
+// };
 
 
 export function AppChat() {
@@ -124,6 +136,7 @@ export function AppChat() {
 
   // external state
   const theme = useTheme();
+  const [composerHasContent, setComposerHasContent] = React.useState(false);
 
   const isMobile = useIsMobile();
   const isTallScreen = useIsTallScreen();
@@ -186,7 +199,7 @@ export function AppChat() {
   // const focusedConversationWorkspaceId = workspaceForConversationIdentity(focusedPaneConversationId);
   //// const focusedConversationWorkspace = useWorkspaceIdForConversation(focusedPaneConversationId);
 
-  const { mayWork: capabilityHasT2I } = useCapabilityTextToImage();
+  const { mayWork: capabilityHasT2I, mayEdit: capabilityHasT2IEdit } = useCapabilityTextToImage();
 
   const activeFolderId = useFolderStore(({ enableFolders, folders }) => {
     const activeFolderId = enableFolders ? _activeFolderId : null;
@@ -194,6 +207,9 @@ export function AppChat() {
     return activeFolder?.id ?? null;
   });
 
+  // Composer Auto-hiding
+  const forceComposerHide = !!beamOpenStoreInFocusedPane;
+  const composerAutoHide = useComposerAutoHide(forceComposerHide, composerHasContent);
 
   // Window actions
 
@@ -226,7 +242,7 @@ export function AppChat() {
     else if (outcome === 'err-t2i-unconfigured')
       optimaOpenPreferences('draw');
     else if (outcome === 'err-no-persona')
-      addSnackbar({ key: 'chat-no-persona', message: 'No persona selected.', type: 'issue' });
+      addSnackbar({ key: 'chat-no-persona', message: 'No persona selected.', type: 'issue', overrides: { autoHideDuration: 4000 } });
     else if (outcome === 'err-no-conversation')
       addSnackbar({ key: 'chat-no-conversation', message: 'No active conversation.', type: 'issue' });
     else if (outcome === 'err-no-last-message')
@@ -344,9 +360,10 @@ export function AppChat() {
       useFolderStore.getState().addConversationToFolder(activeFolderId, conversationId);
 
     // focus the composer
-    composerTextAreaRef.current?.focus();
+    if (!isMobile)
+      composerTextAreaRef.current?.focus();
 
-  }, [activeFolderId, focusedPaneConversationId, handleOpenConversationInFocusedPane, prependNewConversation, recycleNewConversationId]);
+  }, [activeFolderId, focusedPaneConversationId, handleOpenConversationInFocusedPane, isMobile, prependNewConversation, recycleNewConversationId]);
 
   const handleConversationImportDialog = React.useCallback(() => setTradeConfig({ dir: 'import' }), []);
 
@@ -447,11 +464,11 @@ export function AppChat() {
   const barAltTitle = showAltTitleBar ? focusedChatTitle ?? 'No Chat' : null;
 
   const focusedBarContent = React.useMemo(() => beamOpenStoreInFocusedPane
-      ? <ChatBarAltBeam beamStore={beamOpenStoreInFocusedPane} isMobile={isMobile} />
+      ? <ChatBarAltBeam conversationTitle={focusedChatTitle ?? 'No Chat'} beamStore={beamOpenStoreInFocusedPane} isMobile={isMobile} />
       : (barAltTitle === null)
         ? <ChatBarDropdowns conversationId={focusedPaneConversationId} llmDropdownRef={llmDropdownRef} personaDropdownRef={personaDropdownRef} />
         : <ChatBarAltTitle conversationId={focusedPaneConversationId} conversationTitle={barAltTitle} />
-    , [barAltTitle, beamOpenStoreInFocusedPane, focusedPaneConversationId, isMobile],
+    , [barAltTitle, beamOpenStoreInFocusedPane, focusedChatTitle, focusedPaneConversationId, isMobile],
   );
 
 
@@ -615,7 +632,7 @@ export function AppChat() {
         const _panesCount = chatPanes.length;
         const _keyAndId = `chat-pane-${pane.paneId}`;
         const _sepId = `sep-pane-${idx}`;
-        return <WorkspaceIdProvider conversationId={_paneIsFocused ? _paneConversationId : null} key={_keyAndId}>
+        return <WorkspaceIdProvider conversationId={_paneIsFocused ? _paneConversationId : null} key={_keyAndId}><ErrorBoundary>
 
           <Panel
             id={_keyAndId}
@@ -624,8 +641,10 @@ export function AppChat() {
             defaultSize={(_panesCount === 3 && idx === 1) ? 34 : Math.round(100 / _panesCount)}
             // minSize={20 /* IMPORTANT: this forces a reflow even on a simple on hover */}
             onClick={(event) => {
-              const setFocus = chatPanes.length < 2 || !event.altKey;
-              setFocusedPaneIndex(setFocus ? idx : -1);
+              // Alt + Click: undocumented feature to clear focus
+              if (event.altKey && chatPanes.length > 1)
+                return setFocusedPaneIndex(-1);
+              setFocusedPaneIndex(idx);
             }}
             onCollapse={() => {
               // NOTE: despite the delay to try to let the draggin settle, there seems to be an issue with the Pane locking the screen
@@ -727,25 +746,36 @@ export function AppChat() {
             </PanelResizeHandle>
           )}
 
-        </WorkspaceIdProvider>;
+        </ErrorBoundary></WorkspaceIdProvider>;
       })}
 
     </PanelGroup>
 
-    <Composer
-      isMobile={isMobile}
-      chatLLM={chatLLM}
-      composerTextAreaRef={composerTextAreaRef}
-      targetConversationId={focusedPaneConversationId}
-      capabilityHasT2I={capabilityHasT2I}
-      isMulticast={!isMultiConversationId ? null : isComposerMulticast}
-      isDeveloperMode={isFocusedChatDeveloper}
-      onAction={handleComposerAction}
-      onConversationsImportFromFiles={handleConversationsImportFromFiles}
-      onTextImagine={handleImagineFromText}
-      setIsMulticast={setIsComposerMulticast}
-      sx={beamOpenStoreInFocusedPane ? composerClosedSx : composerOpenSx}
-    />
+    {/* Composer with auto-hide */}
+    <Box {...composerAutoHide.compressorProps}>
+      <div style={composerAutoHide.compressibleStyle}>
+        <Composer
+          isMobile={isMobile}
+          chatLLM={chatLLM}
+          composerTextAreaRef={composerTextAreaRef}
+          targetConversationId={focusedPaneConversationId}
+          capabilityHasT2I={capabilityHasT2I}
+          capabilityHasT2IEdit={capabilityHasT2IEdit}
+          isMulticast={!isMultiConversationId ? null : isComposerMulticast}
+          isDeveloperMode={isFocusedChatDeveloper}
+          onAction={handleComposerAction}
+          onConversationBeamEdit={handleMessageBeamLastInFocusedPane}
+          onConversationsImportFromFiles={handleConversationsImportFromFiles}
+          onTextImagine={handleImagineFromText}
+          setIsMulticast={setIsComposerMulticast}
+          onComposerHasContent={setComposerHasContent}
+          sx={isMobile ? composerOpenMobileSx : composerOpenSx}
+        />
+      </div>
+    </Box>
+
+    {/* Hover zone for auto-hide */}
+    {!forceComposerHide && composerAutoHide.isHidden && <Box {...composerAutoHide.detectorProps} />}
 
     {/* Diagrams */}
     {!!diagramConfig && (
