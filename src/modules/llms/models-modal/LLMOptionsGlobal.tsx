@@ -8,7 +8,7 @@ import { llmsStoreActions } from '~/common/stores/llms/store-llms';
 import { LLMParametersEditor } from './LLMParametersEditor';
 
 
-export function LLMOptionsGlobal(props: { llm: DLLM }) {
+export function LLMOptionsGlobal(props: { llm: DLLM; isAdmin: boolean }) {
 
   // derived input
   const llm = props.llm;
@@ -37,6 +37,7 @@ export function LLMOptionsGlobal(props: { llm: DLLM }) {
       parameters={llm.userParameters}
       onChangeParameter={handleChangeParameter}
       onRemoveParameter={handleRemoveParameter}
+      isAdmin={props.isAdmin}
     />
   );
 }

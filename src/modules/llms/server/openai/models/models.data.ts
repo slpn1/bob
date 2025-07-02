@@ -108,8 +108,11 @@ export function fromManualMapping(mappings: ManualMappings, id: string, created?
 
   // label for symlinks
   let label = known.label;
-  if (!disableSymLink && known.symLink && id === known.idPrefix)
-    label = `🔗 ${known.label} → ${known.symLink/*.replace(known.idPrefix, '')*/}`;
+  if (!disableSymLink && known.symLink && id === known.idPrefix) {
+    // For symlink models, show just the clean symlink name without the arrow and target
+    // This avoids showing "Model Name → target-id" and instead shows just "Model Name"
+    label = known.label;
+  }
 
   // check whether this is a partial map, which indicates an unknown/new variant
   const suffix = id.slice(known.idPrefix.length).trim();

@@ -19,6 +19,13 @@ export const useTextToImageStore = create<TextToImageStore>()(
     }),
     {
       name: 'app-module-t2i',
-      version: 1,
+      version: 2, // Increment version to force reset
+      migrate: (persistedState: any, fromVersion: number) => {
+        // Reset to null on any version upgrade to force re-selection
+        if (fromVersion < 2) {
+          return { activeProviderId: null };
+        }
+        return persistedState;
+      },
     }),
 );

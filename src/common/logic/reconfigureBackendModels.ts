@@ -42,18 +42,24 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
   const servicesToReconfigure: DModelsService[] = [];
 
   // add the backend services
-  if (remoteServices)
+  if (remoteServices) {
+    console.log('[reconfigureBackendModels] Adding backend services, backendCaps:', backendCaps);
     findAllModelVendors()
       .filter(vendor => vendor.hasServerConfigKey && backendCaps[vendor.hasServerConfigKey])
       .forEach(remoteVendor => {
+
+        console.log('[reconfigureBackendModels] Adding vendor:', remoteVendor.id, 'hasServerConfigKey:', remoteVendor.hasServerConfigKey);
 
         // find the first service for this vendor
         const { sources: services } = llmsStoreState();
         const remoteService = services.find(s => s.vId === remoteVendor.id)
           || llmsStoreActions().createModelsService(remoteVendor);
+        
+        console.log('[reconfigureBackendModels] Service for vendor', remoteVendor.id, ':', remoteService.id);
         servicesToReconfigure.push(remoteService);
 
       });
+  }
 
   // add any other local services
   if (existingServices)
@@ -73,7 +79,9 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
         configuredServiceIds.push(service.id);
 
         // auto-configure this service
+        console.log('[reconfigureBackendModels] About to update models for service:', service.id, service.label);
         await llmsUpdateModelsForServiceOrThrow(service.id, true);
+        console.log('[reconfigureBackendModels] Successfully updated models for service:', service.id);
       })
       .catch(error => {
         // catches errors and logs them, but does not stop the chain
@@ -88,12 +96,26 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
   // Re-rank the LLMs based on the order of configured services
   llmsStoreActions().rerankLLMsByServices(configuredServiceIds);
 
+  console.log('[reconfigureBackendModels] Configured services:', configuredServiceIds);
+
   // Auto-assignment conditions
   if (initiallyEmpty) {
     // in case we refreshed all vendors, auto-assign the primary chat model, so it doesn't get locked to the first vendor
-    llmsStoreActions().assignDomainModelId('primaryChat', null);
+    console.log('[reconfigureBackendModels] Initially empty, auto-assigning primary chat model');
+    
+    // Prefer chatgpt-4o-latest if available
+    const { llms } = llmsStoreState();
+    const chatgpt4oLatest = llms.find(llm => llm.id === 'chatgpt-4o-latest' && !llm.hidden);
+    if (chatgpt4oLatest) {
+      console.log('[reconfigureBackendModels] Found chatgpt-4o-latest, assigning as primary chat model');
+      llmsStoreActions().assignDomainModelId('primaryChat', 'chatgpt-4o-latest');
+    } else {
+      console.log('[reconfigureBackendModels] chatgpt-4o-latest not available, using auto-assignment');
+      llmsStoreActions().assignDomainModelId('primaryChat', null);
+    }
   } else {
     // in case the chat model becomes unavailable/hidden, we'll auto-reassign it
+    console.log('[reconfigureBackendModels] Re-assigning domain models if needed');
     llmsStoreActions().autoReassignDomainModel('primaryChat', true, true);
     llmsStoreActions().autoReassignDomainModel('codeApply', true, false);
     llmsStoreActions().autoReassignDomainModel('fastUtil', true, false);

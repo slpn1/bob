@@ -53,6 +53,7 @@ export function LLMParametersEditor(props: {
 
   // rendering options
   simplified?: boolean,
+  isAdmin?: boolean,
 }) {
 
   // registry (const) values
@@ -110,6 +111,15 @@ export function LLMParametersEditor(props: {
     return paramId in modelParamSpec && !modelParamSpec[paramId].hidden;
   }
 
+  // For non-admin users, only allow specific parameters
+  function shouldShowForUser(paramId: DModelParameterId): boolean {
+    if (props.isAdmin === false) {
+      // Only allow Temperature and Reasoning Effort for non-admin users
+      return paramId === 'llmVndOaiReasoningEffort';
+    }
+    return showParam(paramId);
+  }
+
   const temperatureHide = showParam('llmVndAntThinkingBudget');
   const antThinkingOff = llmVndAntThinkingBudget === null;
   const gemThinkingAuto = llmVndGeminiThinkingBudget === undefined;
@@ -121,6 +131,7 @@ export function LLMParametersEditor(props: {
 
   return <>
 
+    {/* Temperature - Always show unless explicitly hidden, even for non-admin users */}
     {!temperatureHide && <FormSliderControl
       title='Temperature' ariaLabel='Model Temperature'
       description={llmTemperature === null ? 'Unsupported' : llmTemperature < 0.33 ? 'More strict' : llmTemperature > 1 ? 'Extra hot ♨️' : llmTemperature > 0.67 ? 'Larger freedom' : 'Creativity'}
@@ -142,7 +153,8 @@ export function LLMParametersEditor(props: {
       }
     />}
 
-    {llmResponseTokens === null || props.maxOutputTokens === null ? (
+    {/* Output Tokens - Admin only */}
+    {props.isAdmin !== false && (llmResponseTokens === null || props.maxOutputTokens === null ? (
       <InlineError error='Max Output Tokens: Token computations are disabled because this model does not declare the context window size.' />
     ) : !props.simplified && (
       <Box sx={{ mr: 1 }}>
@@ -155,9 +167,10 @@ export function LLMParametersEditor(props: {
           onChange={value => onChangeParameter({ llmResponseTokens: value })}
         />
       </Box>
-    )}
+    ))}
 
-    {showParam('llmVndAntThinkingBudget') && (
+    {/* Anthropic Thinking Budget - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndAntThinkingBudget') && (
       <FormSliderControl
         title='Thinking Budget' ariaLabel='Anthropic Extended Thinking Token Budget'
         description='Tokens'
@@ -183,7 +196,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndGeminiShowThoughts') && (
+    {/* Gemini Show Thoughts - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndGeminiShowThoughts') && (
       <FormSwitchControl
         title='Show Chain of Thought'
         description={`Displays Gemini\'s reasoning process`}
@@ -192,7 +206,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndGeminiThinkingBudget') && (
+    {/* Gemini Thinking Budget - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndGeminiThinkingBudget') && (
       <FormSliderControl
         title='Thinking Budget' ariaLabel='Gemini Thinking Token Budget'
         description={gemThinkingAuto ? 'Auto' : gemThinkingOff ? 'Thinking Off' : 'Tokens'}
@@ -229,7 +244,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndPerplexitySearchMode') && (
+    {/* Perplexity Search Mode - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndPerplexitySearchMode') && (
       <FormSelectControl
         title='Search Mode'
         tooltip='Type of sources to prioritize in search results'
@@ -244,7 +260,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndOaiWebSearchContext') && (
+    {/* Web Search Context - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndOaiWebSearchContext') && (
       <FormSelectControl
         title='Search Size'
         tooltip='Controls how much context is retrieved from the web (low = default for Perplexity, medium = default for OpenAI)'
@@ -259,7 +276,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndOaiWebSearchGeolocation') && (
+    {/* Web Search Geolocation - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndOaiWebSearchGeolocation') && (
       <FormSwitchControl
         title='Add User Location'
         description='Use approximate location for better search results'
@@ -278,7 +296,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndPerplexityDateFilter') && (
+    {/* Perplexity Date Filter - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndPerplexityDateFilter') && (
       <FormSelectControl
         title='Date Range'
         tooltip='Filter search results by publication date'
@@ -293,7 +312,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndOaiReasoningEffort') && (
+    {/* Reasoning Effort - Available to all users */}
+    {shouldShowForUser('llmVndOaiReasoningEffort') && (
       <FormSelectControl
         title='Reasoning Effort'
         tooltip='Controls how much effort the model spends on reasoning'
@@ -308,7 +328,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmVndOaiRestoreMarkdown') && (
+    {/* Restore Markdown - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmVndOaiRestoreMarkdown') && (
       <FormSwitchControl
         title='Restore Markdown'
         description='Enable markdown formatting'
@@ -323,7 +344,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {showParam('llmForceNoStream') && (
+    {/* Disable Streaming - Admin only */}
+    {props.isAdmin !== false && shouldShowForUser('llmForceNoStream') && (
       <FormSwitchControl
         title='Disable Streaming'
         description='Receive complete responses'

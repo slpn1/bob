@@ -46,11 +46,18 @@ export const backendRouter = createTRPCRouter({
   /* List server-side capabilities (pre-configured by the deployer) */
   listCapabilities: publicProcedure
     .query(async ({ ctx: _unused }): Promise<BackendCapabilities> => {
+      
+      console.log('[Backend Capabilities] Environment check:', {
+        OPENAI_API_KEY: !!env.OPENAI_API_KEY,
+        OPENAI_ALLOWED_MODELS: env.OPENAI_ALLOWED_MODELS,
+        hasLlmOpenAI: !!env.OPENAI_API_KEY,
+      });
+      
       return {
         // llms
         hasLlmAlibaba: !!env.ALIBABA_API_KEY || !!env.ALIBABA_API_HOST,
         hasLlmAnthropic: !!env.ANTHROPIC_API_KEY,
-        hasLlmAzureOpenAI: !!env.AZURE_OPENAI_API_KEY && !!env.AZURE_OPENAI_API_ENDPOINT,
+        hasLlmAzureOpenAI: false, // Disabled: migrated to direct OpenAI API
         hasLlmDeepseek: !!env.DEEPSEEK_API_KEY,
         hasLlmGemini: !!env.GEMINI_API_KEY,
         hasLlmGroq: !!env.GROQ_API_KEY,
@@ -58,7 +65,7 @@ export const backendRouter = createTRPCRouter({
         hasLlmLocalAIKey: !!env.LOCALAI_API_KEY,
         hasLlmMistral: !!env.MISTRAL_API_KEY,
         hasLlmOllama: !!env.OLLAMA_API_HOST,
-        hasLlmOpenAI: !!env.OPENAI_API_KEY || !!env.OPENAI_API_HOST,
+        hasLlmOpenAI: !!env.OPENAI_API_KEY,
         hasLlmOpenPipe: !!env.OPENPIPE_API_KEY,
         hasLlmOpenRouter: !!env.OPENROUTER_API_KEY,
         hasLlmPerplexity: !!env.PERPLEXITY_API_KEY,

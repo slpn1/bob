@@ -258,3 +258,48 @@ the [Third-Party Notices](src/modules/3rdparty/THIRD_PARTY_NOTICES.md).
 ---
 
 2023-2024 · Enrico Ros x [Big-AGI](https://big-agi.com) · Like this project? Leave a star! 💫⭐
+
+# OpenAI Direct API Integration
+
+This application now supports automatic OpenAI API configuration with model filtering:
+
+## Environment Variables
+
+Set these environment variables to enable automatic OpenAI configuration:
+
+```bash
+# Required: Your OpenAI API key
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Optional: Filter available models (comma-separated list)
+OPENAI_ALLOWED_MODELS=gpt-4,gpt-4-turbo,gpt-3.5-turbo
+
+# Optional: Custom OpenAI host (for proxies, etc.)
+OPENAI_API_HOST=https://api.openai.com
+
+# Optional: Organization ID for enterprise users
+OPENAI_API_ORG_ID=your-org-id
+```
+
+## Features
+
+- **Automatic Configuration**: When `OPENAI_API_KEY` is set, the system automatically configures OpenAI for all users
+- **Model Filtering**: Use `OPENAI_ALLOWED_MODELS` to restrict which models are available to users
+- **Default Model Selection**: Automatically selects GPT-4.1 → GPT-4 → first available model as default
+- **Zero User Configuration**: Users don't need to enter API keys or configure anything
+
+## Migration from Azure OpenAI
+
+⚠️ **Azure OpenAI support has been removed** - This system now uses direct OpenAI API access instead.
+
+**Automatic Migration**: The system will automatically:
+1. Remove any existing Azure OpenAI services and models from user configurations
+2. Redirect users to use the direct OpenAI API configuration
+3. Apply model filtering based on your environment configuration
+4. Work for both new and existing users without manual intervention
+
+**Benefits of Direct OpenAI API**:
+- Simpler configuration (no endpoint URLs needed)
+- Better model availability and updates
+- Centralized model filtering and access control
+- Reduced complexity in deployment

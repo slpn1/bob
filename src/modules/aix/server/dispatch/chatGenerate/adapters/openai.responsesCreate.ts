@@ -114,6 +114,11 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
     throw new Error(`Invalid sequence for OpenAI models: ${validated.error.errors?.[0]?.message || validated.error.message || validated.error}.`);
   }
 
+  // [DEBUG] Log temperature being sent to OpenAI Responses API
+  const logTempValue = validated.data.temperature !== undefined ? validated.data.temperature : 'undefined';
+  const logTopPValue = validated.data.top_p !== undefined ? validated.data.top_p : 'undefined';
+  console.log(`[OpenAI Responses] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}`);
+
   return validated.data;
 }
 

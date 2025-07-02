@@ -41,6 +41,7 @@ OPENROUTER_API_KEY=
 PERPLEXITY_API_KEY=
 TOGETHERAI_API_KEY=
 XAI_API_KEY=
+OPENAI_ALLOWED_MODELS=gpt-4,gpt-4-turbo,gpt-3.5-turbo
 
 # Model Observability: Helicone
 HELICONE_API_KEY=
@@ -92,10 +93,11 @@ requiring the user to enter an API key
 | `OPENAI_API_KEY`            | API key for OpenAI                                                                                             | Recommended                                                       |
 | `OPENAI_API_HOST`           | Changes the backend host for the OpenAI vendor, to enable platforms such as Helicone and CloudFlare AI Gateway | Optional                                                          |
 | `OPENAI_API_ORG_ID`         | Sets the "OpenAI-Organization" header field to support organization users                                      | Optional                                                          |
+| `OPENAI_ALLOWED_MODELS`     | Comma-separated list of OpenAI model IDs to allow (filters available models)                                   | Optional                                                          |
 | `ALIBABA_API_HOST`          | The Alibaba AI OpenAI-compatible endpoint                                                                      | Optional                                                          |
 | `ALIBABA_API_KEY`           | The API key for Alibaba AI                                                                                     | Optional                                                          |
-| `AZURE_OPENAI_API_ENDPOINT` | Azure OpenAI endpoint - host only, without the path                                                            | Optional, but if set `AZURE_OPENAI_API_KEY` must also be set      |
-| `AZURE_OPENAI_API_KEY`      | Azure OpenAI API key, see [config-azure-openai.md](config-azure-openai.md)                                     | Optional, but if set `AZURE_OPENAI_API_ENDPOINT` must also be set |
+| `AZURE_OPENAI_API_ENDPOINT` | ⚠️ **DEPRECATED** - Use `OPENAI_API_KEY` instead for direct OpenAI API access                               | Not recommended                                                   |
+| `AZURE_OPENAI_API_KEY`      | ⚠️ **DEPRECATED** - Use `OPENAI_API_KEY` instead for direct OpenAI API access                               | Not recommended                                                   |
 | `ANTHROPIC_API_KEY`         | The API key for Anthropic                                                                                      | Optional                                                          |
 | `ANTHROPIC_API_HOST`        | Changes the backend host for the Anthropic vendor, to enable platforms such as AWS Bedrock                     | Optional                                                          |
 | `DEEPSEEK_API_KEY`          | The API key for Deepseek AI                                                                                    | Optional                                                          |

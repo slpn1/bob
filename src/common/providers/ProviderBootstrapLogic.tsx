@@ -6,7 +6,8 @@ import { navigateToNews, ROUTE_APP_CHAT } from '~/common/app.routes';
 import { preloadTiktokenLibrary } from '~/common/tokens/tokens.text';
 import { useClientLoggerInterception } from '~/common/logger/hooks/useClientLoggerInterception';
 import { useNextLoadProgress } from '~/common/components/useNextLoadProgress';
-import { checkAndUpdateAzureEndpoint } from '~/common/stores/llms/azure-endpoint-check';
+import { cleanupAzureServices } from '~/common/stores/llms/azure-cleanup';
+import { ensureOpenAIModelsUpdated } from '~/common/stores/llms/openai-startup-update';
 
 export function ProviderBootstrapLogic(props: { children: React.ReactNode }) {
   console.log('[ProviderBootstrapLogic] Component mounted');
@@ -59,10 +60,19 @@ export function ProviderBootstrapLogic(props: { children: React.ReactNode }) {
     void sherpaStorageMaintenanceNoChats_delayed(); // fire/forget (background storage maintenance)
   }, [launchStorageGC]);
 
-  // [azure] check and update Azure endpoint if needed
+  // [azure] cleanup existing Azure OpenAI services (migration to direct OpenAI API)
   React.useEffect(() => {
-    console.log('[ProviderBootstrapLogic] Launching Azure endpoint check');
-    checkAndUpdateAzureEndpoint();
+    console.log('[ProviderBootstrapLogic] Cleaning up Azure OpenAI services');
+    cleanupAzureServices();
+  }, []);
+
+  // [openai] ensure models are always updated on startup
+  React.useEffect(() => {
+    console.log('[ProviderBootstrapLogic] Ensuring OpenAI models are updated');
+    // Run after a short delay to let other initialization complete
+    setTimeout(async () => {
+      await ensureOpenAIModelsUpdated();
+    }, 1000);
   }, []);
 
   //

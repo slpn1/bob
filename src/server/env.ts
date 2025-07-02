@@ -21,6 +21,7 @@ export const env = createEnv({
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_API_HOST: z.string().optional(),
     OPENAI_API_ORG_ID: z.string().optional(),
+    OPENAI_ALLOWED_MODELS: z.string().optional(),
 
     // LLM: Alibaba (OpenAI)
     ALIBABA_API_HOST: z.string().url().optional(),

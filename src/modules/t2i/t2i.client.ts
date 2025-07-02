@@ -72,7 +72,8 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
   const isConfigured = !!activeProvider;
   React.useEffect(() => {
     if (isConfigured) return;
-    const autoSelectProvider = providers.find(p => p.configured);
+    // Prioritize OpenAI providers over Prodia
+    const autoSelectProvider = providers.find(p => p.configured && p.vendor === 'openai') || providers.find(p => p.configured);
     if (autoSelectProvider)
       useTextToImageStore.getState().setActiveProviderId(autoSelectProvider.providerId);
   }, [isConfigured, providers]);
@@ -131,7 +132,8 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
     case 'prodia':
       const hasProdiaServer = getBackendCapabilities().hasImagingProdia;
       const hasProdiaClientModels = !!useProdiaStore.getState().modelId;
-      if (!hasProdiaServer && !hasProdiaClientModels)
+      const hasProdiaApiKey = !!useProdiaStore.getState().apiKey;
+      if (!hasProdiaServer && !(hasProdiaClientModels && hasProdiaApiKey))
         throw new Error('No Prodia configuration found for TextToImage');
       if (aixInlineImageParts?.length)
         throw new Error('Prodia image editing is not yet available');
@@ -229,12 +231,6 @@ function getLlmsModelServices(llms: DLLM[], services: DModelsService[]) {
 function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasProdiaClientModels: boolean) {
   const providers: TextToImageProvider[] = [];
 
-  // Check for Azure DALL-E 3 configuration
-  const isDallE3Configured = !!clientEnv.DALL_E_3_ENDPOINT && !!clientEnv.DALL_E_3_API_KEY;
-
-  console.log('isDallE3Configured', isDallE3Configured);
-  console.log('agggg,', llmsModelServices);
-
   // add OpenAI and/or LocalAI providers
   for (const { modelVendorId, modelServiceId, label, hasAnyModels } of llmsModelServices) {
     switch (modelVendorId) {
@@ -250,12 +246,10 @@ function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasP
         break;
 
       case 'openai':
-        // For OpenAI, we'll use the DALL-E 3 configuration
         providers.push({
           providerId: modelServiceId,
           label: label,
           painter: openAIImageModelsCurrentGeneratorName(), // sync this with dMessageUtils.tsx
-          // painter: 'DALL·E',
           description: 'OpenAI Image generation models',
           configured: hasAnyModels,
           vendor: 'openai',
@@ -263,14 +257,13 @@ function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasP
         break;
 
       case 'azure':
-        // For Azure, also use the DALL-E 3 configuration
         providers.push({
           providerId: modelServiceId,
           label: label,
           painter: 'DALL·E',
-          description: 'Azure DALL·E models',
-          configured: isDallE3Configured,
-          vendor: 'openai', // Use 'openai' as the vendor to reuse the same generator
+          description: 'Azure OpenAI DALL·E models',
+          configured: hasAnyModels,
+          vendor: 'openai', // Use 'openai' vendor to use the same generator
         });
         break;
 
@@ -282,12 +275,13 @@ function getTextToImageProviders(llmsModelServices: T2ILlmsModelServices[], hasP
 
   // add Prodia provider
   const hasProdiaServer = getBackendCapabilities().hasImagingProdia;
+  const hasProdiaApiKey = !!useProdiaStore.getState().apiKey;
   providers.push({
     providerId: 'prodia',
     label: 'Prodia',
     painter: 'Prodia',
     description: 'Prodia\'s models',
-    configured: hasProdiaServer || hasProdiaClientModels,
+    configured: hasProdiaServer || (hasProdiaClientModels && hasProdiaApiKey), // Require API key for client models
     vendor: 'prodia',
   });
 

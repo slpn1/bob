@@ -16,6 +16,7 @@ import { ModelDomainsList, ModelDomainsRegistry } from '~/common/stores/llms/mod
 import { llmsStoreActions } from '~/common/stores/llms/store-llms';
 import { useModelDomains } from '~/common/stores/llms/hooks/useModelDomains';
 import { useLLM } from '~/common/stores/llms/llms.hooks';
+import { useIsAdmin } from '~/common/util/auth-utils';
 
 import { LLMOptionsGlobal } from './LLMOptionsGlobal';
 
@@ -73,6 +74,7 @@ export function LLMOptionsModal(props: { id: DLLMId, onClose: () => void }) {
   const llm = useLLM(props.id);
   const domainAssignments = useModelDomains();
   const { removeLLM, updateLLM, assignDomainModelId } = llmsStoreActions();
+  const isAdmin = useIsAdmin();
 
   if (!llm)
     return <>Options issue: LLM not found for id {props.id}</>;
@@ -94,40 +96,49 @@ export function LLMOptionsModal(props: { id: DLLMId, onClose: () => void }) {
       title={<><b>{llm.label}</b> options</>}
       open={!!props.id} onClose={props.onClose}
       startButton={
-        <Button variant='plain' color='neutral' onClick={handleLlmDelete} startDecorator={<DeleteOutlineIcon />}>
-          Delete
-        </Button>
+        isAdmin ? (
+          <Button variant='plain' color='neutral' onClick={handleLlmDelete} startDecorator={<DeleteOutlineIcon />}>
+            Delete
+          </Button>
+        ) : undefined
       }
     >
 
       <Box sx={{ display: 'grid', gap: 'var(--Card-padding)' }}>
-        <LLMOptionsGlobal llm={llm} />
+        <LLMOptionsGlobal llm={llm} isAdmin={isAdmin} />
       </Box>
 
       <Divider />
 
-      <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-        <FormLabelStart title='Name' sx={{ minWidth: 80 }} />
-        <Input variant='outlined' value={llm.label} onChange={handleLlmLabelSet} />
-      </FormControl>
+      {/* Admin-only: Model Name */}
+      {isAdmin && (
+        <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <FormLabelStart title='Name' sx={{ minWidth: 80 }} />
+          <Input variant='outlined' value={llm.label} onChange={handleLlmLabelSet} />
+        </FormControl>
+      )}
 
-      <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-        <FormLabelStart title='Assignment' description='Default model' sx={{ minWidth: 80 }} />
-        <ButtonGroup orientation='horizontal' size='sm' variant='outlined'>
-          {ModelDomainsList.map(domainId => {
-            const domainSpec = ModelDomainsRegistry[domainId];
-            const domainModelId = domainAssignments[domainId]?.modelId;
-            const isActive = domainModelId === llm.id;
-            return (
-              // Note: use Tooltip instead of GoodTooltip here, because GoodTooltip is not working well with ButtonGroup
-              <Tooltip arrow placement='top' key={domainId} title={domainSpec.confTooltip}>
-                <Button variant={isActive ? 'solid' : undefined} onClick={() => assignDomainModelId(domainId, isActive ? null : llm.id)}>{domainSpec.confLabel}</Button>
-              </Tooltip>
-            );
-          })}
-        </ButtonGroup>
-      </FormControl>
+      {/* Admin-only: Domain Assignment */}
+      {isAdmin && (
+        <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <FormLabelStart title='Assignment' description='Default model' sx={{ minWidth: 80 }} />
+          <ButtonGroup orientation='horizontal' size='sm' variant='outlined'>
+            {ModelDomainsList.map(domainId => {
+              const domainSpec = ModelDomainsRegistry[domainId];
+              const domainModelId = domainAssignments[domainId]?.modelId;
+              const isActive = domainModelId === llm.id;
+              return (
+                // Note: use Tooltip instead of GoodTooltip here, because GoodTooltip is not working well with ButtonGroup
+                <Tooltip arrow placement='top' key={domainId} title={domainSpec.confTooltip}>
+                  <Button variant={isActive ? 'solid' : undefined} onClick={() => assignDomainModelId(domainId, isActive ? null : llm.id)}>{domainSpec.confLabel}</Button>
+                </Tooltip>
+              );
+            })}
+          </ButtonGroup>
+        </FormControl>
+      )}
 
+      {/* Available for all users: Starred */}
       <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
         <FormLabelStart title='Starred' sx={{ minWidth: 80 }} />
         <Tooltip title={llm.userStarred ? 'Unstar this model' : 'Star this model for quick access'}>
@@ -138,38 +149,44 @@ export function LLMOptionsModal(props: { id: DLLMId, onClose: () => void }) {
         </Tooltip>
       </FormControl>
 
-      <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-        <FormLabelStart title='Visible' sx={{ minWidth: 80 }} />
-        <Tooltip title={!llm.hidden ? 'Show this model in the list of Chat models' : 'Hide this model from the list of Chat models'}>
-          <Switch checked={!llm.hidden} onChange={handleLlmVisibilityToggle}
-                  endDecorator={!llm.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                  slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
-        </Tooltip>
-      </FormControl>
+      {/* Admin-only: Visibility */}
+      {isAdmin && (
+        <FormControl orientation='horizontal' sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+          <FormLabelStart title='Visible' sx={{ minWidth: 80 }} />
+          <Tooltip title={!llm.hidden ? 'Show this model in the list of Chat models' : 'Hide this model from the list of Chat models'}>
+            <Switch checked={!llm.hidden} onChange={handleLlmVisibilityToggle}
+                    endDecorator={!llm.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                    slotProps={{ endDecorator: { sx: { minWidth: 26 } } }} />
+          </Tooltip>
+        </FormControl>
+      )}
 
-      <FormControl orientation='horizontal' sx={{ flexWrap: 'nowrap' }}>
-        <FormLabelStart title='Details' sx={{ minWidth: 80 }} onClick={() => setShowDetails(!showDetails)} />
-        {showDetails && <Box sx={{ display: 'flex', flexDirection: 'column', wordBreak: 'break-word', gap: 1 }}>
-          {!!llm.description && <Typography level='body-sm'>
-            {llm.description}
-          </Typography>}
-          {!!llm.pricing?.chat?._isFree && <Typography level='body-xs'>
-            🎁 Free model - note: refresh models to check for updates in pricing
-          </Typography>}
-          <Typography level='body-xs'>
-            llm id: {llm.id}<br />
-            context tokens: <b>{llm.contextTokens ? llm.contextTokens.toLocaleString() : 'not provided'}</b>{` · `}
-            max output tokens: <b>{llm.maxOutputTokens ? llm.maxOutputTokens.toLocaleString() : 'not provided'}</b><br />
-            {!!llm.created && <>created: <TimeAgo date={new Date(llm.created * 1000)} /><br /></>}
-            {/*· tags: {llm.tags.join(', ')}*/}
-            {!!llm.pricing?.chat && prettyPricingComponent(llm.pricing.chat)}
-            {/*{!!llm.benchmark && <>benchmark: <b>{llm.benchmark.cbaElo?.toLocaleString() || '(unk) '}</b> CBA Elo<br /></>}*/}
-            {llm.parameterSpecs?.length > 0 && <>options: {llm.parameterSpecs.map(ps => ps.paramId).join(', ')}<br /></>}
-            {Object.keys(llm.initialParameters || {}).length > 0 && <>initial parameters: {JSON.stringify(llm.initialParameters, null, 2)}<br /></>}
-            {Object.keys(llm.userParameters || {}).length > 0 && <>user parameters: {JSON.stringify(llm.userParameters, null, 2)}<br /></>}
-          </Typography>
-        </Box>}
-      </FormControl>
+      {/* Admin-only: Details */}
+      {isAdmin && (
+        <FormControl orientation='horizontal' sx={{ flexWrap: 'nowrap' }}>
+          <FormLabelStart title='Details' sx={{ minWidth: 80 }} onClick={() => setShowDetails(!showDetails)} />
+          {showDetails && <Box sx={{ display: 'flex', flexDirection: 'column', wordBreak: 'break-word', gap: 1 }}>
+            {!!llm.description && <Typography level='body-sm'>
+              {llm.description}
+            </Typography>}
+            {!!llm.pricing?.chat?._isFree && <Typography level='body-xs'>
+              🎁 Free model - note: refresh models to check for updates in pricing
+            </Typography>}
+            <Typography level='body-xs'>
+              llm id: {llm.id}<br />
+              context tokens: <b>{llm.contextTokens ? llm.contextTokens.toLocaleString() : 'not provided'}</b>{` · `}
+              max output tokens: <b>{llm.maxOutputTokens ? llm.maxOutputTokens.toLocaleString() : 'not provided'}</b><br />
+              {!!llm.created && <>created: <TimeAgo date={new Date(llm.created * 1000)} /><br /></>}
+              {/*· tags: {llm.tags.join(', ')}*/}
+              {!!llm.pricing?.chat && prettyPricingComponent(llm.pricing.chat)}
+              {/*{!!llm.benchmark && <>benchmark: <b>{llm.benchmark.cbaElo?.toLocaleString() || '(unk) '}</b> CBA Elo<br /></>}*/}
+              {llm.parameterSpecs?.length > 0 && <>options: {llm.parameterSpecs.map(ps => ps.paramId).join(', ')}<br /></>}
+              {Object.keys(llm.initialParameters || {}).length > 0 && <>initial parameters: {JSON.stringify(llm.initialParameters, null, 2)}<br /></>}
+              {Object.keys(llm.userParameters || {}).length > 0 && <>user parameters: {JSON.stringify(llm.userParameters, null, 2)}<br /></>}
+            </Typography>
+          </Box>}
+        </FormControl>
+      )}
 
     </GoodModal>
 

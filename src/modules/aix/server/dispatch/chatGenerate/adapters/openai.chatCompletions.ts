@@ -169,6 +169,11 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
     throw new Error(`Invalid sequence for OpenAI models: ${validated.error.errors?.[0]?.message || validated.error.message || validated.error}.`);
   }
 
+  // [DEBUG] Log temperature being sent to OpenAI API
+  const logTempValue = validated.data.temperature !== undefined ? validated.data.temperature : 'undefined';
+  const logTopPValue = validated.data.top_p !== undefined ? validated.data.top_p : 'undefined';
+  console.log(`[OpenAI ChatCompletions] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}`);
+
   // if (hotFixUseDeprecatedFunctionCalls)
   //   validated.data = _fixUseDeprecatedFunctionCalls(validated.data);
 

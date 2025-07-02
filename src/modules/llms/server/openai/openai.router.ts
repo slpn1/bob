@@ -159,6 +159,8 @@ export const llmOpenAIRouter = createTRPCRouter({
     .output(ListModelsResponse_schema)
     .query(async ({ input: { access } }): Promise<{ models: ModelDescriptionSchema[] }> => {
 
+      console.log('[OpenAI Router] listModels called with access:', { dialect: access.dialect, hasKey: !!access.oaiKey });
+      
       let models: ModelDescriptionSchema[];
 
       // [Azure]: use an older 'deployments' API to enumerate the models, and a modified OpenAI id to description mapping
@@ -243,6 +245,8 @@ export const llmOpenAIRouter = createTRPCRouter({
         // [OpenAI]: chat-only models, custom sort, manual mapping
         case 'openai':
 
+          console.log('[OpenAI Router] Processing OpenAI dialect case');
+
           // [ChutesAI] special case for model enumeration
           if (chutesAIHeuristic(access.oaiHost))
             return { models: chutesAIModelsToModelDescriptions(openAIModels) };
@@ -255,16 +259,56 @@ export const llmOpenAIRouter = createTRPCRouter({
           if (fastAPIHeuristic(openAIModels))
             return { models: fastAPIModels(openAIModels) };
 
-          models = openAIModels
+          console.log('[OpenAI Router] About to filter models. Raw models count:', openAIModels.length);
+          console.log('[OpenAI Router] OPENAI_ALLOWED_MODELS env var:', env.OPENAI_ALLOWED_MODELS);
 
-            // limit to only 'gpt' and 'non instruct' models
-            .filter(openAIModelFilter)
+          // Check if we have explicit model filtering
+          const allowedModels = env.OPENAI_ALLOWED_MODELS;
+          const hasExplicitFiltering = allowedModels && allowedModels.trim().length > 0;
 
-            // to model description
-            .map((model): ModelDescriptionSchema => openAIModelToModelDescription(model.id, model.created))
+          if (hasExplicitFiltering) {
+            // If OPENAI_ALLOWED_MODELS is specified, ONLY use that filter - bypass all other filtering
+            console.log('[OpenAI Router] Using explicit model filtering, bypassing other filters');
+            const allowedList = allowedModels.split(',').map(m => m.trim()).filter(Boolean);
+            
+            models = openAIModels
+              .filter(model => {
+                // Check if allowed by model ID or by display label
+                const modelDescription = openAIModelToModelDescription(model.id, model.created);
+                const isAllowedById = allowedList.includes(model.id);
+                const isAllowedByLabel = allowedList.some((allowed: string) => {
+                  // Remove emoji and extra spacing for comparison
+                  const cleanLabel = modelDescription.label.replace(/[🌐🎁💎💰⏱️🔓🧩]/g, '').trim();
+                  const cleanAllowed = allowed.replace(/[🌐🎁💎💰⏱️🔓🧩]/g, '').trim();
+                  return cleanLabel === cleanAllowed;
+                });
+                const isAllowed = isAllowedById || isAllowedByLabel;
+                console.log('[OpenAI Router] Explicit filter - Model ID:', model.id, 'Label:', modelDescription.label, 'Allowed:', isAllowed);
+                return isAllowed;
+              })
+              .map((model): ModelDescriptionSchema => openAIModelToModelDescription(model.id, model.created))
+              .map((modelDesc): ModelDescriptionSchema => {
+                // Override hidden flag for explicitly allowed models
+                const { hidden: _removeHidden, ...rest } = modelDesc;
+                console.log('[OpenAI Router] Ensuring explicitly allowed model is visible:', modelDesc.id);
+                return { ...rest, hidden: false };
+              })
+              .sort(openAISortModels);
+          } else {
+            // Default filtering logic when no explicit model list is provided
+            console.log('[OpenAI Router] Using default model filtering');
+            models = openAIModels
+              // limit to only 'gpt' and 'non instruct' models
+              .filter(openAIModelFilter)
+              // to model description
+              .map((model): ModelDescriptionSchema => openAIModelToModelDescription(model.id, model.created))
+              // custom OpenAI sort
+              .sort(openAISortModels);
+          }
 
-            // custom OpenAI sort
-            .sort(openAISortModels);
+          console.log('[OpenAI Router] Final filtered models count:', models.length);
+          console.log('[OpenAI Router] Final filtered models:', models.map(m => m.id));
+          
           break;
 
         case 'openpipe':
