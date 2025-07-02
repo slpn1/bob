@@ -1053,7 +1053,7 @@ export function Composer(props: {
                     <>
                       <Box sx={{ boxShadow: 'none !important', display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
                         <Button
-                          key='composer-chat'
+                          key='composer-chat' 
                           color="primary"
                           disabled={noConversation || noLLM}
                           loading={sendStarted && chatExecuteMode === 'generate-content'}
