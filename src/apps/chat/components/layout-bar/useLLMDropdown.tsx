@@ -16,7 +16,7 @@ import { OptimaBarControlMethods, OptimaBarDropdownMemo, OptimaDropdownItems } f
 import { findModelsServiceOrNull } from '~/common/stores/llms/store-llms';
 import { isDeepEqual } from '~/common/util/hooks/useDeep';
 import { optimaActions, optimaOpenModels } from '~/common/layout/optima/useOptima';
-import { useAllLLMs } from '~/common/stores/llms/hooks/useAllLLMs';
+import { useVisibleLLMs } from '~/common/stores/llms/llms.hooks';
 import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 import { useUIComplexityMode } from '~/common/stores/store-ui';
 import { HIDDEN_MODEL_NAMES } from '~/common/stores/llms/llms.config';
@@ -215,12 +215,12 @@ function LLMDropdown(props: {
 export function useChatLLMDropdown(dropdownRef: React.Ref<OptimaBarControlMethods>) {
 
   // external state
-  const llms = useAllLLMs();
   const { domainModelId: chatLLMId, assignDomainModelId: setChatLLMId } = useModelDomain('primaryChat');
+  const llms = useVisibleLLMs(chatLLMId);
 
   // Ensure Knowledge Central model exists in the store
   React.useEffect(() => {
-    const kcModelExists = llms.some(llm => llm.id === 'knowledge-central-chat');
+    const kcModelExists = llms.some((llm: DLLM) => llm.id === 'knowledge-central-chat');
     if (!kcModelExists) {
       const { updateLLM } = useModelsStore.getState();
       

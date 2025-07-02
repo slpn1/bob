@@ -24,10 +24,14 @@ export function useLLMsByService(serviceId: false | DModelsServiceId): DLLM[] {
 
 export function useVisibleLLMs(includeLlmId: undefined | DLLMId | null): ReadonlyArray<DLLM> {
   return useModelsStore(useShallow(
-    ({ llms }) => llms.filter(llm => 
-      (!llm.hidden && !HIDDEN_MODEL_NAMES.includes(llm.label)) || 
-      (includeLlmId && llm.id === includeLlmId)
-    ),
+    ({ llms }) => llms.filter(llm => {
+      const displayName = llm.userLabel || llm.label;
+      
+      return (
+        (!llm.hidden && !HIDDEN_MODEL_NAMES.includes(displayName) && !displayName.startsWith('?')) || 
+        (includeLlmId && llm.id === includeLlmId)
+      );
+    }),
   ));
 }
 

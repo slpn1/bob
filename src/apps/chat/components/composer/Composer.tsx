@@ -1046,13 +1046,12 @@ export function Composer(props: {
                   color={sendButtonColor}
                   sx={{
                     flexGrow: 1,
-                    backgroundColor: (isMobile && sendButtonVariant === 'outlined') ? 'background.popup' : undefined,
-                    boxShadow: (isMobile && sendButtonVariant !== 'outlined') ? 'none' : `0 8px 24px -4px rgb(var(--joy-palette-${sendButtonColor}-mainChannel) / 20%)`,
+                    backgroundColor: (isMobile && sendButtonVariant === 'outlined') ? 'background.popup' : undefined
                   }}
                 >
                   {!assistantAbortible ? (
                     <>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+                      <Box sx={{ boxShadow: 'none !important', display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
                         <Button
                           key='composer-chat'
                           color="primary"
