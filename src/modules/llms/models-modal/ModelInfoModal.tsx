@@ -5,7 +5,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import TokenIcon from '@mui/icons-material/Token';
 
 import type { DLLM } from '~/common/stores/llms/llms.types';
-import { getModelDescription } from './ModelDescriptions';
+import { getModelDescription, getModelInfo } from './ModelDescriptions';
 
 interface ModelInfoModalProps {
   open: boolean;
@@ -65,13 +65,31 @@ export function ModelInfoModal({ open, onClose, model }: ModelInfoModalProps) {
           },
         }}>
           {/* Model Name */}
-          <Box sx={{ mb: 2 }}>
-            <Typography level="title-lg" sx={{ fontWeight: 600 }}>
-              {model.userLabel || model.label}
-            </Typography>
-            <Typography level="body-sm" sx={{ color: 'text.tertiary', mt: 0.5 }}>
-              Model ID: {model.id}
-            </Typography>
+          <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Box sx={{ flex: 1 }}>
+              <Typography level="title-lg" sx={{ fontWeight: 600 }}>
+                {model.userLabel || model.label}
+              </Typography>
+              <Typography level="body-sm" sx={{ color: 'text.tertiary', mt: 0.5 }}>
+                Model ID: {model.id}
+              </Typography>
+            </Box>
+            {(() => {
+              const modelInfo = getModelInfo(model.id);
+              return modelInfo.icon ? (
+                <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+                  <img 
+                    src={modelInfo.icon} 
+                    alt="Model type icon"
+                    style={{ 
+                      width: '128px', 
+                      objectFit: 'contain',
+                      opacity: 1
+                    }} 
+                  />
+                </Box>
+              ) : null;
+            })()}
           </Box>
 
           <Divider sx={{ my: 2 }} />
