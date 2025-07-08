@@ -111,11 +111,21 @@ export function LLMParametersEditor(props: {
     return paramId in modelParamSpec && !modelParamSpec[paramId].hidden;
   }
 
-  // For non-admin users, only allow specific parameters
+  // For non-admin users, allow all parameters except admin-only ones
   function shouldShowForUser(paramId: DModelParameterId): boolean {
     if (props.isAdmin === false) {
-      // Only allow Temperature and Reasoning Effort for non-admin users
-      return paramId === 'llmVndOaiReasoningEffort';
+      // Non-admin users can see all parameters except these admin-only ones
+      const adminOnlyParams: DModelParameterId[] = [
+        'llmResponseTokens',
+        'llmVndAntThinkingBudget',
+        'llmVndGeminiShowThoughts', 
+        'llmVndGeminiThinkingBudget',
+        'llmVndOaiRestoreMarkdown',
+        'llmForceNoStream',
+        'llmVndPerplexitySearchMode',
+        'llmVndPerplexityDateFilter'
+      ];
+      return showParam(paramId) && !adminOnlyParams.includes(paramId);
     }
     return showParam(paramId);
   }
@@ -260,8 +270,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {/* Web Search Context - Admin only */}
-    {props.isAdmin !== false && shouldShowForUser('llmVndOaiWebSearchContext') && (
+    {/* Web Search Context - Available to all users */}
+    {shouldShowForUser('llmVndOaiWebSearchContext') && (
       <FormSelectControl
         title='Search Size'
         tooltip='Controls how much context is retrieved from the web (low = default for Perplexity, medium = default for OpenAI)'
@@ -276,8 +286,8 @@ export function LLMParametersEditor(props: {
       />
     )}
 
-    {/* Web Search Geolocation - Admin only */}
-    {props.isAdmin !== false && shouldShowForUser('llmVndOaiWebSearchGeolocation') && (
+    {/* Web Search Geolocation - Available to all users */}
+    {shouldShowForUser('llmVndOaiWebSearchGeolocation') && (
       <FormSwitchControl
         title='Add User Location'
         description='Use approximate location for better search results'

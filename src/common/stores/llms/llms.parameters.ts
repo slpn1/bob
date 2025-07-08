@@ -128,7 +128,7 @@ export const DModelParameterRegistry = {
     type: 'enum' as const,
     description: 'Amount of context retrieved from the web',
     values: ['low', 'medium', 'high'] as const,
-    requiredFallback: 'medium',
+    initialValue: 'high',
   } as const,
 
   llmVndOaiWebSearchGeolocation: {
@@ -139,7 +139,7 @@ export const DModelParameterRegistry = {
     label: 'Add User Location (Geolocation API)',
     type: 'boolean' as const,
     description: 'Approximate location for search results',
-    initialValue: false,
+    initialValue: true,
   } as const,
 
   // Perplexity-specific parameters
