@@ -94,8 +94,7 @@ export const PromptVariableRegistry: Record<string, PVariableDefinition> = {
   '{{RenderMermaid}}': {
     scope: 'system',
     description: 'Enable Mermaid diagram rendering',
-    replace: () => 'Mermaid rendering: Enabled for diagrams and pie charts and no other charts',
-  },
+    replace: () => 'Mermaid rendering: Enabled for Flow Diagrams, Sequence Diagrams, Class Diagrams, State Diagrams, Entity Relationship Diagrams, User Journey, Gantt Diagrams, Pie Charts, Mindmaps, Timeline. Do not use any other chart or diagram types.'},
 
   '{{RenderPlantUML}}': {
     scope: 'system',

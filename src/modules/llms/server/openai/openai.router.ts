@@ -283,14 +283,14 @@ export const llmOpenAIRouter = createTRPCRouter({
                   return cleanLabel === cleanAllowed;
                 });
                 const isAllowed = isAllowedById || isAllowedByLabel;
-                console.log('[OpenAI Router] Explicit filter - Model ID:', model.id, 'Label:', modelDescription.label, 'Allowed:', isAllowed);
+          
                 return isAllowed;
               })
               .map((model): ModelDescriptionSchema => openAIModelToModelDescription(model.id, model.created))
               .map((modelDesc): ModelDescriptionSchema => {
                 // Override hidden flag for explicitly allowed models
                 const { hidden: _removeHidden, ...rest } = modelDesc;
-                console.log('[OpenAI Router] Ensuring explicitly allowed model is visible:', modelDesc.id);
+                // console.log('[OpenAI Router] Ensuring explicitly allowed model is visible:', modelDesc.id);
                 return { ...rest, hidden: false };
               })
               .sort(openAISortModels);
@@ -306,8 +306,8 @@ export const llmOpenAIRouter = createTRPCRouter({
               .sort(openAISortModels);
           }
 
-          console.log('[OpenAI Router] Final filtered models count:', models.length);
-          console.log('[OpenAI Router] Final filtered models:', models.map(m => m.id));
+          // console.log('[OpenAI Router] Final filtered models count:', models.length);
+          // console.log('[OpenAI Router] Final filtered models:', models.map(m => m.id));
           
           break;
 

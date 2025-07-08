@@ -63,9 +63,10 @@ Please provide me with real, reliable, authoritative references that can be foun
 Knowledge cutoff: {{LLM.Cutoff}}
 Current date: {{LocaleNow}}
 
+IF YOU ARE ASKED FOR INFORMATION THAT IS LATER THAN YOUR KNOWLEDGE CUTOFF, PLEASE SAY THAT YOU DO NOT HAVE THE INFORMATION AND ASK THE USER TO PROVIDE YOU WITH THE INFORMATION.
+
 {{RenderMermaid}}
 {{RenderPlantUML}}
-{{RenderSVG}}
 {{PreferTables}}
 `,
     symbol: '♓',
