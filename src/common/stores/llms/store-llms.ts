@@ -16,6 +16,7 @@ import { DLLM, DLLMId, LLM_IF_OAI_Fn, LLM_IF_OAI_Vision } from './llms.types';
 import { createDModelConfiguration, DModelConfiguration } from './modelconfiguration.types';
 import { createLlmsAssignmentsSlice, LlmsAssignmentsActions, LlmsAssignmentsSlice, LlmsAssignmentsState, llmsHeuristicUpdateAssignments } from './store-llms-domains_slice';
 import { getDomainModelConfiguration } from './hooks/useModelDomain';
+import type { DModelDomainId } from './model.domains.types';
 import { portModelPricingV2toV3 } from './llms.pricing';
 
 
@@ -239,8 +240,9 @@ export const useModelsStore = create<LlmsStore>()(persist(
      *  3: big-AGI v2
      *  4: migrate .options to .initialParameters/.userParameters
      *  4B: we changed from .chatLLMId/.fastLLMId to modelAssignments: {}, without expicit migration (done on rehydrate, and for no particular reason)
+     *  5: migrate chatgpt-4o-latest to gpt-4.1-2025-04-14
      */
-    version: 4,
+    version: 5,
     migrate: (_state: any, fromVersion: number): LlmsStore => {
 
       if (!_state) return _state;
@@ -279,6 +281,26 @@ export const useModelsStore = create<LlmsStore>()(persist(
         }
       }
 
+      // 4 -> 5: migrate chatgpt-4o-latest to gpt-4.1-2025-04-14
+      if (fromVersion < 5) {
+        try {
+          // Migrate model assignments
+          if (state.modelAssignments) {
+            Object.keys(state.modelAssignments).forEach(domainId => {
+              const assignment = state.modelAssignments[domainId as DModelDomainId];
+              if (assignment && assignment.llmId === 'chatgpt-4o-latest') {
+                console.log(`[Store Migration] Migrating ${domainId} from chatgpt-4o-latest to gpt-4.1-2025-04-14`);
+                assignment.llmId = 'gpt-4.1-2025-04-14';
+              }
+            });
+          }
+          // Remove the deleted model from the llms array
+          state.llms = state.llms.filter(llm => llm.id !== 'chatgpt-4o-latest');
+        } catch (error) {
+          console.warn('[Store Migration] Error migrating chatgpt-4o-latest:', error);
+        }
+      }
+
       return state;
     },
 
@@ -304,6 +326,26 @@ export const useModelsStore = create<LlmsStore>()(persist(
         // ensure the vId link exists and is valid (this was a pre-TF update)
         return llm.vId ? llm : { ...llm, vId: service.vId };
       }).filter(llm => !!llm) as DLLM[];
+
+      // [IMMEDIATE MIGRATION] Clean up any references to chatgpt-4o-latest
+      try {
+        if (state.modelAssignments) {
+          let migrationPerformed = false;
+          Object.keys(state.modelAssignments).forEach(domainId => {
+            const assignment = state.modelAssignments[domainId as DModelDomainId];
+            if (assignment && assignment.llmId === 'chatgpt-4o-latest') {
+              console.log(`[Immediate Migration] Migrating ${domainId} from chatgpt-4o-latest to gpt-4.1-2025-04-14`);
+              assignment.llmId = 'gpt-4.1-2025-04-14';
+              migrationPerformed = true;
+            }
+          });
+          if (migrationPerformed) {
+            console.log('[Immediate Migration] Successfully migrated model assignments from chatgpt-4o-latest');
+          }
+        }
+      } catch (error) {
+        console.warn('[Immediate Migration] Error migrating model assignments:', error);
+      }
 
       // Select the best LLMs automatically, if not set
       try {

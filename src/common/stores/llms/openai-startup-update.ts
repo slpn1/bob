@@ -1,4 +1,5 @@
 import { llmsStoreState, llmsStoreActions } from './store-llms';
+import { getDomainModelConfiguration } from './hooks/useModelDomain';
 import { ModelVendorOpenAI } from '~/modules/llms/vendors/openai/openai.vendor';
 import { llmsUpdateModelsForServiceOrThrow } from '~/modules/llms/llm.client';
 import { getBackendCapabilities } from '~/modules/backend/store-backend-capabilities';
@@ -44,15 +45,27 @@ export async function ensureOpenAIModelsUpdated() {
     await llmsUpdateModelsForServiceOrThrow(openaiService.id, true);
     console.log('[OpenAI Startup Update] Successfully updated OpenAI models');
 
-    // Auto-assign chatgpt-4o-latest as the default primary chat model if available
+    // Auto-assign gpt-4.1-2025-04-14 as the default primary chat model if available
     const { llms } = llmsStoreState();
-    const chatgpt4oLatest = llms.find(llm => llm.id === 'chatgpt-4o-latest' && !llm.hidden);
+    const gpt41 = llms.find(llm => llm.id === 'gpt-4.1-2025-04-14' && !llm.hidden);
     
-    if (chatgpt4oLatest) {
-      console.log('[OpenAI Startup Update] Auto-assigning chatgpt-4o-latest as primary chat model');
-      assignDomainModelId('primaryChat', 'chatgpt-4o-latest');
+    if (gpt41) {
+      console.log('[OpenAI Startup Update] Auto-assigning gpt-4.1-2025-04-14 as primary chat model');
+      assignDomainModelId('primaryChat', 'gpt-4.1-2025-04-14');
     } else {
-      console.log('[OpenAI Startup Update] chatgpt-4o-latest not found or hidden, skipping auto-assignment');
+      console.log('[OpenAI Startup Update] gpt-4.1-2025-04-14 not found or hidden, skipping auto-assignment');
+    }
+
+    // Migration: Check if current model is the removed chatgpt-4o-latest and migrate to GPT-4.1
+    const currentChatModel = getDomainModelConfiguration('primaryChat', true, true)?.modelId;
+    if (currentChatModel === 'chatgpt-4o-latest') {
+      console.log('[OpenAI Startup Update] Migrating from removed chatgpt-4o-latest to gpt-4.1-2025-04-14');
+      if (gpt41) {
+        assignDomainModelId('primaryChat', 'gpt-4.1-2025-04-14');
+        console.log('[OpenAI Startup Update] Successfully migrated to gpt-4.1-2025-04-14');
+      } else {
+        console.warn('[OpenAI Startup Update] Could not migrate - gpt-4.1-2025-04-14 not available');
+      }
     }
 
   } catch (error) {

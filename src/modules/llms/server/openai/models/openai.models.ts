@@ -467,17 +467,6 @@ export const _knownOpenAIChatModels: ManualMappings = [
     chatPrice: { input: 2.5, cache: { cType: 'oai-ac', read: 1.25 }, output: 10 },
     benchmark: { cbaElo: 1265 },
   },
-  {
-    idPrefix: 'chatgpt-4o-latest',
-    label: 'ChatGPT-4o Latest',
-    description: 'The chatgpt-4o-latest model version continuously points to the version of GPT-4o used in ChatGPT, and is updated frequently.',
-    contextWindow: 128000,
-    maxCompletionTokens: 16384,
-    trainingDataCutoff: 'Oct 2023',
-    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Json], // does not support Tools
-    chatPrice: { input: 5, output: 15 },
-    benchmark: { cbaElo: 1408 },
-  },
 
   // GPT-4o Search Preview: When using Chat Completions, the model always retrieves information from the web before responding to your query.
   {

@@ -42,16 +42,6 @@ export const MODEL_DESCRIPTIONS: Record<string, ModelInfo> = {
   </ul>`
   },
 
-  'openai-chatgpt-4o-latest': {
-    icon: '/icons/models/generalist.png',
-    description: `<h2>GPT-4o – <em>"The Generalist"</em></h2>
-  <ul>
-    <li><strong>Strengths:</strong> GPT-4o is the original GPT-4 model – a top-tier generalist with broad knowledge and excellent reasoning and creativity. It's a multi-modal powerhouse that can handle text, images, and even audio inputs, performing on par with earlier GPT-4 Turbo models in text and coding tasks. In other words, it's highly accurate, well-aligned, and versatile across domains (science, coding, creative writing, etc.).<br/><br/></li>
-    <li><strong>Weaknesses:</strong> As the most powerful model of its generation, GPT-4o can be <strong>slower</strong> and more <strong>expensive</strong> to run compared to the smaller models. It may "overkill" simple tasks where a lighter model could suffice. Also, its knowledge is capped at its training cutoff (e.g. it won't know events after 2023 unless you use the Search version).<br/><br/></li>
-    <li><strong>Ideal Use Cases:</strong> Great for in-depth medical content creation and analysis. For example, use GPT-4o to <strong>draft a comprehensive medical article</strong> or to <strong>analyze a complex clinical study</strong> with nuanced understanding. It's also excellent for general or personal uses like writing a detailed report, coding assistance on tough problems, or creative brainstorming – any scenario where you need a knowledgeable, articulate AI "expert" on hand.<br/><br/></li>
-    <li><strong>Context Window:</strong> GPT-4o can handle fairly long prompts – roughly <strong>128,000 tokens by default. This means it can work with long documents or lengthy conversations, though not as large a context as the GPT-4.1 model.</li>
-  </ul>`
-  },
 
   'openai-gpt-4o-search-preview': {
     icon: '/icons/models/researcher.png',

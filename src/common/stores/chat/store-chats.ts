@@ -473,8 +473,9 @@ export const useChatStore = create<ConversationsStore>()(/*devtools(*/
        *  - 3: [2023-09-19] Switch to IndexedDB - no data shape change,
        *                    but we swapped the backend (localStorage -> IndexedDB)
        *  - 4: [2024-05-14] Convert messages to multi-part, removed the IDB migration
+       *  - 5: [2025-07-08] Migrate chatgpt-4o-latest references
        */
-      version: 4,
+      version: 5,
       storage: createIDBPersistStorage<ConversationsStore>(),
 
       // Migrations
@@ -487,6 +488,25 @@ export const useChatStore = create<ConversationsStore>()(/*devtools(*/
             console.warn('Migrated app-chats from v3 to v4');
 
           state.conversations = V3StoreDataToHead.recreateConversations(state.conversations);
+        }
+
+        // 4 -> 5: Clean up any chatgpt-4o-latest references (if any exist in messages)
+        if (fromVersion < 5 && state && state.conversations) {
+          try {
+            state.conversations.forEach((conversation: any) => {
+              if (conversation.messages) {
+                conversation.messages.forEach((message: any) => {
+                  // Check if any message metadata contains the old model reference
+                  if (message.metadata && message.metadata.llmId === 'chatgpt-4o-latest') {
+                    console.log('[Chat Migration] Updating message metadata from chatgpt-4o-latest to gpt-4.1-2025-04-14');
+                    message.metadata.llmId = 'gpt-4.1-2025-04-14';
+                  }
+                });
+              }
+            });
+          } catch (error) {
+            console.warn('[Chat Migration] Error migrating conversations:', error);
+          }
         }
 
         return state;

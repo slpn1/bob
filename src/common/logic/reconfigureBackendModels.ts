@@ -103,14 +103,14 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
     // in case we refreshed all vendors, auto-assign the primary chat model, so it doesn't get locked to the first vendor
     console.log('[reconfigureBackendModels] Initially empty, auto-assigning primary chat model');
     
-    // Prefer chatgpt-4o-latest if available
+    // Prefer gpt-4.1-2025-04-14 if available
     const { llms } = llmsStoreState();
-    const chatgpt4oLatest = llms.find(llm => llm.id === 'chatgpt-4o-latest' && !llm.hidden);
-    if (chatgpt4oLatest) {
-      console.log('[reconfigureBackendModels] Found chatgpt-4o-latest, assigning as primary chat model');
-      llmsStoreActions().assignDomainModelId('primaryChat', 'chatgpt-4o-latest');
+    const gpt41 = llms.find(llm => llm.id === 'gpt-4.1-2025-04-14' && !llm.hidden);
+    if (gpt41) {
+      console.log('[reconfigureBackendModels] Found gpt-4.1-2025-04-14, assigning as primary chat model');
+      llmsStoreActions().assignDomainModelId('primaryChat', 'gpt-4.1-2025-04-14');
     } else {
-      console.log('[reconfigureBackendModels] chatgpt-4o-latest not available, using auto-assignment');
+      console.log('[reconfigureBackendModels] gpt-4.1-2025-04-14 not available, using auto-assignment');
       llmsStoreActions().assignDomainModelId('primaryChat', null);
     }
   } else {
