@@ -3,6 +3,7 @@ import * as React from 'react';
 import { Avatar, Box, Chip, FormControl, Link } from '@mui/joy';
 
 import { TooltipOutlined } from '~/common/components/TooltipOutlined';
+import { optimaOpenModelInfo } from '~/common/layout/optima/useOptima';
 
 
 interface URLInfo {
@@ -119,6 +120,24 @@ export function CustomARenderer({ node, href, children, ...props }: {
 }) {
 
   const isEmptyInlineLink = React.Children.count(children) === 0;
+  
+  // Handle special model-info link
+  const handleClick = React.useCallback((event: React.MouseEvent) => {
+    if (href === '#model-info') {
+      event.preventDefault();
+      optimaOpenModelInfo();
+      return;
+    }
+  }, [href]);
+
+  // Handle special model-info link first
+  if (href === '#model-info') {
+    return (
+      <a {...props} href={href} onClick={handleClick} style={{ cursor: 'pointer' }}>
+        {children}
+      </a>
+    );
+  }
 
   // Empty Inline Link:  render the favicon with a popup for [](https://..)
   if (isEmptyInlineLink && href) {

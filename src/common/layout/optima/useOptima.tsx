@@ -87,6 +87,10 @@ export function optimaOpenModels() {
   useLayoutOptimaStore.getState().openModels();
 }
 
+export function optimaOpenModelInfo() {
+  useLayoutOptimaStore.getState().openModelInfo();
+}
+
 export function optimaOpenPreferences(changeTab?: PreferencesTabId) {
   useLayoutOptimaStore.getState().openPreferences(changeTab);
 }
@@ -97,6 +101,7 @@ export function useOptimaModals() {
     showKeyboardShortcuts: state.showKeyboardShortcuts,
     showLogger: state.showLogger,
     showModelOptions: state.showModelOptions,
+    showModelInfo: state.showModelInfo,
     showModels: state.showModels,
     showPreferences: state.showPreferences,
     preferencesTab: state.preferencesTab,

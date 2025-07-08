@@ -16,7 +16,7 @@ import { workspaceForConversationIdentity } from '~/common/stores/workspace/work
 import { DMessage, DMessageId, DMessageMetadata, MESSAGE_FLAG_AIX_SKIP, messageHasUserFlag } from './chat.message';
 import { DMessageFragment, DMessageFragmentId, isVoidThinkingFragment } from './chat.fragments';
 import { V3StoreDataToHead, V4ToHeadConverters } from './chats.converters';
-import { conversationTitle, createDConversation, DConversation, DConversationId, duplicateDConversation } from './chat.conversation';
+import { conversationTitle, createDConversation, createWelcomeMessage, DConversation, DConversationId, duplicateDConversation } from './chat.conversation';
 import { estimateTokensForFragments } from './chat.tokens';
 import { gcChatImageAssets } from '~/common/stores/chat/chat.gc';
 
@@ -75,6 +75,19 @@ export const useChatStore = create<ConversationsStore>()(/*devtools(*/
       prependNewConversation: (personaId: SystemPurposeId | undefined, isIncognito: boolean): DConversationId => {
         const newConversation = createDConversation(personaId);
         if (isIncognito) newConversation._isIncognito = true;
+
+        // Add welcome message with current model information
+        try {
+          const currentLLMId = getChatLLMId();
+          if (currentLLMId) {
+            const currentLLM = findLLMOrThrow(currentLLMId);
+            const welcomeMessage = createWelcomeMessage(currentLLM);
+            newConversation.messages = [welcomeMessage];
+          }
+        } catch (error) {
+          // If we can't get the model info, continue without welcome message
+          console.warn('Could not create welcome message:', error);
+        }
 
         _set(state => ({
           conversations: [newConversation, ...state.conversations],

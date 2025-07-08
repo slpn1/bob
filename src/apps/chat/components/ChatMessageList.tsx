@@ -78,6 +78,7 @@ export function ChatMessageList(props: {
   })));
   const { mayWork: isSpeakable } = useCapabilityElevenLabs();
 
+
   // derived state
   const { conversationHandler, conversationId, capabilityHasT2I, onConversationBranch, onConversationExecuteHistory, onTextDiagram, onTextImagine, onTextSpeak } = props;
   const composerCanAddInReferenceTo = _composerInReferenceToCount < 5;

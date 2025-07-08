@@ -9,6 +9,9 @@ import { GoodTooltip } from '~/common/components/GoodTooltip';
 import { useLLM } from '~/common/stores/llms/llms.hooks';
 import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 import { ModelInfoModal } from '~/modules/llms/models-modal/ModelInfoModal';
+import { createWelcomeMessage } from '~/common/stores/chat/chat.conversation';
+import { useChatStore } from '~/common/stores/chat/store-chats';
+import { useOptimaModals, optimaActions } from '~/common/layout/optima/useOptima';
 
 import { useChatLLMDropdown } from './useLLMDropdown';
 import { usePersonaIdDropdown } from './usePersonaDropdown';
@@ -21,10 +24,8 @@ export function ChatBarDropdowns(props: {
   personaDropdownRef: React.Ref<OptimaBarControlMethods>;
 }) {
 
-  // state
-  const [showModelInfo, setShowModelInfo] = React.useState(false);
-
   // external state
+  const { showModelInfo } = useOptimaModals();
   const { chatLLMDropdown } = useChatLLMDropdown(props.llmDropdownRef);
   const { personaDropdown } = usePersonaIdDropdown(props.conversationId, props.personaDropdownRef);
   const { folderDropdown } = useFolderDropdown(props.conversationId);
@@ -33,13 +34,40 @@ export function ChatBarDropdowns(props: {
   const { domainModelId: chatLLMId } = useModelDomain('primaryChat');
   const chatLLM = useLLM(chatLLMId) ?? null;
 
+  // Track model changes and add welcome messages to active conversations
+  const prevChatLLMId = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    // Only add welcome message if:
+    // 1. Model actually changed (not initial load)
+    // 2. There's an active conversation
+    // 3. The conversation has existing messages (not a new chat)
+    if (prevChatLLMId.current && 
+        prevChatLLMId.current !== chatLLMId && 
+        props.conversationId && 
+        chatLLM) {
+      
+      const conversation = useChatStore.getState().conversations.find(c => c.id === props.conversationId);
+      if (conversation && conversation.messages.length > 0) {
+        try {
+          const welcomeMessage = createWelcomeMessage(chatLLM);
+          useChatStore.getState().appendMessage(props.conversationId, welcomeMessage);
+        } catch (error) {
+          console.warn('Could not add model change welcome message:', error);
+        }
+      }
+    }
+    
+    // Update the previous model ID
+    prevChatLLMId.current = chatLLMId;
+  }, [chatLLMId, props.conversationId, chatLLM]);
+
   // handlers
   const handleShowModelInfo = React.useCallback(() => {
-    setShowModelInfo(true);
+    optimaActions().openModelInfo();
   }, []);
 
   const handleHideModelInfo = React.useCallback(() => {
-    setShowModelInfo(false);
+    optimaActions().closeModelInfo();
   }, []);
 
   return <>

@@ -27,6 +27,7 @@ interface OptimaState {
   showKeyboardShortcuts: boolean;
   showLogger: boolean;
   showModelOptions: DLLMId | false;
+  showModelInfo: boolean;
   showModels: boolean;
   showPreferences: boolean;
   preferencesTab: PreferencesTabId;
@@ -50,6 +51,7 @@ const modalsClosedState = {
   showKeyboardShortcuts: false,
   showLogger: false,
   showModelOptions: false,
+  showModelInfo: false,
   showModels: false,
   showPreferences: false,
 } as const;
@@ -101,6 +103,9 @@ export interface OptimaActions {
 
   closeModelOptions: () => void;
   openModelOptions: (id: DLLMId) => void;
+
+  closeModelInfo: () => void;
+  openModelInfo: () => void;
 
   closeModels: () => void;
   openModels: () => void;
@@ -203,6 +208,9 @@ export const useLayoutOptimaStore = create<OptimaState & OptimaActions>((_set, _
 
   closeModelOptions: () => _set({ showModelOptions: false }),
   openModelOptions: (id: DLLMId) => _set({ showModelOptions: id }),
+
+  closeModelInfo: () => _set({ showModelInfo: false }),
+  openModelInfo: () => _set({ showModelInfo: true }),
 
   closeModels: () => _set({ showModels: false }),
   openModels: () => _set({ showModels: true }),

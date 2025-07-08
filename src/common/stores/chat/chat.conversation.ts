@@ -2,7 +2,9 @@ import { defaultSystemPurposeId, SystemPurposeId } from '../../../data';
 
 import { agiUuid } from '~/common/util/idUtils';
 
-import { DMessage, DMessageId, duplicateDMessage } from './chat.message';
+import { DMessage, DMessageId, duplicateDMessage, createDMessageTextContent } from './chat.message';
+import { DLLM, LLM_IF_Tools_WebSearch } from '../llms/llms.types';
+import { createTextContentFragment } from './chat.fragments';
 
 
 /// Conversation
@@ -45,6 +47,48 @@ export interface DConversation {
 
 export type DConversationId = string;
 
+
+// helpers - welcome message
+
+export function createWelcomeMessage(model: DLLM): DMessage {
+  // Enhanced web search detection: check both interface and model name
+  const hasWebSearchInterface = model.interfaces?.includes(LLM_IF_Tools_WebSearch) ?? false;
+  const hasSearchInName = model.label?.toLowerCase().includes('search') ?? false;
+  const hasWebSearchCapability = hasWebSearchInterface || hasSearchInName;
+  
+  // Clean model name (remove emojis and extra symbols)
+  const cleanModelName = model.label?.replace(/[🌐🎁💎💰⏱️🔓🧩]/g, '').trim() || model.id;
+  
+  // Format cutoff date
+  const cutoffDate = model.trainingDataCutoff || 'unknown';
+  
+  let messageText: string;
+  
+  if (hasWebSearchCapability) {
+    messageText = `Hello, I am **${cleanModelName}** with web search capabilities. I can access current information from the web, so I'm not limited by a training cutoff date. If you would like to know more about this model please [click here](#model-info).`;
+  } else {
+    messageText = `Hello, I am **${cleanModelName}** and my cutoff date is **${cutoffDate}**. If you ask me for information past that date I may hallucinate. If you are looking for current news, pick a model with a world symbol next to it. If you would like to know more about this model please [click here](#model-info).`;
+  }
+  
+  // Create the message with a clickable "here" link
+  // Use 'assistant' role so the message is visible (system messages are filtered out by default)
+  const welcomeMessage = createDMessageTextContent('assistant', messageText);
+  
+  // Add generator metadata to make it look like a proper assistant message
+  welcomeMessage.generator = {
+    mgt: 'aix',
+    name: cleanModelName,
+    aix: {
+      vId: model.vId,
+      mId: model.id,
+    },
+  };
+  
+  // Set updated timestamp to make it look complete
+  welcomeMessage.updated = Date.now();
+  
+  return welcomeMessage;
+}
 
 // helpers - creation
 

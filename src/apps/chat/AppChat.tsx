@@ -32,8 +32,9 @@ import { themeBgAppChatComposer } from '~/common/app.theme';
 import { createDMessageFromFragments, createDMessagePlaceholderIncomplete, DMessageMetadata, duplicateDMessageMetadata } from '~/common/stores/chat/chat.message';
 import { createErrorContentFragment, createTextContentFragment, DMessageAttachmentFragment, DMessageContentFragment, duplicateDMessageFragments } from '~/common/stores/chat/chat.fragments';
 import { gcChatImageAssets } from '~/common/stores/chat/chat.gc';
-import { getChatLLMId } from '~/common/stores/llms/store-llms';
-import { getConversation, getConversationSystemPurposeId, useConversation } from '~/common/stores/chat/store-chats';
+import { getChatLLMId, findLLMOrThrow } from '~/common/stores/llms/store-llms';
+import { createWelcomeMessage } from '~/common/stores/chat/chat.conversation';
+import { getConversation, getConversationSystemPurposeId, useConversation, useChatStore } from '~/common/stores/chat/store-chats';
 import { optimaActions, optimaOpenModels, optimaOpenPreferences } from '~/common/layout/optima/useOptima';
 import { useFolderStore } from '~/common/stores/folders/store-chat-folders';
 import { useIsMobile, useIsTallScreen } from '~/common/components/useMatchMedia';
@@ -351,6 +352,24 @@ export function AppChat() {
     const conversationId = (recycleNewConversationId && !forceNoRecycle && !isIncognito)
       ? recycleNewConversationId
       : prependNewConversation(getConversationSystemPurposeId(focusedPaneConversationId) ?? undefined, isIncognito);
+
+    // Add welcome message to recycled conversations if they're empty
+    if (recycleNewConversationId && !forceNoRecycle && !isIncognito) {
+      const conversation = getConversation(conversationId);
+      if (conversation && conversation.messages.length === 0) {
+        try {
+          const currentLLMId = getChatLLMId();
+          if (currentLLMId) {
+            const currentLLM = findLLMOrThrow(currentLLMId);
+            const welcomeMessage = createWelcomeMessage(currentLLM);
+            // Add the welcome message to the recycled conversation
+            useChatStore.getState().appendMessage(conversationId, welcomeMessage);
+          }
+        } catch (error) {
+          console.warn('Could not add welcome message to recycled conversation:', error);
+        }
+      }
+    }
 
     // switch the focused pane to the new conversation
     handleOpenConversationInFocusedPane(conversationId);
