@@ -6,6 +6,7 @@ import AllInclusiveIcon from '@mui/icons-material/AllInclusive';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
 
 import { useScaledTypographySx } from '~/modules/blocks/blocks.styles';
+import { RenderMarkdown } from '~/modules/blocks/markdown/RenderMarkdown';
 
 import { ConfirmationModal } from '~/common/components/modals/ConfirmationModal';
 import { ExpanderControlledBox } from '~/common/components/ExpanderControlledBox';
@@ -58,13 +59,15 @@ const _styles = {
     mt: 1,
     p: 1,
 
-    // plain text style
-    overflowWrap: 'anywhere',
-    whiteSpace: 'break-spaces',
-
     // layout
     display: 'flex',
     flexDirection: 'column',
+  } as const,
+
+  plainText: {
+    // plain text style (for non-reasoning content)
+    overflowWrap: 'anywhere',
+    whiteSpace: 'break-spaces',
   } as const,
 
   buttonInline: {
@@ -95,7 +98,8 @@ export function BlockPartModelAux(props: {
 
   // memo
   const scaledTypographySx = useScaledTypographySx(adjustContentScaling(props.contentScaling, -1), false, false);
-  const textSx = React.useMemo(() => ({ ..._styles.text, ...scaledTypographySx }), [scaledTypographySx]);
+  const textSx = React.useMemo(() => ({ ..._styles.text }), []);
+  const plainTextSx = React.useMemo(() => ({ ..._styles.plainText, ...scaledTypographySx }), [scaledTypographySx]);
 
   let typeText = props.auxType === 'reasoning' ? 'Reasoning' : 'Auxiliary';
 
@@ -166,12 +170,30 @@ export function BlockPartModelAux(props: {
     <ExpanderControlledBox expanded={expanded}>
 
       {!neverExpanded && (
-        <Typography sx={textSx}>
-          <span>
-            {props.auxText}
-            {!!props.auxRedactedDataCount && <Box component='span' sx={{ color: 'text.disabled' }}> {ANTHROPIC_REDACTED_EXPLAINER}{'.'.repeat(props.auxRedactedDataCount % 5)}</Box>}
-          </span>
-        </Typography>
+        <Box sx={textSx}>
+          {props.auxType === 'reasoning' ? (
+            <>
+              <RenderMarkdown 
+                content={props.auxText} 
+                sx={{ 
+                  marginInline: '0 !important', // Override default margin
+                  '& > *:first-of-type': { marginTop: 0 }, // Remove top margin from first element
+                  '& > *:last-of-type': { marginBottom: 0 }, // Remove bottom margin from last element
+                }}
+              />
+              {!!props.auxRedactedDataCount && (
+                <Box component='span' sx={{ color: 'text.disabled' }}> {ANTHROPIC_REDACTED_EXPLAINER}{'.'.repeat(props.auxRedactedDataCount % 5)}</Box>
+              )}
+            </>
+          ) : (
+            <Typography sx={plainTextSx}>
+              <span>
+                {props.auxText}
+                {!!props.auxRedactedDataCount && <Box component='span' sx={{ color: 'text.disabled' }}> {ANTHROPIC_REDACTED_EXPLAINER}{'.'.repeat(props.auxRedactedDataCount % 5)}</Box>}
+              </span>
+            </Typography>
+          )}
+        </Box>
       )}
 
     </ExpanderControlledBox>
