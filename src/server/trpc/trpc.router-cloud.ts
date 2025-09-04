@@ -1,3 +1,4 @@
+import '~/server/polyfills';
 import { createTRPCRouter } from './trpc.server';
 
 import { aixRouter } from '~/modules/aix/server/api/aix.router';

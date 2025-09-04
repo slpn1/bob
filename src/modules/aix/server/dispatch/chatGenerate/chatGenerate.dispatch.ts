@@ -108,6 +108,7 @@ export function createChatGenerateDispatch(
 
       // switch to the Responses API if the model supports it
       const isResponsesAPI = !!model.vndOaiResponsesAPI;
+      console.log("Dispatching to OpenAI " + (isResponsesAPI ? "Responses" : "ChatCompletions") + " API for model " + model.id);
       if (isResponsesAPI) {
         return {
           request: {

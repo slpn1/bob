@@ -2,6 +2,9 @@ import * as React from 'react';
 
 import { Box, Sheet, styled } from '@mui/joy';
 
+import { DrawerResizeHandle } from './DrawerResizeHandle';
+import { useDrawerResize } from './useDrawerResize';
+
 import { checkVisibleNav, NavItemApp } from '~/common/app.nav';
 import { themeZIndexDesktopDrawer } from '~/common/app.theme';
 
@@ -36,6 +39,7 @@ const DesktopDrawerTranslatingSheet = styled(Sheet)(({ theme }) => ({
   width: '100%',
   height: '100dvh',
   zIndex: 1, // just to allocate a layer; this was: themeZIndexDesktopDrawer
+  position: 'relative', // for resize handle positioning
 
   // styling
   backgroundColor: OPTIMA_DRAWER_BACKGROUND,
@@ -77,6 +81,7 @@ export function DesktopDrawer(props: { component: React.ElementType, currentApp?
 
   // state
   const drawerPortalRef = useOptimaPortalOutRef('optima-portal-drawer', 'DesktopDrawer');
+  const { drawerWidth, updateDrawerWidth } = useDrawerResize();
 
   // external state
   const _isDrawerOpen = useOptimaDrawerOpen();
@@ -124,6 +129,13 @@ export function DesktopDrawer(props: { component: React.ElementType, currentApp?
         {/*{(!softDrawerUnmount || isDrawerOpen || !UNMOUNT_DELAY_MS) &&*/}
         {/*  appDrawerContent*/}
         {/*}*/}
+
+        {/* Resize Handle */}
+        <DrawerResizeHandle 
+          onResize={updateDrawerWidth}
+          minWidth={280}
+          maxWidth={600}
+        />
 
       </DesktopDrawerTranslatingSheet>
 

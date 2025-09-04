@@ -29,7 +29,7 @@ export const ModelDomainsRegistry: Record<DModelDomainId, ModelDomainSpec> = {
     description: 'The main chat interface for general conversations.',
     requiredInterfaces: [],
     autoStrategy: 'topVendorTopLlm',
-    recommended: 'gpt-4.1-2025-04-14',
+    recommended: 'gpt-5-2025-08-07',
   },
   codeApply: {
     label: 'Code Editor',

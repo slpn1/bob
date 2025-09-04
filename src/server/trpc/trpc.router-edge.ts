@@ -7,7 +7,6 @@ import { llmAnthropicRouter } from '~/modules/llms/server/anthropic/anthropic.ro
 import { llmGeminiRouter } from '~/modules/llms/server/gemini/gemini.router';
 import { llmOllamaRouter } from '~/modules/llms/server/ollama/ollama.router';
 import { llmOpenAIRouter } from '~/modules/llms/server/openai/openai.router';
-import { prodiaRouter } from '~/modules/t2i/prodia/prodia.router';
 import { youtubeRouter } from '~/modules/youtube/youtube.router';
 
 /**
@@ -21,7 +20,6 @@ export const appRouterEdge = createTRPCRouter({
   llmGemini: llmGeminiRouter,
   llmOllama: llmOllamaRouter,
   llmOpenAI: llmOpenAIRouter,
-  prodia: prodiaRouter,
   youtube: youtubeRouter,
 });
 

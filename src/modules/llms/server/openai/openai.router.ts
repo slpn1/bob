@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from 'zod/v4';
 import { TRPCError } from '@trpc/server';
 
 import { createTRPCRouter, publicProcedure } from '~/server/trpc/trpc.server';
@@ -28,7 +28,7 @@ import { openPipeModelDescriptions, openPipeModelSort, openPipeModelToModelDescr
 import { openRouterInjectVariants, openRouterModelFamilySortFn, openRouterModelToModelDescription } from './models/openrouter.models';
 import { perplexityAIModelDescriptions, perplexityInjectVariants } from './models/perplexity.models';
 import { togetherAIModelsToModelDescriptions } from './models/together.models';
-import { wilreLocalAIModelsApplyOutputSchema, wireLocalAIModelsAvailableOutputSchema, wireLocalAIModelsListOutputSchema } from './localai.wiretypes';
+import { wireLocalAIModelsApplyOutputSchema, wireLocalAIModelsAvailableOutputSchema, wireLocalAIModelsListOutputSchema } from './localai.wiretypes';
 import { xaiModelDescriptions, xaiModelSort } from './models/xai.models';
 
 
@@ -336,7 +336,7 @@ export const llmOpenAIRouter = createTRPCRouter({
   /* [OpenAI/LocalAI] images/generations */
   createImages: publicProcedure
     .input(createImagesInputSchema)
-    .mutation(async function* ({ input }): AsyncGenerator<T2ICreateImageAsyncStreamOp> {
+    .mutation(async function* ({ input, signal }): AsyncGenerator<T2ICreateImageAsyncStreamOp> {
 
       const { access, generationConfig: config, editConfig } = input;
 
@@ -420,8 +420,25 @@ export const llmOpenAIRouter = createTRPCRouter({
           config.model,  // modelRefId not really needed for these endpoints
           requestBody,
           isEdit ? '/v1/images/edits' : '/v1/images/generations',
-        ),
+          signal, // wire the signal from the input
+        )
+        .catch((error: any) => {
+          // if aborted, ignore the error, or else we'll throw an error
+          if (signal?.aborted)
+            return null; // de-facto ignores the error, and the connection is already gone
+
+          // otherwise, re-throw the error
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Error: ${error?.message || error?.toString() || 'Unknown error'}`,
+            cause: error,
+          });
+        }),
       );
+
+      // null: there was an error
+      if (!wireOpenAICreateImageOutput)
+        return null;
 
       // common image fields
       const [width, height] = (config.size as any) === 'auto'
@@ -500,7 +517,7 @@ export const llmOpenAIRouter = createTRPCRouter({
     .mutation(async ({ input: { access, galleryName, modelName } }) => {
       const galleryModelId = `${galleryName}@${modelName}`;
       const wireLocalAIModelApply = await openaiPOSTOrThrow(access, null, { id: galleryModelId }, '/models/apply');
-      return wilreLocalAIModelsApplyOutputSchema.parse(wireLocalAIModelApply);
+      return wireLocalAIModelsApplyOutputSchema.parse(wireLocalAIModelApply);
     }),
 
   /* [LocalAI] Poll for a Model download Job status */
@@ -824,9 +841,9 @@ async function openaiGETOrThrow<TOut extends object>(access: OpenAIAccessSchema,
   return await fetchJsonOrTRPCThrow<TOut>({ url, headers, name: `OpenAI/${serverCapitalizeFirstLetter(access.dialect)}` });
 }
 
-async function openaiPOSTOrThrow<TOut extends object, TPostBody extends object | FormData>(access: OpenAIAccessSchema, modelRefId: string | null, body: TPostBody, apiPath: string /*, signal?: AbortSignal*/): Promise<TOut> {
+async function openaiPOSTOrThrow<TOut extends object, TPostBody extends object | FormData>(access: OpenAIAccessSchema, modelRefId: string | null, body: TPostBody, apiPath: string, signal: undefined | AbortSignal = undefined): Promise<TOut> {
   const { headers, url } = openAIAccess(access, modelRefId, apiPath);
-  return await fetchJsonOrTRPCThrow<TOut, TPostBody>({ url, method: 'POST', headers, body, name: `OpenAI/${serverCapitalizeFirstLetter(access.dialect)}` });
+  return await fetchJsonOrTRPCThrow<TOut, TPostBody>({ url, method: 'POST', headers, body, name: `OpenAI/${serverCapitalizeFirstLetter(access.dialect)}`, signal });
 }
 
 

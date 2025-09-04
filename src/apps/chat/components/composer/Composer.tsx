@@ -2,7 +2,21 @@ import * as React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import type { FileWithHandle } from 'browser-fs-access';
 
-import { Box, Button, ButtonGroup, Card, Dropdown, Grid, IconButton, Menu, MenuButton, MenuItem, Textarea, Typography } from '@mui/joy';
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Card,
+  Dropdown,
+  FormHelperText,
+  Grid,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  Textarea,
+  Typography
+} from '@mui/joy';
 import { ColorPaletteProp, SxProps, VariantProp } from '@mui/joy/styles/types';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -88,7 +102,6 @@ const zIndexComposerOverlayMic = 10;
 const SHOW_TIPS_AFTER_RELOADS = 25;
 
 
-
 const paddingBoxSx: SxProps = {
   p: { xs: 1, md: 2 },
 };
@@ -131,7 +144,6 @@ export function Composer(props: {
     chatExecuteMode,
     chatExecuteModeSendColor, chatExecuteModeSendLabel,
     chatExecuteMenuComponent, chatExecuteMenuShown, showChatExecuteMenu,
-    setChatMode, setDrawMode,
   } = useChatExecuteMode(props.capabilityHasT2I, props.isMobile);
   const [isMinimized, setIsMinimized] = React.useState(false);
   const micCardRef = React.useRef<HTMLDivElement>(null);
@@ -733,11 +745,11 @@ export function Composer(props: {
 
   if (isDesktop && timeToShowTips && !isDraw) {
     if (explainShiftEnter)
-      textPlaceholder += !enterIsNewline ? '\n\n💡 Tip: Shift + Enter to add a new line' : '\n\n💡 Shift + Enter to send';
-    else if (explainAltEnter)
-      textPlaceholder += platformAwareKeystrokes('\n\n💡 Tip: Alt + Enter to just append the message');
+      textPlaceholder += !enterIsNewline ? '\n\n⏎ Shift + Enter to add a new line' : '\n\n➤ Shift + Enter to send';
+      // else if (explainAltEnter)
+    //   textPlaceholder += platformAwareKeystrokes('\n\n⭳ Tip: Alt + Enter to just append the message');
     else if (explainCtrlEnter)
-      textPlaceholder += platformAwareKeystrokes('\n\n💡 Tip: Ctrl + Enter to beam');
+      textPlaceholder += platformAwareKeystrokes('\n\n⫷ Tip: Ctrl + Enter to beam');
   }
 
   const stableGridSx: SxProps = React.useMemo(() => ({
@@ -779,8 +791,7 @@ export function Composer(props: {
         >
 
           {/* [Mobile: top, Desktop: left] */}
-          <Grid xs={12} md={12}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
-          <Grid xs={12} md={11}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'stretch' }}>
+          <Grid xs={12} md={10}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
 
             {/* [Mobile, Col1] Mic, Insert Multi-modal content, and Broadcast buttons */}
             {isMobile && (
@@ -837,13 +848,16 @@ export function Composer(props: {
                 {/*</FormHelperText>*/}
 
                 {/* Responsive Open Files button */}
-                {/*<ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />*/}
+                <ButtonAttachFilesMemo color={showTint} onAttachFiles={handleAttachFiles} fullWidth multiple />
 
-                {/*/!* Responsive Paste button *!/*/}
-                {/*{supportsClipboardRead() && <ButtonAttachClipboardMemo onClick={attachAppendClipboardItems} />}*/}
+                {/*/!* Responsive Web button *!/*/}
+                {/*{showChatAttachments !== 'only-images' && <ButtonAttachWebMemo color={showTint} disabled={!hasComposerBrowseCapability} onOpenWebInput={openWebInputDialog} />}*/}
 
-                {/*/!* Responsive Screen Capture button *!/*/}
-                {/*{labsAttachScreenCapture && supportsScreenCapture && <ButtonAttachScreenCaptureMemo onAttachScreenCapture={handleAttachScreenCapture} />}*/}
+                {/* Responsive Paste button */}
+                {supportsClipboardRead() && showChatAttachments !== 'only-images' && <ButtonAttachClipboardMemo color={showTint} onAttachClipboard={attachAppendClipboardItems} />}
+
+                {/* Responsive Screen Capture button */}
+                {labsAttachScreenCapture && supportsScreenCapture && <ButtonAttachScreenCaptureMemo color={showTint} onAttachScreenCapture={handleAttachScreenCapture} />}
 
                 {/* Responsive Camera OCR button */}
                 {labsCameraDesktop && <ButtonAttachCameraMemo color={showTint} onOpenCamera={openCamera} />}
@@ -943,7 +957,7 @@ export function Composer(props: {
                     display: 'flex', flexDirection: 'column', gap: isDesktop ? 1 : 0.25,
                   }}>
                     {/*{isDesktop && <ButtonMicMemo variant={micVariant} color={micColor} errorMessage={recognitionState.errorMessage} onClick={handleToggleMic} noBackground={!recognitionState.isActive} />}*/}
-                    <ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />
+                    {/*<ButtonAttachFilesMemo onAttachFiles={handleAttachFiles} fullWidth multiple />*/}
 
                     {micIsRunning && (
                       <ButtonMicContinuationMemo
@@ -1049,72 +1063,86 @@ export function Composer(props: {
                     backgroundColor: (isMobile && sendButtonVariant === 'outlined') ? 'background.popup' : undefined
                   }}
                 >
-                  {!assistantAbortible ? (
-                    <>
-                      <Box sx={{ boxShadow: 'none !important', display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
+                    {!assistantAbortible ? (
                         <Button
-                          key='composer-chat' 
-                          color="primary"
-                          disabled={noConversation || noLLM}
-                          loading={sendStarted && chatExecuteMode === 'generate-content'}
-                          loadingPosition='end'
-                          onClick={() => {
-                            setChatMode();
-                            handleSendAction('generate-content', composeText);
-                          }}
-                          endDecorator={<SendIcon sx={{ fontSize: 18 }} />}
-                          sx={{ '--Button-gap': '0.5rem', borderRadius: '18px' }}
+                            key='composer-act'
+                            fullWidth
+                            disabled={noConversation /* || noLLM*/}
+                            loading={sendStarted}
+                            loadingPosition='end'
+                            onClick={handleSendClicked}
+                            endDecorator={sendButtonIcon}
+                            sx={{ '--Button-gap': '1rem' }}
                         >
-                          Chat
+                            {micContinuation && 'Voice '}{sendButtonLabel}
                         </Button>
+                    ) : (
                         <Button
-                          key='composer-draw'
-                          color="warning"
-                          disabled={noConversation || noLLM || !props.capabilityHasT2I}
-                          loading={sendStarted && chatExecuteMode === 'generate-image'}
-                          loadingPosition='end'
-                          onClick={() => {
-                            setDrawMode();
-                            handleSendAction('generate-image', composeText);
-                          }}
-                          endDecorator={<BrushIcon sx={{ fontSize: 18 }} />}
-                          sx={{ '--Button-gap': '0.5rem', borderRadius: '18px'  }}
+                            key='composer-stop'
+                            fullWidth
+                            variant='soft'
+                            disabled={noConversation}
+                            onClick={handleStopClicked}
+                            endDecorator={<StopOutlinedIcon sx={{ fontSize: 18 }} />}
+                            sx={{ animation: `${animationEnterBelow} 0.1s ease-out` }}
                         >
-                          Draw
+                            Stop
                         </Button>
-                        {/* Place Image Settings button directly underneath both buttons regardless of mode */}
-                        {isDesktop && isDraw && <ButtonOptionsDraw onClick={handleDrawOptionsClicked} sx={{ mt: 1 }} />}
-                      </Box>
-                    </>
-                  ) : (
-                    <Button
-                      key='composer-stop'
-                      fullWidth
-                      variant='soft'
-                      disabled={noConversation}
-                      onClick={handleStopClicked}
-                      endDecorator={<StopOutlinedIcon sx={{ fontSize: 18 }} />}
-                      sx={{ animation: `${animationEnterBelow} 0.1s ease-out` }}
-                    >
-                      Stop
-                    </Button>
-                  )}
+                    )}
+                  {/* [Beam] Open Beam */}
+                  {/*{isText && <Tooltip title='Open Beam'>*/}
+                  {/*  <IconButton variant='outlined' disabled={noConversation || noLLM} onClick={handleSendTextBeamClicked}>*/}
+                  {/*    <ChatBeamIcon />*/}
+                  {/*  </IconButton>*/}
+                  {/*</Tooltip>}*/}
+
+                  {/* [Draw] Imagine */}
+                  {/* NOTE: disabled: as we have prompt enhancement in the TextArea (Draw Mode) already */}
+                  {/*{isDraw && !!composeText && <Tooltip title='Generate an image prompt'>*/}
+                  {/*  <IconButton variant='outlined' disabled={noConversation || noLLM} onClick={handleTextImagineClicked}>*/}
+                  {/*    <AutoAwesomeIcon />*/}
+                  {/*  </IconButton>*/}
+                  {/*</Tooltip>}*/}
+
+                  {/* Mode expander */}
+                  <IconButton
+                    variant={chatExecuteMenuShown ? 'outlined' : assistantAbortible ? 'soft' : isDraw ? undefined : undefined}
+                    disabled={noConversation /*|| chatExecuteMenuShown*/}
+                    onClick={showChatExecuteMenu}
+                  >
+                    <ExpandLessIcon />
+                  </IconButton>
                 </ButtonGroup>
 
-              </Box>
+                  {/*/!* [desktop] secondary-top buttons *!/*/}
+                  {/*{isDesktop && showChatExtras && !assistantAbortible && (*/}
+                  {/*    <ButtonBeamMemo*/}
+                  {/*        color={beamButtonColor}*/}
+                  {/*        disabled={noConversation /*|| noLLM*!/*/}
+                  {/*        hasContent={!!composeText}*/}
+                  {/*        onClick={handleSendTextBeamClicked}*/}
+                  {/*    />*/}
+                  {/*)}*/}
+
             </Box>
-          </Grid>
 
-              {/* [desktop] Multicast switch (under the Chat button) */}
-              {isDesktop && props.isMulticast !== null && <ButtonMultiChatMemo multiChat={props.isMulticast} onSetMultiChat={props.setIsMulticast} />}
 
-              {/* [desktop] secondary bottom-buttons (aligned to bottom for now, and mutually exclusive) */}
-              {isDesktop && <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
-                {/* [desktop] Call secondary button */}
-                {/*{showChatExtras && <ButtonCallMemo disabled={noConversation || noLLM || assistantAbortible} onClick={handleCallClicked} />}*/}
+                {/* [desktop] Draw mode N buttons */}
+                {isDesktop && isDraw && <ButtonGroupDrawRepeat drawRepeat={drawRepeat} setDrawRepeat={setDrawRepeat} />}
 
-                {/* Image Settings button moved inside the Chat/Draw button group */}
-              </Box>}
+                {/* [desktop] Multicast switch (under the Chat button) */}
+                {isDesktop && props.isMulticast !== null && <ButtonMultiChatMemo multiChat={props.isMulticast} onSetMultiChat={props.setIsMulticast} />}
+
+                {/* [desktop] secondary bottom-buttons (aligned to bottom for now, and mutually exclusive) */}
+                {isDesktop && <Box sx={{ mt: 'auto', display: 'grid', gap: 1 }}>
+
+                    {/*/!* [desktop] Call secondary button *!/*/}
+                    {/*{showChatExtras && <ButtonCallMemo disabled={noConversation || noLLM || assistantAbortible} onClick={handleCallClicked} />}*/}
+
+                    {/* [desktop] Draw Options secondary button */}
+                    {isDraw && <ButtonOptionsDraw onClick={handleDrawOptionsClicked} />}
+
+                </Box>}
 
             </Box>
           </Grid>

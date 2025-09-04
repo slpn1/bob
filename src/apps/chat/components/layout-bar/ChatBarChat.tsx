@@ -18,7 +18,7 @@ import { usePersonaIdDropdown } from './usePersonaDropdown';
 import { useFolderDropdown } from './useFolderDropdown';
 
 
-export function ChatBarDropdowns(props: {
+export function ChatBarChat(props: {
   conversationId: DConversationId | null;
   llmDropdownRef: React.Ref<OptimaBarControlMethods>;
   personaDropdownRef: React.Ref<OptimaBarControlMethods>;

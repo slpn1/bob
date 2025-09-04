@@ -3,6 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 import { Box, Button, Dropdown, IconButton, ListDivider, ListItem, ListItemButton, ListItemDecorator, Menu, MenuButton, MenuItem, Tooltip, Typography, Avatar } from '@mui/joy';
 import AddIcon from '@mui/icons-material/Add';
+import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
 import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
@@ -88,6 +89,7 @@ function ChatDrawer(props: {
   const [searchDepth, setSearchDepth] = React.useState<ChatSearchDepth>('attachments'); // default: full search
   const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState('');
   const [folderChangeRequest, setFolderChangeRequest] = React.useState<FolderChangeRequest | null>(null);
+  const [renderLimit, setRenderLimit] = React.useState(200); // progressive loading limit
 
   // external state
   const {
@@ -106,6 +108,16 @@ function ChatDrawer(props: {
   const [uiComplexityMode, contentScaling] = useUIPreferencesStore(useShallow((state) => [state.complexityMode, state.contentScaling]));
   const zenMode = uiComplexityMode === 'minimal';
   const gifMode = uiComplexityMode === 'extra';
+
+  // Calculate chat counts per folder
+  // TODO: restore this, but also check if conversations are active? or move the computation to the renderNavItems hook?
+  // const folderChatCounts = React.useMemo(() => {
+  //   const counts: Record<string, number> = {};
+  //   allFolders.forEach(folder => {
+  //     counts[folder.id] = folder.conversationIds.length;
+  //   });
+  //   return counts;
+  // }, [allFolders]);
 
   // Use the centralized useIsAdmin hook
   const isAdmin = useIsAdmin();
@@ -161,6 +173,30 @@ function ChatDrawer(props: {
   }, []);
 
 
+  // Render limit - load more items
+
+  const handleRenderLimitIncrease = React.useCallback(() => {
+    setRenderLimit(prevValue => {
+      // Thresholds: 200 --(+200)--> 400 --(+500)--> 900 --(+1000)--> 1900 --> Infinity --> 200 (cycle)
+      if (prevValue === 200)
+        return (filteredChatsCount > 400 ? 400 : Infinity); // if less than 400, show all
+      else if (prevValue === 400)
+        return (filteredChatsCount > 900 ? 900 : Infinity); // if less than 900, show all
+      else if (prevValue === 900)
+        return (filteredChatsCount > 1900 ? 1900 : Infinity); // if less than 1900, show all
+      else if (prevValue === 1900)
+        return Infinity; // no limit
+      else
+        return 200; // go back to optimized view
+    });
+  }, [filteredChatsCount]);
+
+  // Reset render limit when search query changes
+  React.useEffect(() => {
+    setRenderLimit(200);
+  }, [debouncedSearchQuery]);
+
+
   // memoize the group dropdown
   const { isSearching } = isDrawerSearching(debouncedSearchQuery);
   const groupingComponent = React.useMemo(() => (
@@ -195,13 +231,13 @@ function ChatDrawer(props: {
           <ListItem>
             <Typography level='body-sm'>Filter</Typography>
           </ListItem>
-          <MenuItem onClick={toggleFilterIsArchived}>
-            <ListItemDecorator>{filterIsArchived && <CheckRoundedIcon />}</ListItemDecorator>
-            Archived
-          </MenuItem>
           <MenuItem onClick={toggleFilterHasStars}>
             <ListItemDecorator>{filterHasStars && <CheckRoundedIcon />}</ListItemDecorator>
             Starred <StarOutlineRoundedIcon />
+          </MenuItem>
+          <MenuItem onClick={toggleFilterIsArchived}>
+            <ListItemDecorator>{filterIsArchived && <CheckRoundedIcon />}</ListItemDecorator>
+            Archived <ArchiveOutlinedIcon />
           </MenuItem>
           <MenuItem onClick={toggleFilterHasImageAssets}>
             <ListItemDecorator>{filterHasImageAssets && <CheckRoundedIcon />}</ListItemDecorator>
@@ -289,6 +325,7 @@ function ChatDrawer(props: {
     {enableFolders && (
       <ChatFolderList
         folders={allFolders}
+        // folderChatCounts={folderChatCounts}
         contentScaling={contentScaling}
         activeFolderId={props.activeFolderId}
         onFolderSelect={props.setActiveFolderId}
@@ -322,13 +359,13 @@ function ChatDrawer(props: {
             mt: 4,
             mx: 4,
             borderRadius: 20
-          }}  
+          }}
         />
 
         {/* New Chat Button */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
           mt: 2,
           mb: 1,
           ml: 4
@@ -346,9 +383,9 @@ function ChatDrawer(props: {
           >
             <AddIcon />
           </IconButton>
-          <Typography 
-            level="body-md" 
-            sx={{ 
+          <Typography
+            level="body-md"
+            sx={{
               ml: 1.5,
               fontWeight: 500
             }}
@@ -367,9 +404,9 @@ function ChatDrawer(props: {
         ml: 4,
         mr: 4
       }}>
-        <Typography 
-          color='primary' 
-          fontWeight={500} 
+        <Typography
+          color='primary'
+          fontWeight={500}
           level='body-md'
           sx={{
             borderBottom: '1px solid',
@@ -384,40 +421,69 @@ function ChatDrawer(props: {
 
       {/* Chat Titles List (shrink as half the rate as the Folders List) */}
       <Box sx={{ flexGrow: 1, flexShrink: 1, flexBasis: '20rem', overflowY: 'auto', ...themeScalingMap[contentScaling].chatDrawerItemSx }}>
-        {renderNavItems.map((item, idx) => {
-          if (item.type === 'nav-item-chat-data') {
-            return (
-              <ChatDrawerItemMemo
-                key={'nav-chat-' + item.conversationId}
-                item={item}
-                showSymbols={!showPersonaIcons ? false : zenMode ? false : gifMode ? 'gif' : true}
-                bottomBarBasis={filteredChatsBarBasis}
-                onConversationActivate={handleConversationActivate}
-                onConversationBranch={onConversationBranch}
-                onConversationDeleteNoConfirmation={handleConversationDeleteNoConfirmation}
-                onConversationExport={onConversationsExportDialog}
-                onConversationFolderChange={handleConversationFolderChange}
-              />
-            );
-          } else if (item.type === 'nav-item-info-message') {
-            return (
-              <Box key={'nav-info-' + idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, ml: 2 }}>
-                <Typography level='body-xs' sx={{ color: 'primary.softColor', my: 'calc(var(--ListItem-minHeight) / 4)' }}>
-                  {filterHasStars && <StarOutlineRoundedIcon sx={{ color: 'primary.softColor', fontSize: 'xl', mb: -0.5, mr: 1 }} />}
-                  {item.message}
-                </Typography>
-                {(filterHasStars || filterHasImageAssets || filterHasDocFragments || filterIsArchived) && (
-                  <Tooltip title='Clear Filters'>
-                    <IconButton size='sm' color='primary' onClick={clearFilters}>
-                      <ClearIcon />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            );
-          }
-          return null;
-        })}
+        {renderNavItems.slice(0, renderLimit).map((item, idx) => item.type === 'nav-item-chat-data' ? (
+            <ChatDrawerItemMemo
+              key={'nav-chat-' + item.conversationId}
+              item={item}
+              showSymbols={!showPersonaIcons ? false : zenMode ? false : gifMode ? 'gif' : true}
+              bottomBarBasis={filteredChatsBarBasis}
+              onConversationActivate={handleConversationActivate}
+              onConversationBranch={onConversationBranch}
+              onConversationDeleteNoConfirmation={handleConversationDeleteNoConfirmation}
+              onConversationExport={onConversationsExportDialog}
+              onConversationFolderChange={handleConversationFolderChange}
+            />
+          ) : item.type === 'nav-item-group' ? (
+            <Typography key={'nav-divider-' + idx} level='body-xs' sx={{
+              textAlign: 'center',
+              my: 1,
+              // my: 'calc(var(--ListItem-minHeight) / 4)',
+              // keeps the group header sticky to the top
+              position: 'sticky',
+              top: 0,
+              backgroundColor: OPTIMA_DRAWER_BACKGROUND,
+              zIndex: 1,
+            }}>
+              {item.title}
+            </Typography>
+          ) : item.type === 'nav-item-info-message' ? (
+            <Box key={'nav-info-' + idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, ml: 2 }}>
+              <Typography level='body-xs' sx={{ color: 'primary.softColor', my: 'calc(var(--ListItem-minHeight) / 4)' }}>
+                {filterHasStars && <StarOutlineRoundedIcon sx={{ color: 'primary.softColor', fontSize: 'xl', mb: -0.5, mr: 1 }} />}
+                {item.message}
+              </Typography>
+              {(filterHasStars || filterHasImageAssets || filterHasDocFragments || filterIsArchived) && (
+                <Tooltip title='Clear Filters'>
+                  <IconButton size='sm' color='primary' onClick={clearFilters}>
+                    <ClearIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Box>
+          ) : null,
+        )}
+
+        {/* Load More Button */}
+        {filteredChatsCount > 200 && (
+          <ListItem>
+            <ListItemButton
+              variant='soft'
+              onClick={handleRenderLimitIncrease}
+              sx={{ justifyContent: 'center', py: 3 }}
+            >
+              {renderLimit === Infinity
+                ? 'Show less'
+                : (renderLimit === 200 && filteredChatsCount > 400)
+                  ? 'Show 200 more'
+                  : (renderLimit === 400 && filteredChatsCount > 900)
+                    ? 'Show 500 more'
+                    : (renderLimit === 900 && filteredChatsCount > 1900)
+                      ? 'Show 1000 more'
+                      : 'Show all'
+              } {renderLimit !== Infinity && `(${filteredChatsCount - renderLimit} hidden)`}
+            </ListItemButton>
+          </ListItem>
+        )}
       </Box>
 
       <ListDivider sx={{ my: 0 }} />
@@ -441,39 +507,22 @@ function ChatDrawer(props: {
             </ListItemButton>
           </Box>
 
-          {/* App Preferences and Configure AI Model buttons */}
-          <Box sx={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-            <ListItemButton onClick={() => optimaOpenPreferences()} sx={{ flex: 1 }}>
-              <ListItemDecorator>
-                <SettingsIcon />
-              </ListItemDecorator>
-              App Preferences
-            </ListItemButton>
-
-            <ListItemButton onClick={() => optimaOpenModels()} sx={{ flex: 1 }}>
-              <ListItemDecorator>
-                <BuildCircleIcon />
-              </ListItemDecorator>
-              AI Models
-            </ListItemButton>
-          </Box>
-
-          <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
-            <ListItemDecorator>
-              <DeleteOutlineIcon />
-            </ListItemDecorator>
-            Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
-          </ListItemButton>
+      <ListItemButton disabled={filteredChatsAreEmpty} onClick={handleConversationsDeleteFiltered}>
+        <ListItemDecorator>
+          <DeleteOutlineIcon />
+        </ListItemDecorator>
+        Delete {filteredChatsCount >= 2 ? `all ${filteredChatsCount} chats` : 'chat'}
+      </ListItemButton>
 
           <ListDivider sx={{ my: 1 }} />
         </>
       )}
 
       {/* User info and logout */}
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        px: 2, 
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        px: 2,
         py: 1,
         mb: 1
       }}>

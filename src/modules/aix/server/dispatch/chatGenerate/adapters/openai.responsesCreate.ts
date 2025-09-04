@@ -24,12 +24,14 @@ type TRequestTool = OpenAIWire_Responses_Tools.Tool;
 export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, jsonOutput: boolean, streaming: boolean): TRequest {
 
   // [OpenAI] Vendor-specific model checks
-  const isOpenAIOFamily = ['o1', 'o3', 'o4', 'o5'].some(m => model.id === m || model.id.startsWith(m + '-'));
+  const isOpenAIOFamily = ['gpt-6', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-'));
   const isOpenAIComputerUse = model.id.includes('computer-use');
   const isOpenAIO1Pro = model.id === 'o1-pro' || model.id.startsWith('o1-pro-');
+  const isOpenAIDeepResearch = model.id.includes('-deep-research');
 
   const hotFixNoTemperature = isOpenAIOFamily;
   const hotFixNoTruncateAuto = isOpenAIComputerUse;
+  const hotFixForceSearchTool = isOpenAIDeepResearch;
 
   // ---
   // construct the request payload
@@ -91,27 +93,33 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
     // };
   }
 
-  // Web Search Context - TODO: check if still exists
-  if (model.vndOaiWebSearchContext || model.userGeolocation) {
-    console.warn('notImplemented: responses: vndOaiWebSearchContext, userGeolocation');
-    // payload.web_search_options = {};
-    // if (model.vndOaiWebSearchContext)
-    //   payload.web_search_options.search_context_size = model.vndOaiWebSearchContext;
-    // if (model.userGeolocation)
-    //   payload.web_search_options.user_location = {
-    //     type: 'approximate',
-    //     approximate: {
-    //       ...model.userGeolocation,
-    //     },
-    //   };
+  // Tool: Search: for search models, and deep research models
+  // NOTE: OpenAI doesn't support web search with minimal reasoning effort
+  const skipWebSearchDueToMinimalReasoning = model.vndOaiReasoningEffort === 'minimal';
+  if ((hotFixForceSearchTool || model.vndOaiWebSearchContext || model.userGeolocation) && !skipWebSearchDueToMinimalReasoning) {
+    if (!payload.tools?.length)
+      payload.tools = [];
+    const webSearchTool: TRequestTool = {
+      type: 'web_search_preview',
+      search_context_size: model.vndOaiWebSearchContext ?? undefined,
+      user_location: model.userGeolocation && {
+        type: 'approximate',
+        ...model.userGeolocation, // .city, .country, .region, .timezone
+      },
+    };
+    payload.tools.push(webSearchTool);
   }
+
+  // [OpenAI] Vendor-specific restore markdown, for GPT-5 models and recent 'o' models
+  if (model.vndOaiRestoreMarkdown)
+    vndOaiRestoreMarkdown(payload);
 
   // Preemptive error detection with server-side payload validation before sending it upstream
   // this includes stripping 'undefined' fields
   const validated = OpenAIWire_API_Responses.Request_schema.safeParse(payload);
   if (!validated.success) {
     console.warn('[DEV] OpenAI: invalid Responses request payload. Error:', { error: validated.error });
-    throw new Error(`Invalid sequence for OpenAI models: ${validated.error.errors?.[0]?.message || validated.error.message || validated.error}.`);
+    throw new Error(`Invalid sequence for OpenAI models: ${validated.error.issues?.[0]?.message || validated.error.message || validated.error}.`);
   }
 
   // [DEBUG] Log temperature being sent to OpenAI Responses API
@@ -427,5 +435,25 @@ function _toOpenAIResponsesToolChoice(itp: AixTools_ToolsPolicy): NonNullable<TR
       const _exhaustiveCheck: never = itpType;
       throw new Error(`Unsupported tools policy type: ${itpType}`);
   }
+}
+
+/**
+ * Adds GPT-5 specific markdown instructions to Responses API payload.
+ * 
+ * Background: 
+ * GPT-5 benefits from explicit markdown formatting guidance per the GPT-5 prompting guide.
+ * This function adds the recommended markdown instructions to the instructions field.
+ * 
+ * References: 
+ * - GPT-5 prompting guide markdown section
+ */
+export function vndOaiRestoreMarkdown(payload: TRequest) {
+  const MARKDOWN_INSTRUCTION = 'Formatting re-enabled. Use Markdown **only where semantically correct** (e.g., `inline code`, ```code fences```, lists, tables). When using markdown, use backticks to format file, directory, function, and class names. Use \\( and \\) for inline math, \\[ and \\] for block math.';
+  const MARKDOWN_CHECK = 'Use Markdown **only where semantically correct**';
+
+  if (payload.instructions && !payload.instructions.includes(MARKDOWN_CHECK))
+    payload.instructions = MARKDOWN_INSTRUCTION + '\n' + payload.instructions;
+  else if (!payload.instructions)
+    payload.instructions = MARKDOWN_INSTRUCTION;
 }
 

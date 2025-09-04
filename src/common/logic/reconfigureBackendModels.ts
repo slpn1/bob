@@ -105,12 +105,12 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
     
     // Prefer gpt-4.1-2025-04-14 if available
     const { llms } = llmsStoreState();
-    const gpt41 = llms.find(llm => llm.id === 'gpt-4.1-2025-04-14' && !llm.hidden);
-    if (gpt41) {
-      console.log('[reconfigureBackendModels] Found gpt-4.1-2025-04-14, assigning as primary chat model');
-      llmsStoreActions().assignDomainModelId('primaryChat', 'gpt-4.1-2025-04-14');
+    const gpt5 = llms.find(llm => llm.id === 'gpt-5-2025-08-07' && !llm.hidden);
+    if (gpt5) {
+      console.log('[reconfigureBackendModels] Found ggpt-5-2025-08-07, assigning as primary chat model');
+      llmsStoreActions().assignDomainModelId('primaryChat', 'gpt-5-2025-08-07');
     } else {
-      console.log('[reconfigureBackendModels] gpt-4.1-2025-04-14 not available, using auto-assignment');
+      console.log('[reconfigureBackendModels] gpt-5-2025-08-07 not available, using auto-assignment');
       llmsStoreActions().assignDomainModelId('primaryChat', null);
     }
   } else {

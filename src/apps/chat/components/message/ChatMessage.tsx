@@ -10,6 +10,7 @@ import AlternateEmailIcon from '@mui/icons-material/AlternateEmail';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCutIcon from '@mui/icons-material/ContentCut';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import DifferenceIcon from '@mui/icons-material/Difference';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
@@ -225,7 +226,7 @@ export function ChatMessage(props: {
   const handleHighlightSelText = useSelHighlighterMemo(messageId, selText, contentFragments, fromAssistant, props.onMessageFragmentReplace);
 
   const textSubject = selText ? selText : fragmentFlattenedText;
-  const isSpecialT2I = textSubject.startsWith('https://images.prodia.xyz/') || textSubject.startsWith('/draw ') || textSubject.startsWith('/imagine ') || textSubject.startsWith('/img ');
+  const isSpecialT2I = textSubject.startsWith('/draw ') || textSubject.startsWith('/imagine ') || textSubject.startsWith('/img ');
   const couldDiagram = textSubject.length >= 100 && !isSpecialT2I;
   const couldImagine = textSubject.length >= 3 && !isSpecialT2I;
   const couldSpeak = couldImagine;
@@ -603,7 +604,7 @@ export function ChatMessage(props: {
     //   borderBottom: '1px solid',
     //   borderBottomColor: 'divider',
     // }),
-  
+
 
     // style: when starred
     ...(isUserStarred && {
@@ -618,7 +619,7 @@ export function ChatMessage(props: {
       marginLeft: '40%',
       marginRight: '20px',
       marginTop: '20px',
-      marginBottom: '20px', 
+      marginBottom: '20px',
       backgroundColor: 'var(--joy-palette-background-level3)',
       '& p': {
         color: 'white !important',
@@ -670,8 +671,8 @@ export function ChatMessage(props: {
   const showAvatarIcon = !props.hideAvatar && !zenMode;
   const messageGeneratorName = messageGenerator?.name;
   const messageAvatarIcon = React.useMemo(
-      () => !showAvatarIcon ? null : makeMessageAvatarIcon(uiComplexityMode, messageRole, messageGeneratorName, messagePurposeId, !!messagePendingIncomplete, isUserMessageSkipped, isUserNotifyComplete, true),
-      [isUserMessageSkipped, isUserNotifyComplete, messageGeneratorName, messagePendingIncomplete, messagePurposeId, messageRole, showAvatarIcon, uiComplexityMode],
+    () => !showAvatarIcon ? null : makeMessageAvatarIcon(uiComplexityMode, messageRole, messageGeneratorName, messagePurposeId, !!messagePendingIncomplete, isUserMessageSkipped, isUserNotifyComplete, true),
+    [isUserMessageSkipped, isUserNotifyComplete, messageGeneratorName, messagePendingIncomplete, messagePurposeId, messageRole, showAvatarIcon, uiComplexityMode],
   );
 
   const { label: messageAvatarLabel, tooltip: messageAvatarTooltip } = useMessageAvatarLabel(props.message, uiComplexityMode);
@@ -692,15 +693,15 @@ export function ChatMessage(props: {
         {props.topDecorator}
 
 
-        {/* Message Row: Aside, Fragment[][], Aside2 */}
-        <Box
-            role={undefined /* aside | message | ops */}
-            sx={(fromAssistant && !isEditingText) ? messageBodySx : messageBodyReverseSx}
-        >
+      {/* Message Row: Aside, Fragment[][], Aside2 */}
+      <Box
+        role={undefined /* aside | message | ops */}
+        sx={(fromAssistant && !isEditingText) ? messageBodySx : messageBodyReverseSx}
+      >
 
-          {/* [start-Avatar] Avatar (Persona) */}
-          {!props.hideAvatar && !isEditingText && (
-              <Box sx={zenMode ? messageZenAsideColumnSx : messageAsideColumnSx}>
+        {/* [start-Avatar] Avatar (Persona) */}
+        {!props.hideAvatar && !isEditingText && (
+          <Box sx={zenMode ? messageZenAsideColumnSx : messageAsideColumnSx}>
 
                 {/* Persona Avatar or Menu Button */}
                 <Box
@@ -752,19 +753,19 @@ export function ChatMessage(props: {
               </Box>
           )}
 
-          {/* [start-Edit] Fragments Edit: Apply */}
-          {isEditingText && (
-              <Box sx={messageAsideColumnSx} className='msg-edit-button'>
-                <Tooltip arrow disableInteractive title='Apply Edits'>
-                  <IconButton size='sm' variant='solid' color='warning' onClick={handleEditsApplyClicked}>
-                    <CheckRoundedIcon />
-                  </IconButton>
-                </Tooltip>
-                <Typography level='body-xs' sx={editButtonWrapSx}>
-                  Done
-                </Typography>
-              </Box>
-          )}
+        {/* [start-Edit] Fragments Edit: Apply */}
+        {isEditingText && (
+          <Box sx={messageAsideColumnSx} className='msg-edit-button'>
+            <Tooltip arrow disableInteractive title='Apply Edits'>
+              <IconButton size='sm' variant='solid' color='warning' onClick={handleEditsApplyClicked}>
+                <CheckRoundedIcon />
+              </IconButton>
+            </Tooltip>
+            <Typography level='body-xs' sx={editButtonWrapSx}>
+              Done
+            </Typography>
+          </Box>
+        )}
 
 
           {/* V-Fragments: Image Attachments | Content | Doc Attachments */}
@@ -1108,6 +1109,40 @@ export function ChatMessage(props: {
                   {/*</Tooltip>}*/}
                   {!!onAddInReferenceTo && <Divider />}
 
+              {/* Text Tools (edits fragment, only for assistant messages) */}
+              {fromAssistant && <Tooltip disableInteractive arrow placement='top' title='Highlight Text'>
+                <IconButton disabled={!handleHighlightSelText} onClick={!handleHighlightSelText ? undefined : () => {
+                  handleHighlightSelText('highlight');
+                  closeBubble();
+                }}>
+                  <MarkHighlightIcon hcolor={handleHighlightSelText ? 'yellow' : undefined} />
+                </IconButton>
+              </Tooltip>}
+              {fromAssistant && <Tooltip disableInteractive arrow placement='top' title='Strike Through'>
+                <IconButton disabled={!handleHighlightSelText} onClick={!handleHighlightSelText ? undefined : () => {
+                  handleHighlightSelText('strike');
+                  closeBubble();
+                }}>
+                  <StrikethroughSIcon />
+                </IconButton>
+              </Tooltip>}
+              {fromAssistant && <Tooltip disableInteractive arrow placement='top' title='Toggle Bold'>
+                <IconButton disabled={!handleHighlightSelText} onClick={!handleHighlightSelText ? undefined : () => {
+                  handleHighlightSelText('strong');
+                  closeBubble();
+                }}>
+                  <FormatBoldIcon />
+                </IconButton>
+              </Tooltip>}
+              {fromAssistant && <Tooltip disableInteractive arrow placement='top' title='Cut Text'>
+                <IconButton disabled={!handleHighlightSelText} onClick={!handleHighlightSelText ? undefined : () => {
+                  handleHighlightSelText('cut');
+                  closeBubble();
+                }}>
+                  <ContentCutIcon />
+                </IconButton>
+              </Tooltip>}
+              {fromAssistant && <Divider />}
                   {/* Text Tools (edits fragment, only for assistant messages) */}
                   {fromAssistant && <Tooltip disableInteractive arrow placement='top' title='Highlight Text'>
                     <IconButton disabled={!handleHighlightSelText} onClick={!handleHighlightSelText ? undefined : () => {
@@ -1135,65 +1170,65 @@ export function ChatMessage(props: {
                   </Tooltip>}
                   {fromAssistant && <Divider />}
 
-                  {/* Intelligent functions */}
-                  {!!props.onTextDiagram && <Tooltip disableInteractive arrow placement='top' title={couldDiagram ? 'Auto-Diagram...' : 'Too short to Auto-Diagram'}>
-                    <IconButton color='success' onClick={couldDiagram ? handleOpsDiagram : undefined}>
-                      <AccountTreeOutlinedIcon sx={{ color: couldDiagram ? 'primary' : 'neutral.plainDisabledColor' }} />
-                    </IconButton>
-                  </Tooltip>}
-                  {!!props.onTextImagine && <Tooltip disableInteractive arrow placement='top' title='Auto-Draw'>
-                    <IconButton color='success' onClick={handleOpsImagine} disabled={!couldImagine || props.isImagining}>
-                      {!props.isImagining ? <FormatPaintOutlinedIcon /> : <CircularProgress sx={{ '--CircularProgress-size': '16px' }} />}
-                    </IconButton>
-                  </Tooltip>}
-                  {!!props.onTextSpeak && <Tooltip disableInteractive arrow placement='top' title='Speak'>
-                    <IconButton color='success' onClick={handleOpsSpeak} disabled={!couldSpeak || props.isSpeaking}>
-                      {!props.isSpeaking ? <RecordVoiceOverOutlinedIcon /> : <CircularProgress sx={{ '--CircularProgress-size': '16px' }} />}
-                    </IconButton>
-                  </Tooltip>}
-                  {(!!props.onTextDiagram || !!props.onTextImagine || !!props.onTextSpeak) && <Divider />}
+              {/* Intelligent functions */}
+              {!!props.onTextDiagram && <Tooltip disableInteractive arrow placement='top' title={couldDiagram ? 'Auto-Diagram...' : 'Too short to Auto-Diagram'}>
+                <IconButton color='success' onClick={couldDiagram ? handleOpsDiagram : undefined}>
+                  <AccountTreeOutlinedIcon sx={{ color: couldDiagram ? 'primary' : 'neutral.plainDisabledColor' }} />
+                </IconButton>
+              </Tooltip>}
+              {!!props.onTextImagine && <Tooltip disableInteractive arrow placement='top' title='Auto-Draw'>
+                <IconButton color='success' onClick={handleOpsImagine} disabled={!couldImagine || props.isImagining}>
+                  {!props.isImagining ? <FormatPaintOutlinedIcon /> : <CircularProgress sx={{ '--CircularProgress-size': '16px' }} />}
+                </IconButton>
+              </Tooltip>}
+              {!!props.onTextSpeak && <Tooltip disableInteractive arrow placement='top' title='Speak'>
+                <IconButton color='success' onClick={handleOpsSpeak} disabled={!couldSpeak || props.isSpeaking}>
+                  {!props.isSpeaking ? <RecordVoiceOverOutlinedIcon /> : <CircularProgress sx={{ '--CircularProgress-size': '16px' }} />}
+                </IconButton>
+              </Tooltip>}
+              {(!!props.onTextDiagram || !!props.onTextImagine || !!props.onTextSpeak) && <Divider />}
 
-                  {/* Bubble Copy */}
-                  <Tooltip disableInteractive arrow placement='top' title='Copy Selection'>
-                    <IconButton onClick={handleOpsCopy}>
-                      <ContentCopyIcon />
-                    </IconButton>
-                  </Tooltip>
+              {/* Bubble Copy */}
+              <Tooltip disableInteractive arrow placement='top' title='Copy Selection'>
+                <IconButton onClick={handleOpsCopy}>
+                  <ContentCopyIcon />
+                </IconButton>
+              </Tooltip>
 
-                </ButtonGroup>
-              </ClickAwayListener>
-            </Popper>
-        )}
+            </ButtonGroup>
+          </ClickAwayListener>
+        </Popper>
+      )}
 
 
-        {/* Context (Right-click) Menu */}
-        {!!contextMenuAnchor && (
-            <CloseablePopup
-                menu anchorEl={contextMenuAnchor} onClose={closeContextMenu}
-                dense
-                minWidth={220}
-                placement='bottom-start'
-            >
-              <MenuItem onClick={handleOpsCopy} sx={{ flex: 1, alignItems: 'center' }}>
-                <ListItemDecorator><ContentCopyIcon /></ListItemDecorator>
-                Copy
-              </MenuItem>
-              {!!props.onTextDiagram && <ListDivider />}
-              {!!props.onTextDiagram && <MenuItem onClick={handleOpsDiagram} disabled={!couldDiagram || props.isImagining}>
-                <ListItemDecorator><AccountTreeOutlinedIcon /></ListItemDecorator>
-                Auto-Diagram ...
-              </MenuItem>}
-              {!!props.onTextImagine && <MenuItem onClick={handleOpsImagine} disabled={!couldImagine || props.isImagining}>
-                <ListItemDecorator>{props.isImagining ? <CircularProgress size='sm' /> : <FormatPaintOutlinedIcon />}</ListItemDecorator>
-                Auto-Draw
-              </MenuItem>}
-              {!!props.onTextSpeak && <MenuItem onClick={handleOpsSpeak} disabled={!couldSpeak || props.isSpeaking}>
-                <ListItemDecorator>{props.isSpeaking ? <CircularProgress size='sm' /> : <RecordVoiceOverOutlinedIcon />}</ListItemDecorator>
-                Speak
-              </MenuItem>}
-            </CloseablePopup>
-        )}
+      {/* Context (Right-click) Menu */}
+      {!!contextMenuAnchor && (
+        <CloseablePopup
+          menu anchorEl={contextMenuAnchor} onClose={closeContextMenu}
+          dense
+          minWidth={220}
+          placement='bottom-start'
+        >
+          <MenuItem onClick={handleOpsCopy} sx={{ flex: 1, alignItems: 'center' }}>
+            <ListItemDecorator><ContentCopyIcon /></ListItemDecorator>
+            Copy
+          </MenuItem>
+          {!!props.onTextDiagram && <ListDivider />}
+          {!!props.onTextDiagram && <MenuItem onClick={handleOpsDiagram} disabled={!couldDiagram || props.isImagining}>
+            <ListItemDecorator><AccountTreeOutlinedIcon /></ListItemDecorator>
+            Auto-Diagram ...
+          </MenuItem>}
+          {!!props.onTextImagine && <MenuItem onClick={handleOpsImagine} disabled={!couldImagine || props.isImagining}>
+            <ListItemDecorator>{props.isImagining ? <CircularProgress size='sm' /> : <FormatPaintOutlinedIcon />}</ListItemDecorator>
+            Auto-Draw
+          </MenuItem>}
+          {!!props.onTextSpeak && <MenuItem onClick={handleOpsSpeak} disabled={!couldSpeak || props.isSpeaking}>
+            <ListItemDecorator>{props.isSpeaking ? <CircularProgress size='sm' /> : <RecordVoiceOverOutlinedIcon />}</ListItemDecorator>
+            Speak
+          </MenuItem>}
+        </CloseablePopup>
+      )}
 
-      </Box>
+    </Box>
   );
 }
