@@ -6,7 +6,7 @@ import type { DModelsService, DModelsServiceId } from '~/common/stores/llms/llms
 import { llmsStoreActions, llmsStoreState } from '~/common/stores/llms/store-llms';
 
 
-// Note: this function is designed to be called once per session
+// Note: this function is designed to be called once per session, but can be forced to run again
 let _isConfiguring = false;
 let _isConfigurationDone = false;
 
@@ -15,18 +15,19 @@ let _isConfigurationDone = false;
  * Reload models because of:
  * - updated backend capabilities (e.g. new service added)
  * - AIX/LLMs updated, in which case we'd have to re-scan services
+ * - force: bypass caching and force refresh
  */
-export async function reconfigureBackendModels(lastLlmReconfigHash: string, setLastReconfigHash: (hash: string) => void, remoteServices: boolean, existingServices: boolean) {
+export async function reconfigureBackendModels(lastLlmReconfigHash: string, setLastReconfigHash: (hash: string) => void, remoteServices: boolean, existingServices: boolean, force: boolean = false) {
 
-  // Note: double-calling is only expected to happen in react strict mode
-  if (_isConfiguring || _isConfigurationDone)
+  // Note: double-calling is only expected to happen in react strict mode, unless forced
+  if (_isConfiguring || (_isConfigurationDone && !force))
     return;
 
-  // skip if there haven't been any changes in the backend configuration
+  // skip if there haven't been any changes in the backend configuration, unless forced
   // Note: the hash captures both AIX/LLMs changes and new backend-configured services
   const backendCaps = getBackendCapabilities();
   const backendReconfigHash = backendCaps.hashLlmReconfig;
-  if (!backendReconfigHash || lastLlmReconfigHash === backendReconfigHash) {
+  if (!force && (!backendReconfigHash || lastLlmReconfigHash === backendReconfigHash)) {
     _isConfiguring = false;
     _isConfigurationDone = true;
     return;
@@ -34,6 +35,7 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
 
   // begin configuration
   _isConfiguring = true;
+  if (force) _isConfigurationDone = false; // Reset done flag when forcing
   // FIXME: future: move this to the end of the function, but also with strong retry count and error catching, so one's app wouldn't loop upon each boot
   setLastReconfigHash(backendReconfigHash);
   const initiallyEmpty = !llmsStoreState().llms?.length;

@@ -73,11 +73,11 @@ export function markNewsAsSeen() {
 
 // Reconfigure Backend Models
 
-export async function sherpaReconfigureBackendModels() {
+export async function sherpaReconfigureBackendModels(force: boolean = false) {
   return reconfigureBackendModels(
     useLogicSherpaStore.getState().lastLlmReconfigHash,
     (hash: string) => useLogicSherpaStore.setState({ lastLlmReconfigHash: hash }),
-    true, true
+    true, true, force
   );
 }
 
