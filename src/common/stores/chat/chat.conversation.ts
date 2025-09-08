@@ -67,7 +67,7 @@ export function createWelcomeMessage(model: DLLM): DMessage {
   if (hasWebSearchCapability) {
     messageText = `Hello, I am **${cleanModelName}** with web search capabilities. I can access current information from the web, so I'm not limited by a training cutoff date. If you would like to know more about this model please [click here](#model-info).`;
   } else {
-    messageText = `Hello, I am **${cleanModelName}** and my cutoff date is **${cutoffDate}**. If you ask me for information past that date I may hallucinate. If you are looking for current news, pick a model with a world symbol next to it. If you would like to know more about this model please [click here](#model-info).`;
+    messageText = `Hello, I am **${cleanModelName}** and my cutoff date is **${cutoffDate}**. If you ask me for information past that date I may hallucinate. If you are looking for current news or content, please make sure you have 'Web Search' switched on. If you would like to know more about this model please [click here](#model-info).`;
   }
   
   // Create the message with a clickable "here" link

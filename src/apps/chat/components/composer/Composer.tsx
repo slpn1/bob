@@ -843,7 +843,7 @@ export function Composer(props: {
         >
 
           {/* [Mobile: top, Desktop: left] */}
-          <Grid xs={12} md={10}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
+          <Grid xs={12} md={9.8}><Box sx={{ display: 'flex', gap: { xs: 1, md: 2 }, alignItems: 'flex-start' }}>
 
             {/* [Mobile, Col1] Mic, Insert Multi-modal content, and Broadcast buttons */}
             {isMobile && (
@@ -1089,7 +1089,7 @@ export function Composer(props: {
 
 
           {/* [Mobile: bottom, Desktop: right] */}
-          <Grid xs={12} md={2}>
+          <Grid xs={12} md={2.2}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, height: '100%' } as const}>
 
               {/* [mobile] This row is here only for the [mobile] bottom-start corner item */}

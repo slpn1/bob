@@ -136,7 +136,7 @@ export const DModelParameterRegistry = {
     type: 'enum' as const,
     description: 'Amount of context retrieved from the web',
     values: ['low', 'medium', 'high'] as const,
-    initialValue: 'high',
+    // No initialValue means it defaults to 'off'
   } as const,
 
   llmVndOaiWebSearchGeolocation: {

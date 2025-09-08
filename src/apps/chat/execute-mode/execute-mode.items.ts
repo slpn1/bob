@@ -37,14 +37,14 @@ export const ExecuteModeItems: { [key in ChatExecuteMode]: ModeDescription } = {
     sendColor: 'primary',
     sendText: 'Beam',
   },
-  'append-user': {
-    label: 'Add',
-    description: 'Insert content',
-    shortcut: 'Alt + Enter',
-    canAttach: true,
-    sendColor: 'primary',
-    sendText: 'Add',
-  },
+  // 'append-user': {
+  //   label: 'Add',
+  //   description: 'Insert content',
+  //   shortcut: 'Alt + Enter',
+  //   canAttach: true,
+  //   sendColor: 'primary',
+  //   sendText: 'Add',
+  // },
   'generate-image': {
     label: 'Draw',
     description: 'AI Image Generation',
@@ -53,10 +53,10 @@ export const ExecuteModeItems: { [key in ChatExecuteMode]: ModeDescription } = {
     sendColor: 'warning',
     sendText: 'Draw',
   },
-  'react-content': {
-    label: 'Reason + Act', //  · α
-    description: 'Answer questions in multiple steps',
-    sendColor: 'success',
-    sendText: 'ReAct',
-  },
+  // 'react-content': {
+  //   label: 'Reason + Act', //  · α
+  //   description: 'Answer questions in multiple steps',
+  //   sendColor: 'success',
+  //   sendText: 'ReAct',
+  // },
 };

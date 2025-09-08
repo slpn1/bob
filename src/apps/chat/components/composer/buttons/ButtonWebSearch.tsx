@@ -77,6 +77,7 @@ function ButtonWebSearch(props: {
                     '&:active:hover': {
                         'color': '#fff',
                     },
+                    'text-align': 'left',
                 },
             }
           }}
