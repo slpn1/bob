@@ -74,11 +74,14 @@ export function markNewsAsSeen() {
 // Reconfigure Backend Models
 
 export async function sherpaReconfigureBackendModels(force: boolean = false) {
-  return reconfigureBackendModels(
+  console.log('[Sherpa] Starting backend models reconfiguration, force:', force);
+  const result = await reconfigureBackendModels(
     useLogicSherpaStore.getState().lastLlmReconfigHash,
     (hash: string) => useLogicSherpaStore.setState({ lastLlmReconfigHash: hash }),
     true, true, force
   );
+  console.log('[Sherpa] Backend models reconfiguration completed:', result);
+  return result;
 }
 
 

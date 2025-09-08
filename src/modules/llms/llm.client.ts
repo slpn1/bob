@@ -13,12 +13,20 @@ import { findServiceAccessOrThrow } from './vendors/vendor.helpers';
 // LLM Model Updates Client Functions
 
 export async function llmsUpdateModelsForServiceOrThrow(serviceId: DModelsServiceId, keepUserEdits: boolean): Promise<{ models: ModelDescriptionSchema[] }> {
+  console.log('[LLM Client] Starting model update for service:', serviceId, 'keepUserEdits:', keepUserEdits);
 
   // get the access, assuming there's no client config and the server will do all
   const { service, vendor, transportAccess } = findServiceAccessOrThrow(serviceId);
+  console.log('[LLM Client] Found service and vendor:', { serviceId: service.id, vendorId: vendor.id });
 
   // fetch models
+  console.log('[LLM Client] Fetching models from vendor...');
   const data = await vendor.rpcUpdateModelsOrThrow(transportAccess);
+  console.log('[LLM Client] Fetched models:', {
+    count: data.models.length,
+    modelIds: data.models.map(m => m.id),
+    gpt5Models: data.models.filter(m => m.id.includes('gpt-5')).map(m => ({ id: m.id, label: m.label }))
+  });
 
 
   // update the global models store
