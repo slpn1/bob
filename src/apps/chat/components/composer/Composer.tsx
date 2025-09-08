@@ -60,6 +60,9 @@ import { useComposerStartupText, useLogicSherpaStore } from '~/common/logic/stor
 import { useOverlayComponents } from '~/common/layout/overlays/useOverlayComponents';
 import { useUICounter, useUIPreferencesStore } from '~/common/stores/store-ui';
 import { useUXLabsStore } from '~/common/stores/store-ux-labs';
+import { useModelsStore } from '~/common/stores/llms/store-llms';
+import { getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
+import { useModelDomain } from '~/common/stores/llms/hooks/useModelDomain';
 
 import type { ActileItem } from './actile/ActileProvider';
 import { providerAttachmentLabels } from './actile/providerAttachmentLabels';
@@ -153,6 +156,8 @@ export function Composer(props: {
   // external state
   const { showPromisedOverlay } = useOverlayComponents();
   const { newChat: appChatNewChatIntent } = useRouterQuery<Partial<AppChatIntent>>();
+  const { domainModelId: chatLLMId } = useModelDomain('primaryChat');
+  const updateLLMUserParameters = useModelsStore(state => state.updateLLMUserParameters);
   const { labsAttachScreenCapture, labsCameraDesktop, labsShowCost, labsShowShortcutBar } = useUXLabsStore(useShallow(state => ({
     labsAttachScreenCapture: state.labsAttachScreenCapture,
     labsCameraDesktop: state.labsCameraDesktop,
@@ -251,6 +256,26 @@ export function Composer(props: {
   const tokensResponseMax = getModelParameterValueOrThrow('llmResponseTokens', props.chatLLM?.initialParameters, props.chatLLM?.userParameters, 0) ?? 0;
   const tokenLimit = props.chatLLM?.contextTokens || 0;
   const tokenChatPricing = props.chatLLM?.pricing?.chat;
+
+  // Model Options State - Get current model parameters
+  const modelParameters = React.useMemo(() => {
+    if (!props.chatLLM) return null;
+    return getAllModelParameterValues(props.chatLLM.initialParameters, props.chatLLM.userParameters);
+  }, [props.chatLLM]);
+
+  // Current option values from model parameters
+  const webSearchValue = React.useMemo(() => {
+    const value = modelParameters?.llmVndOaiWebSearchContext;
+    if (value === 'low') return 'low';
+    if (value === 'medium') return 'medium'; 
+    if (value === 'high') return 'comprehensive';
+    return 'off';
+  }, [modelParameters]);
+
+  const reasoningValue = React.useMemo(() => {
+    const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
+    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'medium';
+  }, [modelParameters]);
 
 
   // Effect: load initial text if queued up (e.g. by /link/share_targetF)
@@ -501,6 +526,31 @@ export function Composer(props: {
     onTextImagine(targetConversationId, composeText);
     setComposeText('');
   }, [composeText, onTextImagine, setComposeText, targetConversationId]);
+
+  // Model Options Handlers
+  const handleWebSearchChange = React.useCallback((value: 'off' | 'low' | 'medium' | 'comprehensive') => {
+    if (!chatLLMId) return;
+    
+    const paramValue = value === 'off' ? undefined : 
+      value === 'comprehensive' ? 'high' : value;
+    
+    updateLLMUserParameters(chatLLMId, {
+      llmVndOaiWebSearchContext: paramValue
+    });
+  }, [chatLLMId, updateLLMUserParameters]);
+
+  const handleReasoningChange = React.useCallback((value: 'minimal' | 'low' | 'medium' | 'high') => {
+    if (!chatLLMId) return;
+    
+    // Use the newer parameter format if model supports it, otherwise fallback
+    const paramKey = modelParameters?.llmVndOaiReasoningEffort4 !== undefined 
+      ? 'llmVndOaiReasoningEffort4' 
+      : 'llmVndOaiReasoningEffort';
+      
+    updateLLMUserParameters(chatLLMId, {
+      [paramKey]: value
+    });
+  }, [chatLLMId, modelParameters, updateLLMUserParameters]);
 
 
   // Actiles
@@ -1056,8 +1106,16 @@ export function Composer(props: {
                       : <IconButton disabled sx={{ mr: { xs: 1, md: 2 } }} />
                 )}
 
-                <ButtonWebSearchMemo onAttachClipboard={attachAppendClipboardItems} />
-                <ButtonReasoningMemo onAttachClipboard={attachAppendClipboardItems} />
+                <ButtonWebSearchMemo 
+                  value={webSearchValue} 
+                  onValueChange={handleWebSearchChange}
+                  onAttachClipboard={attachAppendClipboardItems} 
+                />
+                <ButtonReasoningMemo 
+                  value={reasoningValue}
+                  onValueChange={handleReasoningChange}
+                  onAttachClipboard={attachAppendClipboardItems} 
+                />
                 {/* Responsive Send/Stop buttons */}
                 <ButtonGroup
                   variant={sendButtonVariant}
