@@ -52,10 +52,7 @@ export function ProviderBootstrapLogic(props: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!launchAutoConf) return;
     console.log('[ProviderBootstrapLogic] Launching auto configuration');
-    
-    // Force model refresh to ensure latest models (including GPT-5) are available
-    // This bypasses the caching mechanisms that might prevent model updates
-    void sherpaReconfigureBackendModels(true); // fire/forget (background server-driven model reconfiguration)
+    void sherpaReconfigureBackendModels(); // fire/forget (background server-driven model reconfiguration)
   }, [launchAutoConf]);
 
   // storage maintenance and garbage collection
