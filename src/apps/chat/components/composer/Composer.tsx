@@ -263,6 +263,9 @@ export function Composer(props: {
     return getAllModelParameterValues(props.chatLLM.initialParameters, props.chatLLM.userParameters);
   }, [props.chatLLM]);
 
+  // State to store previous web search value when disabled
+  const [previousWebSearchValue, setPreviousWebSearchValue] = React.useState<'off' | 'low' | 'medium' | 'comprehensive'>('off');
+
   // Current option values from model parameters
   const webSearchValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiWebSearchContext;
@@ -276,6 +279,9 @@ export function Composer(props: {
     const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
     return (value as 'minimal' | 'low' | 'medium' | 'high') || 'medium';
   }, [modelParameters]);
+
+  // Check if web search should be disabled (when reasoning is minimal)
+  const isWebSearchDisabled = reasoningValue === 'minimal';
 
 
   // Effect: load initial text if queued up (e.g. by /link/share_targetF)
@@ -529,7 +535,7 @@ export function Composer(props: {
 
   // Model Options Handlers
   const handleWebSearchChange = React.useCallback((value: 'off' | 'low' | 'medium' | 'comprehensive') => {
-    if (!chatLLMId) return;
+    if (!chatLLMId || isWebSearchDisabled) return; // Don't allow changes when disabled
     
     const paramValue = value === 'off' ? undefined : 
       value === 'comprehensive' ? 'high' : value;
@@ -537,10 +543,30 @@ export function Composer(props: {
     updateLLMUserParameters(chatLLMId, {
       llmVndOaiWebSearchContext: paramValue
     });
-  }, [chatLLMId, updateLLMUserParameters]);
+  }, [chatLLMId, updateLLMUserParameters, isWebSearchDisabled]);
 
   const handleReasoningChange = React.useCallback((value: 'minimal' | 'low' | 'medium' | 'high') => {
     if (!chatLLMId) return;
+    
+    const wasDisabled = reasoningValue === 'minimal';
+    const willBeDisabled = value === 'minimal';
+    
+    // If switching TO minimal, store current web search value and disable it
+    if (!wasDisabled && willBeDisabled && webSearchValue !== 'off') {
+      setPreviousWebSearchValue(webSearchValue);
+      updateLLMUserParameters(chatLLMId, {
+        llmVndOaiWebSearchContext: undefined, // Set to off
+      });
+    }
+    
+    // If switching FROM minimal, restore previous web search value
+    if (wasDisabled && !willBeDisabled) {
+      const valueToRestore = previousWebSearchValue === 'off' ? undefined : 
+        previousWebSearchValue === 'comprehensive' ? 'high' : previousWebSearchValue;
+      updateLLMUserParameters(chatLLMId, {
+        llmVndOaiWebSearchContext: valueToRestore
+      });
+    }
     
     // Use the newer parameter format if model supports it, otherwise fallback
     const paramKey = modelParameters?.llmVndOaiReasoningEffort4 !== undefined 
@@ -550,7 +576,7 @@ export function Composer(props: {
     updateLLMUserParameters(chatLLMId, {
       [paramKey]: value
     });
-  }, [chatLLMId, modelParameters, updateLLMUserParameters]);
+  }, [chatLLMId, modelParameters, updateLLMUserParameters, reasoningValue, webSearchValue, previousWebSearchValue]);
 
 
   // Actiles
@@ -1109,6 +1135,7 @@ export function Composer(props: {
                 <ButtonWebSearchMemo 
                   value={webSearchValue} 
                   onValueChange={handleWebSearchChange}
+                  disabled={isWebSearchDisabled}
                   onAttachClipboard={attachAppendClipboardItems} 
                 />
                 <ButtonReasoningMemo 

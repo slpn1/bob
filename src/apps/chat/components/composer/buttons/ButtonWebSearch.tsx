@@ -31,7 +31,7 @@ function ButtonWebSearch(props: {
   onAttachClipboard: () => void,
 }) {
   const currentValue = props.value || 'off';
-  const displayLabel = WEB_SEARCH_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Off';
+  const displayLabel = props.disabled ? 'N/A' : (WEB_SEARCH_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Off');
   return props.isMobile ? (
     <Dropdown>
       <MenuButton
@@ -40,26 +40,28 @@ function ButtonWebSearch(props: {
       >
         <LanguageRoundedIcon />
       </MenuButton>
-      <Menu placement="bottom-start" size="sm">
-        {WEB_SEARCH_OPTIONS.map((option) => (
-          <MenuItem
-            key={option.value}
-            selected={currentValue === option.value}
-            onClick={() => props.onValueChange?.(option.value)}
-          >
-            <ListItemDecorator>
-              {currentValue === option.value && <CheckRoundedIcon />}
-            </ListItemDecorator>
-            {option.label}
-          </MenuItem>
-        ))}
-      </Menu>
+      {!props.disabled && (
+        <Menu placement="bottom-start" size="sm">
+          {WEB_SEARCH_OPTIONS.map((option) => (
+            <MenuItem
+              key={option.value}
+              selected={currentValue === option.value}
+              onClick={() => props.onValueChange?.(option.value)}
+            >
+              <ListItemDecorator>
+                {currentValue === option.value && <CheckRoundedIcon />}
+              </ListItemDecorator>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Menu>
+      )}
     </Dropdown>
   ) : (
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
         <b>Web Search</b><br />
-        Choose your web search level<br />
+        {props.disabled ? 'Web search is not available when reasoning is set to minimal' : 'Choose your web search level'}<br />
       </Box>
     )}>
       <Dropdown>
@@ -84,24 +86,26 @@ function ButtonWebSearch(props: {
         >
           Web Search: {displayLabel}
         </MenuButton>
-        <Menu placement="bottom-start" size="sm">
-          {WEB_SEARCH_OPTIONS.map((option) => (
-            <MenuItem
-              key={option.value}
-              selected={currentValue === option.value}
-              onClick={() => props.onValueChange?.(option.value)}
-              sx={{
-                  "&.Mui-selected": { color: 'white' },
-                  "&:active:hover": { color: 'white' }
-            }}
-            >
-              <ListItemDecorator>
-                {currentValue === option.value && <CheckRoundedIcon />}
-              </ListItemDecorator>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Menu>
+        {!props.disabled && (
+          <Menu placement="bottom-start" size="sm">
+            {WEB_SEARCH_OPTIONS.map((option) => (
+              <MenuItem
+                key={option.value}
+                selected={currentValue === option.value}
+                onClick={() => props.onValueChange?.(option.value)}
+                sx={{
+                    "&.Mui-selected": { color: 'white' },
+                    "&:active:hover": { color: 'white' }
+              }}
+              >
+                <ListItemDecorator>
+                  {currentValue === option.value && <CheckRoundedIcon />}
+                </ListItemDecorator>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Menu>
+        )}
       </Dropdown>
     </Tooltip>
   );
