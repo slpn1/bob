@@ -5,11 +5,12 @@ import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 
 import { KeyStroke } from '~/common/components/KeyStroke';
 import { buttonAttachSx } from '~/common/components/ButtonAttachFiles';
+import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 
 
-export const ButtonAttachClipboardMemo = React.memo(ButtonAttachClipboard);
+export const ButtonWebSearchMemo = React.memo(ButtonWebSearch);
 
-function ButtonAttachClipboard(props: {
+function ButtonWebSearch(props: {
   color?: ColorPaletteProp,
   isMobile?: boolean,
   disabled?: boolean,
@@ -19,12 +20,12 @@ function ButtonAttachClipboard(props: {
 }) {
   return props.isMobile ? (
     <IconButton color={props.color} disabled={props.disabled} onClick={props.onAttachClipboard}>
-      <ContentPasteGoIcon />
+      <LanguageRoundedIcon />
     </IconButton>
   ) : (
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
-        <b>Attach clipboard 📚</b><br />
+        <b>Web Search</b><br />
         Auto-converts to the best types<br />
         <KeyStroke combo='Ctrl + Shift + V' sx={{ mt: 1, mb: 0.5 }} />
       </Box>
@@ -34,11 +35,11 @@ function ButtonAttachClipboard(props: {
         color={props.color || 'neutral'}
         disabled={props.disabled}
         fullWidth={props.fullWidth}
-        startDecorator={<ContentPasteGoIcon />}
+        startDecorator={<LanguageRoundedIcon />}
         onClick={props.onAttachClipboard}
         sx={buttonAttachSx.desktop}
       >
-        Paste
+        Web Search: High
       </Button>
     </Tooltip>
   );

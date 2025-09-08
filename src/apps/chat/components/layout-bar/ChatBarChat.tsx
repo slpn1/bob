@@ -16,6 +16,9 @@ import { useOptimaModals, optimaActions } from '~/common/layout/optima/useOptima
 import { useChatLLMDropdown } from './useLLMDropdown';
 import { usePersonaIdDropdown } from './usePersonaDropdown';
 import { useFolderDropdown } from './useFolderDropdown';
+import { ModelOptionsControls } from './ModelOptionsControls';
+import { useModelsStore } from '~/common/stores/llms/store-llms';
+import { getAllModelParameterValues } from '~/common/stores/llms/llms.parameters';
 
 
 export function ChatBarChat(props: {
@@ -31,8 +34,36 @@ export function ChatBarChat(props: {
   const { folderDropdown } = useFolderDropdown(props.conversationId);
   
   // Get current model for info display
-  const { domainModelId: chatLLMId } = useModelDomain('primaryChat');
+  const { domainModelId: chatLLMId, assignDomainModelId: setChatLLMId } = useModelDomain('primaryChat');
   const chatLLM = useLLM(chatLLMId) ?? null;
+  
+  // Model Options State
+  const [originalModelId, setOriginalModelId] = React.useState<string | null>(null);
+  const updateLLMUserParameters = useModelsStore(state => state.updateLLMUserParameters);
+  
+  // Get current model parameters
+  const modelParameters = React.useMemo(() => {
+    if (!chatLLM) return null;
+    return getAllModelParameterValues(chatLLM.initialParameters, chatLLM.userParameters);
+  }, [chatLLM]);
+  
+  // Current option values from model parameters
+  const webSearchValue = React.useMemo(() => {
+    const value = modelParameters?.llmVndOaiWebSearchContext;
+    if (value === 'low') return 'low';
+    if (value === 'medium') return 'medium'; 
+    if (value === 'high') return 'comprehensive';
+    return 'off';
+  }, [modelParameters]);
+  
+  const reasoningValue = React.useMemo(() => {
+    const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
+    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'medium';
+  }, [modelParameters]);
+  
+  const deepResearchValue = React.useMemo(() => {
+    return chatLLMId?.includes('deep-research') || false;
+  }, [chatLLMId]);
 
   // Track model changes and add welcome messages to active conversations
   const prevChatLLMId = React.useRef<string | null>(null);
@@ -58,7 +89,7 @@ export function ChatBarChat(props: {
     }
     
     // Update the previous model ID
-    prevChatLLMId.current = chatLLMId;
+    prevChatLLMId.current = chatLLMId || null;
   }, [chatLLMId, props.conversationId, chatLLM]);
 
   // handlers
@@ -70,35 +101,104 @@ export function ChatBarChat(props: {
     optimaActions().closeModelInfo();
   }, []);
 
+  // Model Options Handlers
+  const handleWebSearchChange = React.useCallback((value: 'off' | 'low' | 'medium' | 'comprehensive') => {
+    if (!chatLLMId) return;
+    
+    const paramValue = value === 'off' ? undefined : 
+      value === 'comprehensive' ? 'high' : value;
+    
+    updateLLMUserParameters(chatLLMId, {
+      llmVndOaiWebSearchContext: paramValue
+    });
+  }, [chatLLMId, updateLLMUserParameters]);
+
+  const handleReasoningChange = React.useCallback((value: 'minimal' | 'low' | 'medium' | 'high') => {
+    if (!chatLLMId) return;
+    
+    // Use the newer parameter format if model supports it, otherwise fallback
+    const paramKey = modelParameters?.llmVndOaiReasoningEffort4 !== undefined 
+      ? 'llmVndOaiReasoningEffort4' 
+      : 'llmVndOaiReasoningEffort';
+      
+    updateLLMUserParameters(chatLLMId, {
+      [paramKey]: value
+    });
+  }, [chatLLMId, modelParameters, updateLLMUserParameters]);
+
+  const handleDeepResearchChange = React.useCallback((enabled: boolean) => {
+    if (!chatLLMId) return;
+    
+    if (enabled) {
+      // Store original model if switching to deep research
+      if (!chatLLMId.includes('deep-research')) {
+        setOriginalModelId(chatLLMId);
+        // Switch to the deep research variant
+        const deepResearchModelId = 'gpt-5-deep-reasoning';
+        setChatLLMId(deepResearchModelId);
+      }
+    } else {
+      // Switch back to original model
+      if (originalModelId && chatLLMId.includes('deep-research')) {
+        setChatLLMId(originalModelId);
+        setOriginalModelId(null);
+      }
+    }
+  }, [chatLLMId, originalModelId, setChatLLMId]);
+  
+  // Determine if options should be disabled (Knowledge Central)
+  const optionsDisabled = chatLLMId === 'knowledge-central-chat';
+
   return <>
 
     {/* Persona selector */}
     {/* {personaDropdown} */}
 
-    {/* Model selector with info button */}
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      {chatLLMDropdown}
+    {/* New Layout: Model selector on left, options in middle */}
+    {/*<Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>*/}
       
-      {chatLLM && (
-        <GoodTooltip title="Model Information">
-          <IconButton
-            size="sm"
-            variant="plain"
-            color="neutral"
-            onClick={handleShowModelInfo}
-            sx={{
-              color: 'rgba(255 255 255 / 0.7)',
-              '&:hover': {
-                color: 'rgba(255 255 255 / 1)',
-                backgroundColor: 'rgba(255 255 255 / 0.1)',
-              },
-            }}
-          >
-            <InfoOutlinedIcon sx={{ fontSize: 'lg' }} />
-          </IconButton>
-        </GoodTooltip>
-      )}
-    </Box>
+      {/* Left Side: Model Dropdown */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5}}>
+        {chatLLMDropdown}
+        
+        {chatLLM && (
+          <GoodTooltip title="Model Information">
+            <IconButton
+              size="sm"
+              variant="plain"
+              color="neutral"
+              onClick={handleShowModelInfo}
+              sx={{
+                color: 'rgba(255 255 255 / 0.7)',
+                '&:hover': {
+                  color: 'rgba(255 255 255 / 1)',
+                  backgroundColor: 'rgba(255 255 255 / 0.1)',
+                },
+              }}
+            >
+              <InfoOutlinedIcon sx={{ fontSize: 'lg' }} />
+            </IconButton>
+          </GoodTooltip>
+        )}
+      </Box>
+
+      {/* Center: Model Options */}
+      {/*<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: '0 0 auto' }}>*/}
+      {/*  <ModelOptionsControls*/}
+      {/*    webSearch={webSearchValue}*/}
+      {/*    reasoning={reasoningValue}*/}
+      {/*    deepResearch={deepResearchValue}*/}
+      {/*    disabled={optionsDisabled}*/}
+      {/*    onWebSearchChange={handleWebSearchChange}*/}
+      {/*    onReasoningChange={handleReasoningChange}*/}
+      {/*    onDeepResearchChange={handleDeepResearchChange}*/}
+      {/*  />*/}
+      {/*</Box>*/}
+
+      {/*/!* Right Side: Empty space for balance *!/*/}
+      {/*<Box sx={{ flex: '1 1 0' }} />*/}
+      
+    {/*</Box>*/}
 
     {/* Folder selector */}
     {folderDropdown}

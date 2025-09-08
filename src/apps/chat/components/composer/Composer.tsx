@@ -95,6 +95,8 @@ import { TokenProgressbarMemo } from './tokens/TokenProgressbar';
 import { useComposerDragDrop } from './useComposerDragDrop';
 import { useTextTokenCount } from './tokens/useTextTokenCounter';
 import { useWebInputModal } from './WebInputModal';
+import {ButtonWebSearchMemo} from "./buttons/ButtonWebSearch";
+import {ButtonReasoningMemo} from "./buttons/ButtonReasoning";
 
 
 // configuration
@@ -1054,6 +1056,8 @@ export function Composer(props: {
                       : <IconButton disabled sx={{ mr: { xs: 1, md: 2 } }} />
                 )}
 
+                <ButtonWebSearchMemo onAttachClipboard={attachAppendClipboardItems} />
+                <ButtonReasoningMemo onAttachClipboard={attachAppendClipboardItems} />
                 {/* Responsive Send/Stop buttons */}
                 <ButtonGroup
                   variant={sendButtonVariant}
@@ -1089,6 +1093,7 @@ export function Composer(props: {
                             Stop
                         </Button>
                     )}
+
                   {/* [Beam] Open Beam */}
                   {/*{isText && <Tooltip title='Open Beam'>*/}
                   {/*  <IconButton variant='outlined' disabled={noConversation || noLLM} onClick={handleSendTextBeamClicked}>*/}

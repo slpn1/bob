@@ -434,14 +434,13 @@ function ChatDrawer(props: {
               onConversationFolderChange={handleConversationFolderChange}
             />
           ) : item.type === 'nav-item-group' ? (
-            <Typography key={'nav-divider-' + idx} level='body-xs' sx={{
+            <Typography key={'nav-divider-' + idx} level='body-sm' sx={{
               textAlign: 'center',
               my: 1,
               // my: 'calc(var(--ListItem-minHeight) / 4)',
               // keeps the group header sticky to the top
               position: 'sticky',
               top: 0,
-              backgroundColor: OPTIMA_DRAWER_BACKGROUND,
               zIndex: 1,
             }}>
               {item.title}

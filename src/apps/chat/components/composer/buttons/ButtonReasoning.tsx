@@ -6,11 +6,12 @@ import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import { KeyStroke } from '~/common/components/KeyStroke';
 import { buttonAttachSx } from '~/common/components/ButtonAttachFiles';
 import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
+import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 
 
-export const ButtonWebSearchMemo = React.memo(ButtonWebSearch);
+export const ButtonReasoningMemo = React.memo(uttonReasoning);
 
-function ButtonWebSearch(props: {
+function uttonReasoning(props: {
   color?: ColorPaletteProp,
   isMobile?: boolean,
   disabled?: boolean,
@@ -20,7 +21,7 @@ function ButtonWebSearch(props: {
 }) {
   return props.isMobile ? (
     <IconButton color={props.color} disabled={props.disabled} onClick={props.onAttachClipboard}>
-      <LanguageRoundedIcon />
+      <SchoolRoundedIcon />
     </IconButton>
   ) : (
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
@@ -35,11 +36,11 @@ function ButtonWebSearch(props: {
         color={props.color || 'neutral'}
         disabled={props.disabled}
         fullWidth={props.fullWidth}
-        startDecorator={<LanguageRoundedIcon />}
+        startDecorator={<SchoolRoundedIcon />}
         onClick={props.onAttachClipboard}
         sx={buttonAttachSx.desktop}
       >
-        Web Search: High
+       Reasoning: High
       </Button>
     </Tooltip>
   );
