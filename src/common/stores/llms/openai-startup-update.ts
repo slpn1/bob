@@ -14,7 +14,10 @@ export async function ensureOpenAIModelsUpdated() {
   try {
     // Check if OpenAI is configured via backend
     const backendCaps = getBackendCapabilities();
-    console.log('[OpenAI Startup Update] Backend capabilities check:', { hasLlmOpenAI: backendCaps.hasLlmOpenAI });
+    console.log('[OpenAI Startup Update] Backend capabilities check:', { 
+      hasLlmOpenAI: backendCaps.hasLlmOpenAI,
+      hashLlmReconfig: backendCaps.hashLlmReconfig
+    });
     
     if (!backendCaps.hasLlmOpenAI) {
       console.log('[OpenAI Startup Update] OpenAI not configured in backend, skipping');
@@ -47,6 +50,11 @@ export async function ensureOpenAIModelsUpdated() {
 
     // Auto-assign gpt-5-2025-08-07 as the default primary chat model if available
     const { llms } = llmsStoreState();
+    console.log('[OpenAI Startup Update] Current LLM models:', llms.map(llm => ({ id: llm.id, label: llm.label, hidden: llm.hidden })));
+    
+    const gpt5Models = llms.filter(llm => llm.id.includes('gpt-5'));
+    console.log('[OpenAI Startup Update] Found GPT-5 models:', gpt5Models.map(llm => ({ id: llm.id, label: llm.label, hidden: llm.hidden })));
+    
     const gpt41 = llms.find(llm => llm.id === 'gpt-5-2025-08-07' && !llm.hidden);
     
     if (gpt41) {
@@ -54,6 +62,7 @@ export async function ensureOpenAIModelsUpdated() {
       assignDomainModelId('primaryChat', 'gpt-5-2025-08-07');
     } else {
       console.log('[OpenAI Startup Update] gpt-5-2025-08-07 not found or hidden, skipping auto-assignment');
+      console.log('[OpenAI Startup Update] Available model IDs:', llms.map(llm => llm.id).filter(id => id.includes('gpt')));
     }
 
     // Migration: Check if current model is the removed chatgpt-4o-latest and migrate to GPT-4.1

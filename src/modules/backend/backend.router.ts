@@ -31,7 +31,18 @@ function generateLlmEnvConfigHash(env: Record<string, unknown>): string {
     Release.TenantSlug.toString(),          // triggers when branch changes
     ...envAPIKeys,                      // triggers when env keys change
   ];
-  return sdbmHash(hashInputs.join(';'));
+  const hashString = hashInputs.join(';');
+  const finalHash = sdbmHash(hashString);
+  
+  console.log('[Backend Hash Generation]', {
+    aixVersion: Release.Monotonics.Aix,
+    tenantSlug: Release.TenantSlug,
+    envKeysCount: envAPIKeys.length,
+    hashInputs: hashString.substring(0, 200) + (hashString.length > 200 ? '...' : ''),
+    finalHash: finalHash
+  });
+  
+  return finalHash;
 }
 
 

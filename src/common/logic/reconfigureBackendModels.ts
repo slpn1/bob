@@ -19,26 +19,56 @@ let _isConfigurationDone = false;
  */
 export async function reconfigureBackendModels(lastLlmReconfigHash: string, setLastReconfigHash: (hash: string) => void, remoteServices: boolean, existingServices: boolean, force: boolean = false) {
 
+  console.log('[Model Reconfigure] Starting reconfiguration check', {
+    lastStoredHash: lastLlmReconfigHash,
+    isConfiguring: _isConfiguring,
+    isConfigurationDone: _isConfigurationDone,
+    force: force,
+    remoteServices: remoteServices,
+    existingServices: existingServices
+  });
+
   // Note: double-calling is only expected to happen in react strict mode, unless forced
-  if (_isConfiguring || (_isConfigurationDone && !force))
+  if (_isConfiguring || (_isConfigurationDone && !force)) {
+    console.log('[Model Reconfigure] Skipping - already configuring or done', { _isConfiguring, _isConfigurationDone, force });
     return;
+  }
 
   // skip if there haven't been any changes in the backend configuration, unless forced
   // Note: the hash captures both AIX/LLMs changes and new backend-configured services
   const backendCaps = getBackendCapabilities();
   const backendReconfigHash = backendCaps.hashLlmReconfig;
+  
+  console.log('[Model Reconfigure] Hash comparison', {
+    currentBackendHash: backendReconfigHash,
+    lastStoredHash: lastLlmReconfigHash,
+    hashesEqual: lastLlmReconfigHash === backendReconfigHash,
+    shouldSkip: !force && (!backendReconfigHash || lastLlmReconfigHash === backendReconfigHash)
+  });
+  
   if (!force && (!backendReconfigHash || lastLlmReconfigHash === backendReconfigHash)) {
+    console.log('[Model Reconfigure] Skipping - hashes match and not forced');
     _isConfiguring = false;
     _isConfigurationDone = true;
     return;
   }
 
   // begin configuration
+  console.log('[Model Reconfigure] Starting configuration process', {
+    oldHash: lastLlmReconfigHash,
+    newHash: backendReconfigHash
+  });
+  
   _isConfiguring = true;
   if (force) _isConfigurationDone = false; // Reset done flag when forcing
   // FIXME: future: move this to the end of the function, but also with strong retry count and error catching, so one's app wouldn't loop upon each boot
   setLastReconfigHash(backendReconfigHash);
   const initiallyEmpty = !llmsStoreState().llms?.length;
+  
+  console.log('[Model Reconfigure] Current LLM state', {
+    initiallyEmpty: initiallyEmpty,
+    currentLlmCount: llmsStoreState().llms?.length || 0
+  });
 
   // reconfigure these
   const servicesToReconfigure: DModelsService[] = [];
