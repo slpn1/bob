@@ -79,6 +79,7 @@ function ButtonReasoning(props: {
                     '&:active:hover': {
                         'color': '#fff',
                     },
+                    'text-align': 'left',
                 },
             }
           }}
