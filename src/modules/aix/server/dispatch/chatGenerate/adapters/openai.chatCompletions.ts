@@ -77,7 +77,7 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
     top_p: undefined,
     n: hotFixOnlySupportN1 ? undefined : 0, // NOTE: we choose to not support this at the API level - most downstram ecosystem supports 1 only, which is the default
     stream: streaming,
-    stream_options: streaming ? { include_usage: true } : undefined,
+    stream_options: streaming ? { include_usage: false } : undefined,
     response_format: jsonOutput ? { type: 'json_object' } : undefined,
     seed: undefined,
     stop: undefined,
