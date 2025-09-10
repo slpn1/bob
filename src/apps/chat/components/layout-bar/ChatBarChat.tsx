@@ -58,7 +58,7 @@ export function ChatBarChat(props: {
   
   const reasoningValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'medium';
+    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'minimal';
   }, [modelParameters]);
   
   const deepResearchValue = React.useMemo(() => {

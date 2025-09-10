@@ -277,7 +277,7 @@ export function Composer(props: {
 
   const reasoningValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'medium';
+    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'minimal';
   }, [modelParameters]);
 
   // Check if web search should be disabled (when reasoning is minimal)
