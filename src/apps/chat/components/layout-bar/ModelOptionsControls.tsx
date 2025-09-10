@@ -40,30 +40,32 @@ function WebSearchControl({value, onChange, disabled}: WebSearchControlProps) {
     const displayLabel = WEB_SEARCH_OPTIONS.find(opt => opt.value === value)?.label || 'Off';
 
     return (
-        <GoodTooltip title="Web Search Level">
-            <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-                <LanguageRoundedIcon sx={{fontSize: 'sm', color: disabled ? 'text.tertiary' : 'text.secondary'}}/>
-                <Box sx={{fontSize: 'sm', fontWeight: 500, color: disabled ? 'text.tertiary' : 'text.primary'}}>
-                    Web Search:
-                </Box>
-                <Dropdown>
-                    <MenuButton
-                        disabled={disabled}
-                        size="sm"
-                        variant="plain"
-                        color={disabled ? 'neutral' : 'primary'}
-                        sx={{
-                            width: '3rem',
-                            fontSize: 'sm',
-                            fontWeight: 500,
-                            color: disabled ? 'text.tertiary' : 'white',
-                            '&:hover': disabled ? {} : {
-                                backgroundColor: 'primary.softHoverBg',
-                            },
-                        }}
-                    >
-                        {displayLabel}
-                    </MenuButton>
+        <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
+            <GoodTooltip title={disabled ? "Web search is not available when reasoning is set to minimal" : "Web Search Level"}>
+                <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: disabled ? 'not-allowed' : 'default'}}>
+                    <LanguageRoundedIcon sx={{fontSize: 'sm', color: disabled ? 'text.tertiary' : 'text.secondary'}}/>
+                    <Box sx={{fontSize: 'sm', fontWeight: 500, color: disabled ? 'text.tertiary' : 'text.primary'}}>
+                        Web Search:
+                    </Box>
+                    <Dropdown>
+                        <MenuButton
+                            disabled={disabled}
+                            size="sm"
+                            variant="plain"
+                            color={disabled ? 'neutral' : 'primary'}
+                            sx={{
+                                width: '3rem',
+                                fontSize: 'sm',
+                                fontWeight: 500,
+                                color: disabled ? 'text.tertiary' : 'white',
+                                pointerEvents: disabled ? 'none' : 'auto',
+                                '&:hover': disabled ? {} : {
+                                    backgroundColor: 'primary.softHoverBg',
+                                },
+                            }}
+                        >
+                            {displayLabel}
+                        </MenuButton>
 
                     <Menu placement="bottom-end" size="sm">
                         {WEB_SEARCH_OPTIONS.map((option) => (
@@ -93,9 +95,10 @@ function WebSearchControl({value, onChange, disabled}: WebSearchControlProps) {
                             </MenuItem>
                         ))}
                     </Menu>
-                </Dropdown>
-            </Box>
-        </GoodTooltip>
+                    </Dropdown>
+                </Box>
+            </GoodTooltip>
+        </Box>
     );
 }
 

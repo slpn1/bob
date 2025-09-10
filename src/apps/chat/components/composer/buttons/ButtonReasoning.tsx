@@ -31,8 +31,8 @@ function ButtonReasoning(props: {
   onValueChange?: (value: ReasoningLevel) => void,
   onAttachClipboard: () => void,
 }) {
-  const currentValue = props.value || 'medium';
-  const displayLabel = REASONING_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Medium';
+  const currentValue = props.value || 'minimal';
+  const displayLabel = REASONING_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Minimal';
   return props.isMobile ? (
     <Dropdown>
       <MenuButton
@@ -60,11 +60,11 @@ function ButtonReasoning(props: {
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
         <b>Reasoning</b><br />
-        Choose your reasoning level<br />
-        <KeyStroke combo='Ctrl + Shift + V' sx={{ mt: 1, mb: 0.5 }} />
+        Choose how much you would like Lumina to think about an answer<br />
       </Box>
     )}>
-      <Dropdown>
+      <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>
+        <Dropdown>
         <MenuButton
           slots={{ root: Button }}
           slotProps={{
@@ -105,7 +105,8 @@ function ButtonReasoning(props: {
             </MenuItem>
           ))}
         </Menu>
-      </Dropdown>
+        </Dropdown>
+      </Box>
     </Tooltip>
   );
 }

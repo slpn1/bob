@@ -64,7 +64,8 @@ function ButtonWebSearch(props: {
         {props.disabled ? 'Web search is not available when reasoning is set to minimal' : 'Choose your web search level'}<br />
       </Box>
     )}>
-      <Dropdown>
+      <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>
+        <Dropdown>
         <MenuButton
           slots={{ root: Button }}
           slotProps={{
@@ -106,7 +107,8 @@ function ButtonWebSearch(props: {
             ))}
           </Menu>
         )}
-      </Dropdown>
+        </Dropdown>
+      </Box>
     </Tooltip>
   );
 }
