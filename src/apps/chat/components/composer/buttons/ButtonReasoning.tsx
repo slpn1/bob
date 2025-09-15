@@ -59,8 +59,8 @@ function ButtonReasoning(props: {
   ) : (
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
-        <b>Reasoning</b><br />
-        Choose how much you would like Lumina to think about an answer<br />
+        <b>Extra Reasoning</b><br />
+        Choose how much extra you would like Lumina to think about an answer. Minimal is enough in a lot of cases.<br />
       </Box>
     )}>
       <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>
@@ -84,7 +84,7 @@ function ButtonReasoning(props: {
             }
           }}
         >
-          Reasoning: {displayLabel}
+          Extra Reasoning: {displayLabel}
         </MenuButton>
         <Menu placement="bottom-start" size="sm">
           {REASONING_OPTIONS.map((option) => (
