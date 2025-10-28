@@ -56,6 +56,7 @@ import { Composer } from './components/composer/Composer';
 import { PaneTitleOverlay } from './components/PaneTitleOverlay';
 import { useComposerAutoHide } from './components/composer/useComposerAutoHide';
 import { usePanesManager } from './components/panes/store-panes-manager';
+import { LuminaQuickStartBanner } from './components/LuminaQuickStartBanner';
 
 import type { ChatExecuteMode } from './execute-mode/execute-mode.types';
 
@@ -633,11 +634,14 @@ export function AppChat() {
 
 
   return <>
-
     {/* -> Toolbar, -> Drawer, -> Panel*/}
     <OptimaToolbarIn>{focusedBarContent}</OptimaToolbarIn>
     <OptimaDrawerIn>{drawerContent}</OptimaDrawerIn>
     <OptimaPanelIn>{focusedChatPanelContent}</OptimaPanelIn>
+
+    <Box sx={{ backgroundColor: 'white' }}>
+      <LuminaQuickStartBanner />
+    </Box>
 
     <PanelGroup
       direction={(isMobile || isTallScreen) ? 'vertical' : 'horizontal'}
@@ -658,7 +662,6 @@ export function AppChat() {
         const _keyAndId = `chat-pane-${pane.paneId}`;
         const _sepId = `sep-pane-${idx}`;
         return <WorkspaceIdProvider conversationId={_paneIsFocused ? _paneConversationId : null} key={_keyAndId}><ErrorBoundary>
-
           <Panel
             id={_keyAndId}
             order={idx}
