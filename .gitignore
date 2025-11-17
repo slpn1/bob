@@ -7,6 +7,9 @@
 /supabase/
 /*.sql
 
+# Documentation
+/docs
+
 # dependencies
 /node_modules
 /.pnp
