@@ -1,11 +1,12 @@
 import { safeErrorString } from '~/server/wire';
 
 import type { AixWire_Particles } from '../../../api/aix.wiretypes';
-import type { ChatGenerateParseFunction } from '../chatGenerate.dispatch';
+import type { ChatGenerateParseFunction, UserContext } from '../chatGenerate.dispatch';
 import type { IParticleTransmitter } from '../IParticleTransmitter';
 import { IssueSymbols } from '../ChatGenerateTransmitter';
 
 import { OpenAIWire_API_Responses } from '../../wiretypes/openai.wiretypes';
+import { logTokenUsage } from '~/server/services/tokenUsageLogger';
 
 
 // configuration
@@ -180,9 +181,10 @@ class ResponseParserStateMachine {
 /**
  * OpenAI Responses API Streaming Parser
  */
-export function createOpenAIResponsesEventParser(): ChatGenerateParseFunction {
+export function createOpenAIResponsesEventParser(userContext?: UserContext | null): ChatGenerateParseFunction {
 
   const R = new ResponseParserStateMachine();
+  let modelName: string | undefined;
 
   return function(pt: IParticleTransmitter, eventData: string) {
 
@@ -224,7 +226,8 @@ export function createOpenAIResponsesEventParser(): ChatGenerateParseFunction {
         R.setResponse(eventType, event.response);
 
         // -> Model
-        pt.setModelName(event.response.model);
+        modelName = event.response.model;
+        pt.setModelName(modelName);
 
         // -> TODO: Generation Details:
         //    .created_at, .truncation, .temperature, .top_p, .tool_choice, tool count, text output type
@@ -250,6 +253,23 @@ export function createOpenAIResponsesEventParser(): ChatGenerateParseFunction {
           const metrics = _fromResponseUsage(event.response.usage, R.parserCreationTimestamp, R.timeToFirstEvent);
           if (metrics)
             pt.updateMetrics(metrics);
+
+          // Log token usage to database (non-blocking)
+          if (userContext?.email && modelName && event.response.usage.output_tokens !== undefined) {
+            const inputTokens = event.response.usage.input_tokens ?? 0;
+            const outputTokens = event.response.usage.output_tokens;
+
+            // Log asynchronously without blocking the response
+            logTokenUsage(
+              userContext.email,
+              modelName,
+              inputTokens,
+              outputTokens,
+              'chat'
+            ).catch(error => {
+              console.error('Failed to log token usage:', error);
+            });
+          }
         }
         break;
 
@@ -424,7 +444,7 @@ export function createOpenAIResponsesEventParser(): ChatGenerateParseFunction {
 /**
  * OpenAI Responses API Non-Streaming Parser
  */
-export function createOpenAIResponseParserNS(): ChatGenerateParseFunction {
+export function createOpenAIResponseParserNS(userContext?: UserContext | null): ChatGenerateParseFunction {
 
   const parserCreationTimestamp = Date.now();
 
@@ -453,6 +473,23 @@ export function createOpenAIResponseParserNS(): ChatGenerateParseFunction {
       const metrics = _fromResponseUsage(response.usage, parserCreationTimestamp, undefined);
       if (metrics)
         pt.updateMetrics(metrics);
+
+      // Log token usage to database (non-blocking)
+      if (userContext?.email && response.model && response.usage.output_tokens !== undefined) {
+        const inputTokens = response.usage.input_tokens ?? 0;
+        const outputTokens = response.usage.output_tokens;
+
+        // Log asynchronously without blocking the response
+        logTokenUsage(
+          userContext.email,
+          response.model,
+          inputTokens,
+          outputTokens,
+          'chat'
+        ).catch(error => {
+          console.error('Failed to log token usage:', error);
+        });
+      }
     }
 
     // -> Status

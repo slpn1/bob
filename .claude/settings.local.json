@@ -21,7 +21,8 @@
       "mcp__ide__getDiagnostics",
       "Bash(git rm:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git log --since=\"2024-10-20\" --until=\"2024-11-05\" --all --oneline --grep=\"Responses\\|response\" -i)"
     ],
     "deny": [
       "Read(node_modules)",

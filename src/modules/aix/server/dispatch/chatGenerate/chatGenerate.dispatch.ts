@@ -116,7 +116,7 @@ export function createChatGenerateDispatch(
             body: aixToOpenAIResponses(model, chatGenerate, false, streaming),
           },
           demuxerFormat: streaming ? 'fast-sse' : null,
-          chatGenerateParse: streaming ? createOpenAIResponsesEventParser() : createOpenAIResponseParserNS(),
+          chatGenerateParse: streaming ? createOpenAIResponsesEventParser(userContext) : createOpenAIResponseParserNS(userContext),
         };
       }
 
