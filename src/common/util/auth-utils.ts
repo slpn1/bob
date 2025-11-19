@@ -76,6 +76,12 @@ export function useIsAdmin(): boolean {
     if (queryOverride !== null) {
       return queryOverride;
     }
+
+    console.log('No admin role found in token', session?.user?.email);
+    // Temporary fallback: check if user's email is in admin list
+    if (session?.user?.email && ADMIN_EMAILS.includes(session.user.email)) {
+      return true;
+    }
     
     if (!session?.accessToken) return false;
     
@@ -91,11 +97,6 @@ export function useIsAdmin(): boolean {
         if (hasAdminRole) {
           return true;
         }
-      }
-      
-      // Temporary fallback: check if user's email is in admin list
-      if (session?.user?.email && ADMIN_EMAILS.includes(session.user.email)) {
-        return true;
       }
       
       return false;
