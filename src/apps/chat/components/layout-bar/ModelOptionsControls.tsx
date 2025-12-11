@@ -9,7 +9,7 @@ import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import {GoodTooltip} from '~/common/components/GoodTooltip';
 
 type WebSearchLevel = 'off' | 'low' | 'medium' | 'comprehensive';
-type ReasoningLevel = 'minimal' | 'low' | 'medium' | 'high';
+type ReasoningLevel = 'none' | 'low' | 'medium' | 'high';
 
 const WEB_SEARCH_OPTIONS: Array<{ value: WebSearchLevel; label: string }> = [
     {value: 'off', label: 'Off'},
@@ -19,7 +19,7 @@ const WEB_SEARCH_OPTIONS: Array<{ value: WebSearchLevel; label: string }> = [
 ];
 
 const REASONING_OPTIONS: Array<{ value: ReasoningLevel; label: string }> = [
-    {value: 'minimal', label: 'Minimal'},
+    {value: 'none', label: 'None'},
     {value: 'low', label: 'Low'},
     {value: 'medium', label: 'Medium'},
     {value: 'high', label: 'High'}
@@ -41,7 +41,7 @@ function WebSearchControl({value, onChange, disabled}: WebSearchControlProps) {
 
     return (
         <Box sx={{display: 'flex', alignItems: 'center', gap: 1}}>
-            <GoodTooltip title={disabled ? "Web search is not available when reasoning is set to minimal" : "Web Search Level"}>
+            <GoodTooltip title={disabled ? "Web search is not available when reasoning is set to none" : "Web Search Level"}>
                 <Box sx={{display: 'flex', alignItems: 'center', gap: 1, cursor: disabled ? 'not-allowed' : 'default'}}>
                     <LanguageRoundedIcon sx={{fontSize: 'sm', color: disabled ? 'text.tertiary' : 'text.secondary'}}/>
                     <Box sx={{fontSize: 'sm', fontWeight: 500, color: disabled ? 'text.tertiary' : 'text.primary'}}>

@@ -10,10 +10,10 @@ import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
 import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 
 
-type ReasoningLevel = 'minimal' | 'low' | 'medium' | 'high';
+type ReasoningLevel = 'none' | 'low' | 'medium' | 'high';
 
 const REASONING_OPTIONS: Array<{ value: ReasoningLevel; label: string }> = [
-  {value: 'minimal', label: 'Minimal'},
+  {value: 'none', label: 'None'},
   {value: 'low', label: 'Low'},
   {value: 'medium', label: 'Medium'},
   {value: 'high', label: 'High'}
@@ -31,8 +31,8 @@ function ButtonReasoning(props: {
   onValueChange?: (value: ReasoningLevel) => void,
   onAttachClipboard: () => void,
 }) {
-  const currentValue = props.value || 'minimal';
-  const displayLabel = REASONING_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Minimal';
+  const currentValue = props.value || 'none';
+  const displayLabel = REASONING_OPTIONS.find(opt => opt.value === currentValue)?.label || 'None';
   return props.isMobile ? (
     <Dropdown>
       <MenuButton
@@ -60,7 +60,7 @@ function ButtonReasoning(props: {
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
         <b>Extra Reasoning</b><br />
-        Choose how much extra you would like Lumina to think about an answer. Minimal is enough in a lot of cases.<br />
+        Choose how much extra you would like Lumina to think about an answer. 'None' is enough in a lot of cases.<br />
       </Box>
     )}>
       <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>

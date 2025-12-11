@@ -58,7 +58,7 @@ export function ChatBarChat(props: {
   
   const reasoningValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'minimal';
+    return (value as 'none' | 'low' | 'medium' | 'high') || 'none';
   }, [modelParameters]);
   
   const deepResearchValue = React.useMemo(() => {
@@ -113,7 +113,7 @@ export function ChatBarChat(props: {
     });
   }, [chatLLMId, updateLLMUserParameters]);
 
-  const handleReasoningChange = React.useCallback((value: 'minimal' | 'low' | 'medium' | 'high') => {
+  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high') => {
     if (!chatLLMId) return;
     
     // Use the newer parameter format if model supports it, otherwise fallback

@@ -24,7 +24,7 @@ type TRequestTool = OpenAIWire_Responses_Tools.Tool;
 export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, jsonOutput: boolean, streaming: boolean): TRequest {
 
   // [OpenAI] Vendor-specific model checks
-  const isOpenAIOFamily = ['gpt-6', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-'));
+  const isOpenAIOFamily = ['gpt-6', 'gpt-5.1', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-') || model.id.startsWith(_id + '.'));
   const isOpenAIComputerUse = model.id.includes('computer-use');
   const isOpenAIO1Pro = model.id === 'o1-pro' || model.id.startsWith('o1-pro-');
   const isOpenAIDeepResearch = model.id.includes('-deep-research');
@@ -94,8 +94,8 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
   }
 
   // Tool: Search: for search models, and deep research models
-  // NOTE: OpenAI doesn't support web search with minimal reasoning effort
-  const skipWebSearchDueToMinimalReasoning = model.vndOaiReasoningEffort === 'minimal';
+  // NOTE: OpenAI doesn't support web search with 'none' reasoning effort
+  const skipWebSearchDueToMinimalReasoning = model.vndOaiReasoningEffort === 'none';
   if ((hotFixForceSearchTool || model.vndOaiWebSearchContext || model.userGeolocation) && !skipWebSearchDueToMinimalReasoning) {
     if (!payload.tools?.length)
       payload.tools = [];
@@ -125,7 +125,9 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
   // [DEBUG] Log temperature being sent to OpenAI Responses API
   const logTempValue = validated.data.temperature !== undefined ? validated.data.temperature : 'undefined';
   const logTopPValue = validated.data.top_p !== undefined ? validated.data.top_p : 'undefined';
-  console.log(`[OpenAI Responses] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}`);
+  const logReasoningEffort = model.vndOaiReasoningEffort ?? 'undefined';
+  const logWebSearchEnabled = validated.data.tools?.some(tool => tool.type === 'web_search_preview') ?? false;
+  console.log(`[OpenAI Responses] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}, Reasoning: ${logReasoningEffort}, Web Search: ${logWebSearchEnabled}`);
 
   return validated.data;
 }

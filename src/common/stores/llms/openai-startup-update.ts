@@ -48,32 +48,32 @@ export async function ensureOpenAIModelsUpdated() {
     await llmsUpdateModelsForServiceOrThrow(openaiService.id, true);
     console.log('[OpenAI Startup Update] Successfully updated OpenAI models');
 
-    // Auto-assign gpt-5-2025-08-07 as the default primary chat model if available
+    // Auto-assign gpt-5.1 as the default primary chat model if available
     const { llms } = llmsStoreState();
     console.log('[OpenAI Startup Update] Current LLM models:', llms.map(llm => ({ id: llm.id, label: llm.label, hidden: llm.hidden })));
-    
+
     const gpt5Models = llms.filter(llm => llm.id.includes('gpt-5'));
     console.log('[OpenAI Startup Update] Found GPT-5 models:', gpt5Models.map(llm => ({ id: llm.id, label: llm.label, hidden: llm.hidden })));
-    
-    const gpt41 = llms.find(llm => llm.id === 'gpt-5-2025-08-07' && !llm.hidden);
-    
-    if (gpt41) {
-      console.log('[OpenAI Startup Update] Auto-assigning gpt-5-2025-08-07 as primary chat model');
-      assignDomainModelId('primaryChat', 'gpt-5-2025-08-07');
+
+    const gpt51 = llms.find(llm => llm.id === 'gpt-5.1' && !llm.hidden);
+
+    if (gpt51) {
+      console.log('[OpenAI Startup Update] Auto-assigning gpt-5.1 as primary chat model');
+      assignDomainModelId('primaryChat', 'gpt-5.1');
     } else {
-      console.log('[OpenAI Startup Update] gpt-5-2025-08-07 not found or hidden, skipping auto-assignment');
+      console.log('[OpenAI Startup Update] gpt-5.1 not found or hidden, skipping auto-assignment');
       console.log('[OpenAI Startup Update] Available model IDs:', llms.map(llm => llm.id).filter(id => id.includes('gpt')));
     }
 
-    // Migration: Check if current model is the removed chatgpt-4o-latest and migrate to GPT-4.1
+    // Migration: Check if current model is the removed chatgpt-4o-latest and migrate to gpt-5.1
     const currentChatModel = getDomainModelConfiguration('primaryChat', true, true)?.modelId;
     if (currentChatModel === 'chatgpt-4o-latest') {
-      console.log('[OpenAI Startup Update] Migrating from removed chatgpt-4o-latest to gpt-5-2025-08-07');
-      if (gpt41) {
-        assignDomainModelId('primaryChat', 'gpt-5-2025-08-07');
-        console.log('[OpenAI Startup Update] Successfully migrated to gpt-5-2025-08-07');
+      console.log('[OpenAI Startup Update] Migrating from removed chatgpt-4o-latest to gpt-5.1');
+      if (gpt51) {
+        assignDomainModelId('primaryChat', 'gpt-5.1');
+        console.log('[OpenAI Startup Update] Successfully migrated to gpt-5.1');
       } else {
-        console.warn('[OpenAI Startup Update] Could not migrate -gpt-5-2025-08-07 not available');
+        console.warn('[OpenAI Startup Update] Could not migrate - gpt-5.1 not available');
       }
     }
 

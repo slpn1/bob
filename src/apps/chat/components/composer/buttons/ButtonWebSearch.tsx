@@ -61,7 +61,7 @@ function ButtonWebSearch(props: {
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
         <b>Web Search</b><br />
-        {props.disabled ? 'Web search is not available when reasoning is set to minimal' : 'Choose your web search level'}<br />
+        {props.disabled ? 'Web search is not available when reasoning is set to none' : 'Choose your web search level'}<br />
       </Box>
     )}>
       <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>

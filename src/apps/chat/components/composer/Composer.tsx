@@ -277,11 +277,11 @@ export function Composer(props: {
 
   const reasoningValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'minimal' | 'low' | 'medium' | 'high') || 'minimal';
+    return (value as 'none' | 'low' | 'medium' | 'high') || 'none';
   }, [modelParameters]);
 
-  // Check if web search should be disabled (when reasoning is minimal)
-  const isWebSearchDisabled = reasoningValue === 'minimal';
+  // Check if web search should be disabled (when reasoning is none)
+  const isWebSearchDisabled = reasoningValue === 'none';
 
 
   // Effect: load initial text if queued up (e.g. by /link/share_targetF)
@@ -545,21 +545,21 @@ export function Composer(props: {
     });
   }, [chatLLMId, updateLLMUserParameters, isWebSearchDisabled]);
 
-  const handleReasoningChange = React.useCallback((value: 'minimal' | 'low' | 'medium' | 'high') => {
+  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high') => {
     if (!chatLLMId) return;
-    
-    const wasDisabled = reasoningValue === 'minimal';
-    const willBeDisabled = value === 'minimal';
-    
-    // If switching TO minimal, store current web search value and disable it
+
+    const wasDisabled = reasoningValue === 'none';
+    const willBeDisabled = value === 'none';
+
+    // If switching TO none, store current web search value and disable it
     if (!wasDisabled && willBeDisabled && webSearchValue !== 'off') {
       setPreviousWebSearchValue(webSearchValue);
       updateLLMUserParameters(chatLLMId, {
         llmVndOaiWebSearchContext: undefined, // Set to off
       });
     }
-    
-    // If switching FROM minimal, restore previous web search value
+
+    // If switching FROM none, restore previous web search value
     if (wasDisabled && !willBeDisabled) {
       const valueToRestore = previousWebSearchValue === 'off' ? undefined : 
         previousWebSearchValue === 'comprehensive' ? 'high' : previousWebSearchValue;

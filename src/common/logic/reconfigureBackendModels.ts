@@ -135,14 +135,14 @@ export async function reconfigureBackendModels(lastLlmReconfigHash: string, setL
     // in case we refreshed all vendors, auto-assign the primary chat model, so it doesn't get locked to the first vendor
     console.log('[reconfigureBackendModels] Initially empty, auto-assigning primary chat model');
     
-    // Prefer gpt-4.1-2025-04-14 if available
+    // Prefer gpt-5.1 if available
     const { llms } = llmsStoreState();
-    const gpt5 = llms.find(llm => llm.id === 'gpt-5-2025-08-07' && !llm.hidden);
-    if (gpt5) {
-      console.log('[reconfigureBackendModels] Found ggpt-5-2025-08-07, assigning as primary chat model');
-      llmsStoreActions().assignDomainModelId('primaryChat', 'gpt-5-2025-08-07');
+    const gpt51 = llms.find(llm => llm.id === 'gpt-5.1' && !llm.hidden);
+    if (gpt51) {
+      console.log('[reconfigureBackendModels] Found gpt-5.1, assigning as primary chat model');
+      llmsStoreActions().assignDomainModelId('primaryChat', 'gpt-5.1');
     } else {
-      console.log('[reconfigureBackendModels] gpt-5-2025-08-07 not available, using auto-assignment');
+      console.log('[reconfigureBackendModels] gpt-5.1 not available, using auto-assignment');
       llmsStoreActions().assignDomainModelId('primaryChat', null);
     }
   } else {

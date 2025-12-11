@@ -13,13 +13,13 @@ import { fromManualMapping, ManualMappings } from './models.data';
 // - "Structured Outputs" is LLM_IF_OAI_Json
 export const _knownOpenAIChatModels: ManualMappings = [
 
-  /// GPT-5 series - Released August 7, 2025
+  /// GPT-5.1 series
 
-  // GPT-5
+  // GPT-5.1
   {
     isLatest: true,
-    idPrefix: 'gpt-5-2025-08-07',
-    label: 'GPT-5 (2025-08-07)',
+    idPrefix: 'gpt-5.1',
+    label: 'GPT-5.1',
     description: 'The best model for coding and agentic tasks across domains.',
     contextWindow: 400000,
     maxCompletionTokens: 128000,
@@ -29,21 +29,6 @@ export const _knownOpenAIChatModels: ManualMappings = [
       { paramId: 'llmVndOaiReasoningEffort4' }, { paramId: 'llmVndOaiWebSearchContext' },
       { paramId: 'llmVndOaiRestoreMarkdown' } // activate markdown restoration (true as initial value)
     ],
-    chatPrice: { input: 1.25, cache: { cType: 'oai-ac', read: 0.125 }, output: 10 },
-    benchmark: { cbaElo: 1481 },
-  },
-  {
-    idPrefix: 'gpt-5',
-    label: 'GPT-5',
-    description: 'The best model for coding and agentic tasks. Points to gpt-5-2025-08-07.',
-    symLink: 'gpt-5-2025-08-07',
-    hidden: true, // prefer versioned
-    // copied from symlinked
-    contextWindow: 400000,
-    maxCompletionTokens: 128000,
-    trainingDataCutoff: 'Sep 30, 2024',
-    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_OAI_Reasoning, LLM_IF_OAI_Responses, LLM_IF_OAI_PromptCaching, LLM_IF_HOTFIX_NoTemperature],
-    parameterSpecs: [{ paramId: 'llmVndOaiReasoningEffort4' }, { paramId: 'llmVndOaiWebSearchContext' }, { paramId: 'llmVndOaiRestoreMarkdown' }],
     chatPrice: { input: 1.25, cache: { cType: 'oai-ac', read: 0.125 }, output: 10 },
     benchmark: { cbaElo: 1481 },
   },
@@ -1125,6 +1110,8 @@ export function openAIModelToModelDescription(modelId: string, modelCreated: num
 
 
 const _manualOrderingIdPrefixes = [
+  // GPT-5.1
+  'gpt-5.1',
   // GPT-5
   'gpt-5-20',
   'gpt-5-chat-latest',
