@@ -28,6 +28,20 @@ const _reasoningEffort4Options = [
   { value: 'none', label: 'None', description: 'No reasoning, fastest and cheapest' } as const,
   { value: _UNSPECIFIED, label: 'Default', description: 'Default value (unset)' } as const,
 ] as const;
+const _reasoningEffort5Options = [
+  { value: 'xhigh', label: 'Extra High', description: 'Maximum reasoning depth (GPT-5.2+)' } as const,
+  { value: 'high', label: 'High', description: 'Deep, thorough analysis' } as const,
+  { value: 'medium', label: 'Medium', description: 'Balanced reasoning depth' } as const,
+  { value: 'low', label: 'Low', description: 'Quick, concise responses' } as const,
+  { value: 'none', label: 'None', description: 'No reasoning, fastest and cheapest' } as const,
+  { value: _UNSPECIFIED, label: 'Default', description: 'Default value (unset)' } as const,
+] as const;
+const _verbosityOptions = [
+  { value: 'high', label: 'High', description: 'Comprehensive, detailed responses' } as const,
+  { value: 'medium', label: 'Medium', description: 'Balanced length and detail' } as const,
+  { value: 'low', label: 'Low', description: 'Concise, to-the-point responses' } as const,
+  { value: _UNSPECIFIED, label: 'Default', description: 'Default value (unset)' } as const,
+] as const;
 const _webSearchContextOptions = [
   { value: 'high', label: 'Comprehensive', description: 'Largest, highest cost, slower' } as const,
   { value: 'medium', label: 'Medium', description: 'Balanced context, cost, and speed' } as const,
@@ -101,6 +115,8 @@ export function LLMParametersEditor(props: {
     llmVndGeminiThinkingBudget,
     llmVndOaiReasoningEffort,
     llmVndOaiReasoningEffort4,
+    llmVndOaiReasoningEffort5,
+    llmVndOaiVerbosity,
     llmVndOaiRestoreMarkdown,
     llmVndOaiWebSearchContext,
     llmVndOaiWebSearchGeolocation,
@@ -165,8 +181,6 @@ export function LLMParametersEditor(props: {
   const gemTBSpec = modelParamSpec['llmVndGeminiThinkingBudget'];
   const gemTBMinMax = gemTBSpec?.rangeOverride || defGemTB.range;
 
-  // Check if web search should be disabled due to 'none' reasoning effort
-  const isOaiReasoningEffortNone = llmVndOaiReasoningEffort4 === 'none';
 
   return <>
 
@@ -301,8 +315,7 @@ export function LLMParametersEditor(props: {
     {shouldShowForUser('llmVndOaiWebSearchContext') && (
       <FormSelectControl
         title='Web Search'
-        tooltip={isOaiReasoningEffortNone ? 'Web search is not compatible with reasoning effort set to none' : 'Controls how much context is retrieved from the web (low = default for Perplexity, medium = default for OpenAI). For GPT-5 models, Default=OFF.'}
-        disabled={isOaiReasoningEffortNone}
+        tooltip='Controls how much context is retrieved from the web (low = default for Perplexity, medium = default for OpenAI). For GPT-5 models, Default=OFF.'
         value={llmVndOaiWebSearchContext ?? _UNSPECIFIED}
         onChange={(value) => {
           if (value === _UNSPECIFIED || !value)
@@ -319,8 +332,7 @@ export function LLMParametersEditor(props: {
       <FormSwitchControl
         title='Add User Location'
         description='Use approximate location for better search results'
-        tooltip={isOaiReasoningEffortNone ? 'Web search geolocation is not compatible with reasoning effort set to none' : 'When enabled, uses browser geolocation API to provide approximate location data to improve search results relevance'}
-        disabled={isOaiReasoningEffortNone}
+        tooltip='When enabled, uses browser geolocation API to provide approximate location data to improve search results relevance'
         checked={!!llmVndOaiWebSearchGeolocation}
         onChange={checked => {
           if (!checked)
@@ -379,6 +391,38 @@ export function LLMParametersEditor(props: {
             onChangeParameter({ llmVndOaiReasoningEffort4: value });
         }}
         options={_reasoningEffort4Options}
+      />
+    )}
+
+    {/* Reasoning Effort 5 (GPT-5.2+) - with xhigh support */}
+    {showParam('llmVndOaiReasoningEffort5') && (
+      <FormSelectControl
+        title='Reasoning Effort'
+        tooltip='Controls how much effort the model spends on reasoning (includes xhigh for GPT-5.2+)'
+        value={llmVndOaiReasoningEffort5 ?? _UNSPECIFIED}
+        onChange={(value) => {
+          if (value === _UNSPECIFIED || !value)
+            onRemoveParameter('llmVndOaiReasoningEffort5');
+          else
+            onChangeParameter({ llmVndOaiReasoningEffort5: value });
+        }}
+        options={_reasoningEffort5Options}
+      />
+    )}
+
+    {/* Verbosity (GPT-5.2+) */}
+    {showParam('llmVndOaiVerbosity') && (
+      <FormSelectControl
+        title='Verbosity'
+        tooltip='Controls response length and depth - low is concise, high is comprehensive'
+        value={llmVndOaiVerbosity ?? _UNSPECIFIED}
+        onChange={(value) => {
+          if (value === _UNSPECIFIED || !value)
+            onRemoveParameter('llmVndOaiVerbosity');
+          else
+            onChangeParameter({ llmVndOaiVerbosity: value });
+        }}
+        options={_verbosityOptions}
       />
     )}
 

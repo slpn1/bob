@@ -45,7 +45,7 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
   // - o1 models don't support system messages, we could hotfix this here once and for all, but we want to transfer the responsibility to the UI for better messaging to the user
   // - o1 models also use the new 'max_completion_tokens' rather than 'max_tokens', breaking API compatibility, so we have to address it here
   const hotFixOpenAIOFamily = (openAIDialect === 'openai' || openAIDialect === 'azure')
-    && ['gpt-6', 'gpt-5.1', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-') || model.id.startsWith(_id + '.'));
+    && ['gpt-6', 'gpt-5.2', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-') || model.id.startsWith(_id + '.'));
 
   // Throw if function support is needed but missing
   if (chatGenerate.tools?.length && hotFixThrowCannotFC)
@@ -103,9 +103,7 @@ export function aixToOpenAIChatCompletions(openAIDialect: OpenAIDialects, model:
     _fixVndOaiRestoreMarkdown_Inline(payload);
   }
   // [OpenAI] Vendor-specific web search context and/or geolocation
-  // NOTE: OpenAI doesn't support web search with 'none' reasoning effort
-  const skipWebSearchDueToMinimalReasoning = model.vndOaiReasoningEffort === 'none';
-  if ((model.vndOaiWebSearchContext || model.userGeolocation) && !skipWebSearchDueToMinimalReasoning) {
+  if (model.vndOaiWebSearchContext || model.userGeolocation) {
     payload.web_search_options = {};
     if (model.vndOaiWebSearchContext)
       payload.web_search_options.search_context_size = model.vndOaiWebSearchContext;

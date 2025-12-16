@@ -57,8 +57,8 @@ export function ChatBarChat(props: {
   }, [modelParameters]);
   
   const reasoningValue = React.useMemo(() => {
-    const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'none' | 'low' | 'medium' | 'high') || 'none';
+    const value = modelParameters?.llmVndOaiReasoningEffort5 || modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
+    return (value as 'none' | 'low' | 'medium' | 'high' | 'xhigh') || 'none';
   }, [modelParameters]);
   
   const deepResearchValue = React.useMemo(() => {
@@ -113,14 +113,16 @@ export function ChatBarChat(props: {
     });
   }, [chatLLMId, updateLLMUserParameters]);
 
-  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high') => {
+  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high' | 'xhigh') => {
     if (!chatLLMId) return;
-    
+
     // Use the newer parameter format if model supports it, otherwise fallback
-    const paramKey = modelParameters?.llmVndOaiReasoningEffort4 !== undefined 
-      ? 'llmVndOaiReasoningEffort4' 
-      : 'llmVndOaiReasoningEffort';
-      
+    const paramKey = modelParameters?.llmVndOaiReasoningEffort5 !== undefined
+      ? 'llmVndOaiReasoningEffort5'
+      : modelParameters?.llmVndOaiReasoningEffort4 !== undefined
+        ? 'llmVndOaiReasoningEffort4'
+        : 'llmVndOaiReasoningEffort';
+
     updateLLMUserParameters(chatLLMId, {
       [paramKey]: value
     });

@@ -13,20 +13,22 @@ import { fromManualMapping, ManualMappings } from './models.data';
 // - "Structured Outputs" is LLM_IF_OAI_Json
 export const _knownOpenAIChatModels: ManualMappings = [
 
-  /// GPT-5.1 series
+  /// GPT-5.2 series
 
-  // GPT-5.1
+  // GPT-5.2
   {
     isLatest: true,
-    idPrefix: 'gpt-5.1',
-    label: 'GPT-5.1',
+    idPrefix: 'gpt-5.2',
+    label: 'GPT-5.2',
     description: 'The best model for coding and agentic tasks across domains.',
     contextWindow: 400000,
     maxCompletionTokens: 128000,
     trainingDataCutoff: 'Sep 30, 2024',
     interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_OAI_Reasoning, LLM_IF_OAI_Responses, LLM_IF_OAI_PromptCaching, LLM_IF_HOTFIX_NoTemperature],
     parameterSpecs: [
-      { paramId: 'llmVndOaiReasoningEffort4' }, { paramId: 'llmVndOaiWebSearchContext' },
+      { paramId: 'llmVndOaiReasoningEffort5' }, // GPT-5.2 supports xhigh reasoning
+      { paramId: 'llmVndOaiVerbosity' }, // GPT-5.2 supports verbosity control
+      { paramId: 'llmVndOaiWebSearchContext' },
       { paramId: 'llmVndOaiRestoreMarkdown' } // activate markdown restoration (true as initial value)
     ],
     chatPrice: { input: 1.25, cache: { cType: 'oai-ac', read: 0.125 }, output: 10 },
@@ -1110,8 +1112,8 @@ export function openAIModelToModelDescription(modelId: string, modelCreated: num
 
 
 const _manualOrderingIdPrefixes = [
-  // GPT-5.1
-  'gpt-5.1',
+  // GPT-5.2
+  'gpt-5.2',
   // GPT-5
   'gpt-5-20',
   'gpt-5-chat-latest',

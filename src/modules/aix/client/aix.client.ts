@@ -50,7 +50,7 @@ export function aixCreateModelFromLLMOptions(
     llmRef, llmTemperature, llmResponseTokens, llmTopP, llmForceNoStream,
     llmVndAntThinkingBudget,
     llmVndGeminiShowThoughts, llmVndGeminiThinkingBudget,
-    llmVndOaiReasoningEffort, llmVndOaiReasoningEffort4, llmVndOaiRestoreMarkdown, llmVndOaiWebSearchContext, llmVndOaiWebSearchGeolocation,
+    llmVndOaiReasoningEffort, llmVndOaiReasoningEffort4, llmVndOaiReasoningEffort5, llmVndOaiVerbosity, llmVndOaiRestoreMarkdown, llmVndOaiWebSearchContext, llmVndOaiWebSearchGeolocation,
     llmVndPerplexityDateFilter, llmVndPerplexitySearchMode,
     llmVndXaiSearchMode, llmVndXaiSearchSources, llmVndXaiSearchDateFilter,
   } = {
@@ -104,7 +104,8 @@ export function aixCreateModelFromLLMOptions(
     ...(llmVndGeminiShowThoughts ? { vndGeminiShowThoughts: llmVndGeminiShowThoughts } : {}),
     ...(llmVndGeminiThinkingBudget !== undefined ? { vndGeminiThinkingBudget: llmVndGeminiThinkingBudget } : {}),
     ...(llmVndOaiResponsesAPI ? { vndOaiResponsesAPI: true } : {}),
-    ...((llmVndOaiReasoningEffort4 || llmVndOaiReasoningEffort) ? { vndOaiReasoningEffort: llmVndOaiReasoningEffort4 || llmVndOaiReasoningEffort } : {}),
+    ...((llmVndOaiReasoningEffort5 || llmVndOaiReasoningEffort4 || llmVndOaiReasoningEffort) ? { vndOaiReasoningEffort: llmVndOaiReasoningEffort5 || llmVndOaiReasoningEffort4 || llmVndOaiReasoningEffort } : {}),
+    ...(llmVndOaiVerbosity ? { vndOaiVerbosity: llmVndOaiVerbosity } : {}),
     ...(llmVndOaiRestoreMarkdown ? { vndOaiRestoreMarkdown: llmVndOaiRestoreMarkdown } : {}),
     ...(llmVndOaiWebSearchContext ? { vndOaiWebSearchContext: llmVndOaiWebSearchContext } : {}),
     ...(llmVndPerplexityDateFilter ? { vndPerplexityDateFilter: llmVndPerplexityDateFilter } : {}),

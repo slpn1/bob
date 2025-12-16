@@ -1,49 +1,43 @@
 import * as React from 'react';
 
 import { Box, Button, ColorPaletteProp, IconButton, Tooltip, Menu, MenuButton, MenuItem, ListItemDecorator, Dropdown } from '@mui/joy';
-import ContentPasteGoIcon from '@mui/icons-material/ContentPasteGo';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
+import ShortTextRoundedIcon from '@mui/icons-material/ShortTextRounded';
 
-import { KeyStroke } from '~/common/components/KeyStroke';
 import { buttonAttachSx } from '~/common/components/ButtonAttachFiles';
-import LanguageRoundedIcon from "@mui/icons-material/LanguageRounded";
-import SchoolRoundedIcon from "@mui/icons-material/SchoolRounded";
 
 
-type ReasoningLevel = 'none' | 'low' | 'medium' | 'high' | 'xhigh';
+type VerbosityLevel = 'low' | 'medium' | 'high';
 
-const REASONING_OPTIONS: Array<{ value: ReasoningLevel; label: string }> = [
-  {value: 'none', label: 'None'},
-  {value: 'low', label: 'Low'},
-  {value: 'medium', label: 'Medium'},
-  {value: 'high', label: 'High'},
-  {value: 'xhigh', label: 'Extra High'}
+const VERBOSITY_OPTIONS: Array<{ value: VerbosityLevel; label: string }> = [
+  {value: 'low', label: 'Concise'},
+  {value: 'medium', label: 'Balanced'},
+  {value: 'high', label: 'Detailed'}
 ];
 
-export const ButtonReasoningMemo = React.memo(ButtonReasoning);
+export const ButtonVerbosityMemo = React.memo(ButtonVerbosity);
 
-function ButtonReasoning(props: {
+function ButtonVerbosity(props: {
   color?: ColorPaletteProp,
   isMobile?: boolean,
   disabled?: boolean,
   fullWidth?: boolean,
   noToolTip?: boolean,
-  value?: ReasoningLevel,
-  onValueChange?: (value: ReasoningLevel) => void,
-  onAttachClipboard: () => void,
+  value?: VerbosityLevel,
+  onValueChange?: (value: VerbosityLevel) => void,
 }) {
-  const currentValue = props.value || 'none';
-  const displayLabel = REASONING_OPTIONS.find(opt => opt.value === currentValue)?.label || 'None';
+  const currentValue = props.value || 'medium';
+  const displayLabel = VERBOSITY_OPTIONS.find(opt => opt.value === currentValue)?.label || 'Balanced';
   return props.isMobile ? (
     <Dropdown>
       <MenuButton
         slots={{ root: IconButton }}
         slotProps={{ root: { color: props.color, disabled: props.disabled } }}
       >
-        <SchoolRoundedIcon />
+        <ShortTextRoundedIcon />
       </MenuButton>
       <Menu placement="bottom-start" size="sm">
-        {REASONING_OPTIONS.map((option) => (
+        {VERBOSITY_OPTIONS.map((option) => (
           <MenuItem
             key={option.value}
             selected={currentValue === option.value}
@@ -60,8 +54,8 @@ function ButtonReasoning(props: {
   ) : (
     <Tooltip arrow disableInteractive placement='top-start' title={props.noToolTip ? null : (
       <Box sx={buttonAttachSx.tooltip}>
-        <b>Extra Reasoning</b><br />
-        Choose how much extra you would like Lumina to think about an answer. 'None' is enough in a lot of cases.<br />
+        <b>Response Length</b><br />
+        Control how detailed responses should be. Concise for quick answers, Detailed for comprehensive explanations.<br />
       </Box>
     )}>
       <Box sx={{ display: 'inline-block', cursor: props.disabled ? 'not-allowed' : 'default' }}>
@@ -74,7 +68,7 @@ function ButtonReasoning(props: {
               color: props.color || 'neutral',
               disabled: props.disabled,
               fullWidth: props.fullWidth,
-              startDecorator: <SchoolRoundedIcon />,
+              startDecorator: <ShortTextRoundedIcon />,
                 sx: {
                     ...buttonAttachSx.desktop,
                     '&:active:hover': {
@@ -85,10 +79,10 @@ function ButtonReasoning(props: {
             }
           }}
         >
-          Extra Reasoning: {displayLabel}
+          Length: {displayLabel}
         </MenuButton>
         <Menu placement="bottom-start" size="sm">
-          {REASONING_OPTIONS.map((option) => (
+          {VERBOSITY_OPTIONS.map((option) => (
             <MenuItem
               key={option.value}
               selected={currentValue === option.value}

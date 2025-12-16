@@ -24,7 +24,7 @@ type TRequestTool = OpenAIWire_Responses_Tools.Tool;
 export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPIChatGenerate_Request, jsonOutput: boolean, streaming: boolean): TRequest {
 
   // [OpenAI] Vendor-specific model checks
-  const isOpenAIOFamily = ['gpt-6', 'gpt-5.1', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-') || model.id.startsWith(_id + '.'));
+  const isOpenAIOFamily = ['gpt-6', 'gpt-5.2', 'gpt-5', 'o4', 'o3', 'o1'].some(_id => model.id === _id || model.id.startsWith(_id + '-') || model.id.startsWith(_id + '.'));
   const isOpenAIComputerUse = model.id.includes('computer-use');
   const isOpenAIO1Pro = model.id === 'o1-pro' || model.id.startsWith('o1-pro-');
   const isOpenAIDeepResearch = model.id.includes('-deep-research');
@@ -93,10 +93,16 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
     // };
   }
 
+  // [OpenAI GPT-5.2] Verbosity: controls response length and depth
+  if (model.vndOaiVerbosity) {
+    payload.text = {
+      ...payload.text,
+      verbosity: model.vndOaiVerbosity,
+    };
+  }
+
   // Tool: Search: for search models, and deep research models
-  // NOTE: OpenAI doesn't support web search with 'none' reasoning effort
-  const skipWebSearchDueToMinimalReasoning = model.vndOaiReasoningEffort === 'none';
-  if ((hotFixForceSearchTool || model.vndOaiWebSearchContext || model.userGeolocation) && !skipWebSearchDueToMinimalReasoning) {
+  if (hotFixForceSearchTool || model.vndOaiWebSearchContext || model.userGeolocation) {
     if (!payload.tools?.length)
       payload.tools = [];
     const webSearchTool: TRequestTool = {
@@ -122,12 +128,13 @@ export function aixToOpenAIResponses(model: AixAPI_Model, chatGenerate: AixAPICh
     throw new Error(`Invalid sequence for OpenAI models: ${validated.error.issues?.[0]?.message || validated.error.message || validated.error}.`);
   }
 
-  // [DEBUG] Log temperature being sent to OpenAI Responses API
+  // [DEBUG] Log parameters being sent to OpenAI Responses API
   const logTempValue = validated.data.temperature !== undefined ? validated.data.temperature : 'undefined';
   const logTopPValue = validated.data.top_p !== undefined ? validated.data.top_p : 'undefined';
   const logReasoningEffort = model.vndOaiReasoningEffort ?? 'undefined';
+  const logVerbosity = model.vndOaiVerbosity ?? 'undefined';
   const logWebSearchEnabled = validated.data.tools?.some(tool => tool.type === 'web_search_preview') ?? false;
-  console.log(`[OpenAI Responses] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}, Reasoning: ${logReasoningEffort}, Web Search: ${logWebSearchEnabled}`);
+  console.log(`[OpenAI Responses] Model: ${model.id}, Temperature: ${logTempValue}, Top-P: ${logTopPValue}, Reasoning: ${logReasoningEffort}, Verbosity: ${logVerbosity}, Web Search: ${logWebSearchEnabled}`);
 
   return validated.data;
 }

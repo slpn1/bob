@@ -100,6 +100,7 @@ import { useTextTokenCount } from './tokens/useTextTokenCounter';
 import { useWebInputModal } from './WebInputModal';
 import {ButtonWebSearchMemo} from "./buttons/ButtonWebSearch";
 import {ButtonReasoningMemo} from "./buttons/ButtonReasoning";
+import {ButtonVerbosityMemo} from "./buttons/ButtonVerbosity";
 
 
 // configuration
@@ -263,9 +264,6 @@ export function Composer(props: {
     return getAllModelParameterValues(props.chatLLM.initialParameters, props.chatLLM.userParameters);
   }, [props.chatLLM]);
 
-  // State to store previous web search value when disabled
-  const [previousWebSearchValue, setPreviousWebSearchValue] = React.useState<'off' | 'low' | 'medium' | 'comprehensive'>('off');
-
   // Current option values from model parameters
   const webSearchValue = React.useMemo(() => {
     const value = modelParameters?.llmVndOaiWebSearchContext;
@@ -276,12 +274,15 @@ export function Composer(props: {
   }, [modelParameters]);
 
   const reasoningValue = React.useMemo(() => {
-    const value = modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'none' | 'low' | 'medium' | 'high') || 'none';
+    const value = modelParameters?.llmVndOaiReasoningEffort5 || modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
+    return (value as 'none' | 'low' | 'medium' | 'high' | 'xhigh') || 'none';
   }, [modelParameters]);
 
-  // Check if web search should be disabled (when reasoning is none)
-  const isWebSearchDisabled = reasoningValue === 'none';
+  const verbosityValue = React.useMemo(() => {
+    const value = modelParameters?.llmVndOaiVerbosity;
+    return (value as 'low' | 'medium' | 'high') || 'medium';
+  }, [modelParameters]);
+
 
 
   // Effect: load initial text if queued up (e.g. by /link/share_targetF)
@@ -535,48 +536,38 @@ export function Composer(props: {
 
   // Model Options Handlers
   const handleWebSearchChange = React.useCallback((value: 'off' | 'low' | 'medium' | 'comprehensive') => {
-    if (!chatLLMId || isWebSearchDisabled) return; // Don't allow changes when disabled
-    
-    const paramValue = value === 'off' ? undefined : 
+    if (!chatLLMId) return;
+
+    const paramValue = value === 'off' ? undefined :
       value === 'comprehensive' ? 'high' : value;
-    
+
     updateLLMUserParameters(chatLLMId, {
       llmVndOaiWebSearchContext: paramValue
     });
-  }, [chatLLMId, updateLLMUserParameters, isWebSearchDisabled]);
+  }, [chatLLMId, updateLLMUserParameters]);
 
-  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high') => {
+  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high' | 'xhigh') => {
     if (!chatLLMId) return;
 
-    const wasDisabled = reasoningValue === 'none';
-    const willBeDisabled = value === 'none';
-
-    // If switching TO none, store current web search value and disable it
-    if (!wasDisabled && willBeDisabled && webSearchValue !== 'off') {
-      setPreviousWebSearchValue(webSearchValue);
-      updateLLMUserParameters(chatLLMId, {
-        llmVndOaiWebSearchContext: undefined, // Set to off
-      });
-    }
-
-    // If switching FROM none, restore previous web search value
-    if (wasDisabled && !willBeDisabled) {
-      const valueToRestore = previousWebSearchValue === 'off' ? undefined : 
-        previousWebSearchValue === 'comprehensive' ? 'high' : previousWebSearchValue;
-      updateLLMUserParameters(chatLLMId, {
-        llmVndOaiWebSearchContext: valueToRestore
-      });
-    }
-    
     // Use the newer parameter format if model supports it, otherwise fallback
-    const paramKey = modelParameters?.llmVndOaiReasoningEffort4 !== undefined 
-      ? 'llmVndOaiReasoningEffort4' 
-      : 'llmVndOaiReasoningEffort';
-      
+    const paramKey = modelParameters?.llmVndOaiReasoningEffort5 !== undefined
+      ? 'llmVndOaiReasoningEffort5'
+      : modelParameters?.llmVndOaiReasoningEffort4 !== undefined
+        ? 'llmVndOaiReasoningEffort4'
+        : 'llmVndOaiReasoningEffort';
+
     updateLLMUserParameters(chatLLMId, {
       [paramKey]: value
     });
-  }, [chatLLMId, modelParameters, updateLLMUserParameters, reasoningValue, webSearchValue, previousWebSearchValue]);
+  }, [chatLLMId, modelParameters, updateLLMUserParameters]);
+
+  const handleVerbosityChange = React.useCallback((value: 'low' | 'medium' | 'high') => {
+    if (!chatLLMId) return;
+
+    updateLLMUserParameters(chatLLMId, {
+      llmVndOaiVerbosity: value
+    });
+  }, [chatLLMId, updateLLMUserParameters]);
 
 
   // Actiles
@@ -1132,16 +1123,19 @@ export function Composer(props: {
                       : <IconButton disabled sx={{ mr: { xs: 1, md: 2 } }} />
                 )}
 
-                <ButtonWebSearchMemo 
-                  value={webSearchValue} 
+                <ButtonWebSearchMemo
+                  value={webSearchValue}
                   onValueChange={handleWebSearchChange}
-                  disabled={isWebSearchDisabled}
-                  onAttachClipboard={attachAppendClipboardItems} 
+                  onAttachClipboard={attachAppendClipboardItems}
                 />
-                <ButtonReasoningMemo 
+                <ButtonReasoningMemo
                   value={reasoningValue}
                   onValueChange={handleReasoningChange}
-                  onAttachClipboard={attachAppendClipboardItems} 
+                  onAttachClipboard={attachAppendClipboardItems}
+                />
+                <ButtonVerbosityMemo
+                  value={verbosityValue}
+                  onValueChange={handleVerbosityChange}
                 />
                 {/* Responsive Send/Stop buttons */}
                 <ButtonGroup

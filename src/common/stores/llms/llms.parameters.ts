@@ -116,12 +116,20 @@ export const DModelParameterRegistry = {
     requiredFallback: 'medium',
   } as const,
 
-  llmVndOaiReasoningEffort4: {
+  llmVndOaiReasoningEffort5: {
     label: 'Reasoning Effort',
     type: 'enum' as const,
-    description: 'Constrains effort on reasoning for OpenAI advanced reasoning models',
-    values: ['none', 'low', 'medium', 'high'] as const,
+    description: 'Constrains effort on reasoning for OpenAI GPT-5.2+ models',
+    values: ['none', 'low', 'medium', 'high', 'xhigh'] as const,
     requiredFallback: 'low',
+  } as const,
+
+  llmVndOaiVerbosity: {
+    label: 'Verbosity',
+    type: 'enum' as const,
+    description: 'Controls response length and depth - low is concise, high is comprehensive',
+    values: ['low', 'medium', 'high'] as const,
+    // No initialValue means it defaults to unset (medium is OpenAI default)
   } as const,
 
   llmVndOaiRestoreMarkdown: {
