@@ -3,17 +3,11 @@ import { Accordion, AccordionDetails, accordionDetailsClasses, AccordionGroup, A
 import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import KeyboardCommandKeyOutlinedIcon from '@mui/icons-material/KeyboardCommandKeyOutlined';
-import LanguageRoundedIcon from '@mui/icons-material/LanguageRounded';
-import MicIcon from '@mui/icons-material/Mic';
-import RecordVoiceOverIcon from '@mui/icons-material/RecordVoiceOver';
 import ScienceIcon from '@mui/icons-material/Science';
-import SearchIcon from '@mui/icons-material/Search';
 import TerminalOutlinedIcon from '@mui/icons-material/TerminalOutlined';
 
-import { BrowseSettings } from '~/modules/browse/BrowseSettings';
+// Browse, ElevenLabs, and Google modules removed
 import { DallESettings } from '~/modules/t2i/dalle/DallESettings';
-import { ElevenlabsSettings } from '~/modules/elevenlabs/ElevenlabsSettings';
-import { GoogleSearchSettings } from '~/modules/google/GoogleSearchSettings';
 import { T2ISettings } from '~/modules/t2i/T2ISettings';
 
 import type { PreferencesTabId } from '~/common/layout/optima/store-layout-optima';
@@ -28,7 +22,6 @@ import { useIsAdmin } from '~/common/util/auth-utils';
 import { AppChatSettingsAI } from './AppChatSettingsAI';
 import { AppChatSettingsUI } from './settings-ui/AppChatSettingsUI';
 import { UxLabsSettings } from './UxLabsSettings';
-import { VoiceSettings } from './VoiceSettings';
 
 
 // configuration
@@ -247,9 +240,7 @@ export function SettingsModal(props: {
           sx={_styles.tabsList}
         >
           {isAdmin && <Tab value='chat' disableIndicator sx={_styles.tabsListTab}>Chat</Tab>}
-          {isAdmin && <Tab value='voice' disableIndicator sx={_styles.tabsListTab}>Voice</Tab>}
           <Tab value='draw' disableIndicator sx={_styles.tabsListTab}>Draw</Tab>
-          {isAdmin && <Tab value='tools' disableIndicator sx={_styles.tabsListTab}>Tools</Tab>}
         </TabList>
 
         {isAdmin && (
@@ -271,18 +262,6 @@ export function SettingsModal(props: {
           </TabPanel>
         )}
 
-        {isAdmin && (
-          <TabPanel value='voice' variant='outlined' sx={_styles.tabPanel}>
-            <Topics>
-              <Topic icon={/*'🎙️'*/ <MicIcon />} title='Microphone'>
-                <VoiceSettings />
-              </Topic>
-              <Topic icon={/*'📢'*/ <RecordVoiceOverIcon />} title='ElevenLabs API'>
-                <ElevenlabsSettings />
-              </Topic>
-            </Topics>
-          </TabPanel>
-        )}
 
         <TabPanel value='draw' variant='outlined' sx={_styles.tabPanel}>
           <Topics>
@@ -295,19 +274,6 @@ export function SettingsModal(props: {
           </Topics>
         </TabPanel>
 
-        {isAdmin && (
-          <TabPanel value='tools' variant='outlined' sx={_styles.tabPanel}>
-            <Topics>
-              <Topic icon={<LanguageRoundedIcon />} title='Browse Web Pages'>
-                <BrowseSettings />
-              </Topic>
-              <Topic icon={<SearchIcon />} title='Web Search · Google API' startCollapsed>
-                <GoogleSearchSettings />
-              </Topic>
-              {/*<Topic icon='🛠' title='Other tools...' />*/}
-            </Topics>
-          </TabPanel>
-        )}
       </Tabs>
 
       {/*<Divider />*/}

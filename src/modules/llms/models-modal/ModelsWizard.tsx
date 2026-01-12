@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
-import { Avatar, Badge, Box, Button, Chip, CircularProgress, Input, Sheet, Typography } from '@mui/joy';
+import { Avatar, Badge, Box, Button, CircularProgress, Input, Sheet, Typography } from '@mui/joy';
 
 import { TooltipOutlined } from '~/common/components/TooltipOutlined';
 import { llmsStoreActions, llmsStoreState, useModelsStore } from '~/common/stores/llms/store-llms';
@@ -9,27 +9,17 @@ import { useShallowStabilizer } from '~/common/util/hooks/useShallowObject';
 
 import type { IModelVendor } from '../vendors/IModelVendor';
 import { LLMVendorIcon } from '../components/LLMVendorIcon';
-import { ModelVendorAnthropic } from '../vendors/anthropic/anthropic.vendor';
-import { ModelVendorGemini } from '../vendors/gemini/gemini.vendor';
-import { ModelVendorLMStudio } from '../vendors/lmstudio/lmstudio.vendor';
-import { ModelVendorLocalAI } from '../vendors/localai/localai.vendor';
-import { ModelVendorOllama } from '../vendors/ollama/ollama.vendor';
+// Only OpenAI vendor is supported - other vendors removed
 import { ModelVendorOpenAI } from '../vendors/openai/openai.vendor';
 import { llmsUpdateModelsForServiceOrThrow } from '../llm.client';
 
 
-// configuration
+// configuration - only OpenAI supported
 const WizardProviders: ReadonlyArray<WizardProvider> = [
   { cat: 'popular', vendor: ModelVendorOpenAI, settingsKey: 'oaiKey' } as const,
-  { cat: 'popular', vendor: ModelVendorAnthropic, settingsKey: 'anthropicKey' } as const,
-  { cat: 'popular', vendor: ModelVendorGemini, settingsKey: 'geminiKey' } as const,
-  { cat: 'local', vendor: ModelVendorLocalAI, settingsKey: 'localAIHost' } as const,
-  { cat: 'local', vendor: ModelVendorOllama, settingsKey: 'ollamaHost' } as const,
-  { cat: 'local', vendor: ModelVendorLMStudio, settingsKey: 'oaiHost', omit: true } as const,
-  // { vendor: ModelVendorOpenRouter, settingsKey: 'oaiKey' } as const,
 ] as const;
 
-type VendorCategory = 'popular' | 'local';
+type VendorCategory = 'popular';
 
 interface WizardProvider {
   cat: VendorCategory,
@@ -121,9 +111,8 @@ function WizardProviderSetup(props: {
   }, [serviceKeyValue, triggerValueLoad]);
 
 
-  // derived
-  const isLocal = providerCat === 'local';
-  const valueName = isLocal ? 'server' : 'API Key';
+  // derived - only OpenAI is supported
+  const valueName = 'API Key';
   const { name: vendorName } = providerVendor;
 
 
@@ -238,7 +227,7 @@ function WizardProviderSetup(props: {
             value={localValue ?? ''}
             onChange={handleTextChanged}
             placeholder={`${vendorName} ${valueName}`}
-            type={isLocal ? undefined : 'password'}
+            type='password'
             // error={!isValidKey}
             // startDecorator={<props.vendorIcon />}
             endDecorator={endButtons}
@@ -268,30 +257,16 @@ export function ModelsWizard(props: {
   onSwitchToAdvanced?: () => void,
 }) {
 
-  // state
-  const [activeCategory, setActiveCategory] = React.useState<VendorCategory>('popular');
-
-  // derived
-  const isLocal = activeCategory === 'local';
+  // Only OpenAI is supported, no category switching needed
+  const activeCategory: VendorCategory = 'popular';
 
   return (
     <Sheet variant='soft' sx={_styles.container}>
 
       <Box sx={props.isMobile ? _styles.text1Mobile : _styles.text1}>
         <Typography component='div' level='title-sm'>
-          Enter {isLocal ? 'the addresses of ' : 'your API keys for '}
-          <Chip variant={!isLocal ? 'solid' : 'outlined'} sx={{ mx: 0.25 }} onClick={() => setActiveCategory('popular')}>
-            Popular
-          </Chip>
-          <Chip variant={isLocal ? 'solid' : 'outlined'} sx={{ mx: 0.25 }} onClick={() => setActiveCategory('local')}>
-            Local
-          </Chip>
-          {' '}AI services below.
+          Enter your OpenAI API key below.
         </Typography>
-        {/*<Box sx={{ fontSize: 'sm', color: 'text.primary' }}>*/}
-        {/*  Enter API keys to connect your AI services.{' '}*/}
-        {/*  {!props.isMobile && <>Switch to <Box component='a' onClick={props.onSwitchToAdvanced} sx={{ textDecoration: 'underline', cursor: 'pointer' }}>Advanced</Box> for more options.</>}*/}
-        {/*</Box>*/}
       </Box>
 
       {WizardProviders.map((provider, index) => (
@@ -304,14 +279,10 @@ export function ModelsWizard(props: {
       ))}
 
       <Box sx={props.isMobile ? _styles.text2Mobile : _styles.text2}>
-        {/*{!props.isMobile && <>Switch to <Box component='a' onClick={props.onSwitchToAdvanced} sx={{ textDecoration: 'underline', cursor: 'pointer' }}>Advanced</Box> to choose between {getModelVendorsCount()} services.</>}{' '}*/}
         {!props.isMobile && <>
           Switch to{' '}
           <Box component='a' onClick={props.onSwitchToAdvanced} sx={{ textDecoration: 'underline', cursor: 'pointer' }}>advanced configuration</Box>
-          {/*<Chip variant={isLocal ? 'solid' : 'outlined'} sx={{ ml: 0.25 }} onClick={props.onSwitchToAdvanced}>*/}
-          {/*  more services*/}
-          {/*</Chip>*/}
-          {' '}for more services,
+          {' '}for more options,
         </>}{' '}
         or <Box component='a' onClick={props.onSkip} sx={{ textDecoration: 'underline', cursor: 'pointer' }}>skip</Box> for now and do it later.
       </Box>

@@ -32,7 +32,8 @@ import VerticalAlignBottomIcon from '@mui/icons-material/VerticalAlignBottom';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
-import { ModelVendorAnthropic } from '~/modules/llms/vendors/anthropic/anthropic.vendor';
+// Anthropic vendor removed - using fallback color for styling
+const ANTHROPIC_BRAND_COLOR = '#cc785c';
 
 import { AnthropicIcon } from '~/common/components/icons/vendors/AnthropicIcon';
 import { ChatBeamIcon } from '~/common/components/icons/ChatBeamIcon';
@@ -117,7 +118,7 @@ const antCachePromptOffSx: SxProps = {
 
 const antCachePromptOnSx: SxProps = {
   ...antCachePromptOffSx,
-  color: ModelVendorAnthropic.brandColor,
+  color: ANTHROPIC_BRAND_COLOR,
   transform: 'rotate(90deg)',
 };
 
@@ -629,7 +630,7 @@ export function ChatMessage(props: {
 
     // style: when has a user/automatic breakpoint
     ...(isVndAndCacheUser && {
-      borderInlineStart: `0.125rem solid ${ModelVendorAnthropic.brandColor}`,
+      borderInlineStart: `0.125rem solid ${ANTHROPIC_BRAND_COLOR}`,
       // borderTopLeftRadius: '0.375rem',
       // borderBottomLeftRadius: '0.375rem',
     }),
@@ -642,7 +643,7 @@ export function ChatMessage(props: {
         top: 0,
         bottom: 0,
         width: '0.125rem',
-        background: `repeating-linear-gradient( -45deg, transparent, transparent 2px, ${ModelVendorAnthropic.brandColor} 2px, ${ModelVendorAnthropic.brandColor} 12px ) repeat`,
+        background: `repeating-linear-gradient( -45deg, transparent, transparent 2px, ${ANTHROPIC_BRAND_COLOR} 2px, ${ANTHROPIC_BRAND_COLOR} 12px ) repeat`,
       },
     }),
     // style: when the user skips the message
@@ -976,7 +977,7 @@ export function ChatMessage(props: {
               )}
               {!messagePendingIncomplete && !isUserMessageSkipped && !!props.showAntPromptCaching && isVndAndCacheAuto && !isVndAndCacheUser && (
                   <MenuItem disabled>
-                    <ListItemDecorator><TextureIcon sx={{ color: ModelVendorAnthropic.brandColor }} /></ListItemDecorator>
+                    <ListItemDecorator><TextureIcon sx={{ color: ANTHROPIC_BRAND_COLOR }} /></ListItemDecorator>
                     Auto-Cached <span style={{ opacity: 0.5 }}>for 5 min</span>
                   </MenuItem>
               )}

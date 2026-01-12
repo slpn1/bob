@@ -1,5 +1,6 @@
 import { Agent } from '~/modules/aifn/react/react';
-import { useBrowseStore } from '~/modules/browse/store-module-browsing';
+
+// Browse module removed - browse capability disabled
 
 import type { ConversationHandler } from '~/common/chat-overlay/ConversationHandler';
 import type { DLLMId } from '~/common/stores/llms/llms.types';
@@ -24,7 +25,8 @@ export async function runReActUpdatingState(cHandler: ConversationHandler, quest
     '...',
     { generator: { mgt: 'named', name: assistantModelLabel } },
   );
-  const { enableReactTool: enableBrowse } = useBrowseStore.getState();
+  // Browse module removed - browse capability disabled
+  const enableBrowse = false;
 
   // Abort controller for the ReAct loop
   const abortController = new AbortController();

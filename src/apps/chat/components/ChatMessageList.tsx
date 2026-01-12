@@ -17,7 +17,7 @@ import { createTextContentFragment, DMessageFragment, DMessageFragmentId } from 
 import { openFileForAttaching } from '~/common/components/ButtonAttachFiles';
 import { optimaOpenPreferences } from '~/common/layout/optima/useOptima';
 import { useBrowserTranslationWarning } from '~/common/components/useIsBrowserTranslating';
-import { useCapabilityElevenLabs } from '~/common/components/useCapabilities';
+// ElevenLabs module removed
 import { useChatOverlayStore } from '~/common/chat-overlay/store-perchat_vanilla';
 import { useChatStore } from '~/common/stores/chat/store-chats';
 import { useScrollToBottom } from '~/common/scroll-to-bottom/useScrollToBottom';
@@ -76,7 +76,8 @@ export function ChatMessageList(props: {
     _composerInReferenceToCount: state.inReferenceTo?.length ?? 0,
     ephemerals: state.ephemerals?.length ? state.ephemerals : null,
   })));
-  const { mayWork: isSpeakable } = useCapabilityElevenLabs();
+  // ElevenLabs module removed - speech synthesis disabled
+  const isSpeakable = false;
 
 
   // derived state

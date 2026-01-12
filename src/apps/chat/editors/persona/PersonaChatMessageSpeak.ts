@@ -1,4 +1,4 @@
-import { elevenLabsSpeakText } from '~/modules/elevenlabs/elevenlabs.client';
+// ElevenLabs TTS module removed - speak functionality disabled
 
 import { isTextContentFragment } from '~/common/stores/chat/chat.fragments';
 
@@ -56,9 +56,8 @@ export class PersonaChatMessageSpeak implements PersonaProcessorInterface {
   }
 
   #speak(text: string) {
-    console.log('📢 TTS:', text);
+    console.log('📢 TTS (disabled):', text);
     this.spokenLine = true;
-    // fire/forget: we don't want to stall this loop
-    void elevenLabsSpeakText(text, undefined, false, true);
+    // ElevenLabs TTS module removed - speak functionality disabled
   }
 }

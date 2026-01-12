@@ -3,7 +3,7 @@ import Router from 'next/router';
 
 import { Box, Button, ButtonGroup, ColorPaletteProp, Sheet } from '@mui/joy';
 
-import { ROUTE_APP_NEWS } from '~/common/app.routes';
+// News app removed
 import { checkDivider, checkVisibileIcon, NavItemApp, navItems } from '~/common/app.nav';
 
 import { BringTheLove } from './BringTheLove';
@@ -127,16 +127,7 @@ export function MobileNavItems(props: { currentApp?: NavItemApp }) {
 
       {/* Group 2: Modals & Social Links */}
       <Box sx={_styles.linksGroup}>
-        <Button
-          size='sm'
-          color='neutral'
-          aria-selected={props.currentApp?.route === '/news'}
-          variant={props.currentApp?.route === '/news' ? (INVERT_PANE ? 'soft' : 'solid') : 'plain'}
-          onClick={() => handleNavigate(ROUTE_APP_NEWS, true)}
-          sx={_styles.button}
-        >
-          News
-        </Button>
+        {/* News app removed */}
 
         {/* HARDCODED: Models */}
         <Button

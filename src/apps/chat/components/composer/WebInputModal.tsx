@@ -9,7 +9,8 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import LanguageRoundedIcon from '@mui/icons-material/LanguageRounded';
 import YouTubeIcon from '@mui/icons-material/YouTube';
 
-import { extractYoutubeVideoIDFromURL } from '~/modules/youtube/youtube.utils';
+// YouTube functionality removed
+const extractYoutubeVideoIDFromURL = (_url: string): string | null => null;
 
 import { GoodModal } from '~/common/components/modals/GoodModal';
 import { addSnackbar } from '~/common/components/snackbar/useSnackbarsStore';

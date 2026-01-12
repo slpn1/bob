@@ -1,11 +1,32 @@
 import type { StoreApi } from 'zustand';
+import { createStore } from 'zustand';
 
-import { bareBonesPromptMixer } from '~/modules/persona/pmix/pmix';
+// Persona module removed - using simple passthrough for prompt mixing
+const bareBonesPromptMixer = (prompt: string, _llmId?: string) => prompt;
 
 import { SystemPurposes } from '../../data';
 
-import { BeamStore, createBeamVanillaStore } from '~/modules/beam/store-beam_vanilla';
-import { useModuleBeamStore } from '~/modules/beam/store-module-beam';
+// Beam module removed - using stub types and stores
+interface BeamStore {
+  isOpen: boolean;
+  open: (history: any, llmId: string | null, replace: boolean, onSuccess: (update: any) => void) => void;
+  importRays: (messages: any[], llmId: string | null) => void;
+  terminateKeepingSettings: () => void;
+}
+
+const createBeamVanillaStore = (): StoreApi<BeamStore> => createStore<BeamStore>(() => ({
+  isOpen: false,
+  open: () => {},
+  importRays: () => {},
+  terminateKeepingSettings: () => {},
+}));
+
+// Beam module store stub - no-op
+const useModuleBeamStore = {
+  getState: () => ({
+    setBeamOpenForConversation: (_conversationId: string, _isOpen: boolean) => {},
+  }),
+};
 
 import type { DConversationId } from '~/common/stores/chat/chat.conversation';
 import type { DLLMId } from '~/common/stores/llms/llms.types';

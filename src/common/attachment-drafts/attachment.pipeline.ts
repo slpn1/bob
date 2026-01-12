@@ -1,8 +1,13 @@
 import type { FileWithHandle } from 'browser-fs-access';
 
-import { callBrowseFetchPageOrThrow } from '~/modules/browse/browse.client';
-import { extractYoutubeVideoIDFromURL } from '~/modules/youtube/youtube.utils';
-import { youTubeGetVideoData } from '~/modules/youtube/useYouTubeTranscript';
+// Browse module removed - web page fetching disabled
+const callBrowseFetchPageOrThrow = async (_url: string, _formats: string[], _screenshot: object, _includeFile: boolean): Promise<never> => {
+  throw new Error('Web page fetching is not available (browse module removed)');
+};
+
+// YouTube module removed - video transcript extraction disabled
+const extractYoutubeVideoIDFromURL = (_url: string): string | null => null;
+const youTubeGetVideoData = async (_videoId: string): Promise<undefined> => undefined;
 
 import type { CommonImageMimeTypes } from '~/common/util/imageUtils';
 import { Is } from '~/common/util/pwaUtils';

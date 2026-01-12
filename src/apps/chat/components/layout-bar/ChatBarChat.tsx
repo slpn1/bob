@@ -14,7 +14,6 @@ import { useChatStore } from '~/common/stores/chat/store-chats';
 import { useOptimaModals, optimaActions } from '~/common/layout/optima/useOptima';
 
 import { useChatLLMDropdown } from './useLLMDropdown';
-import { usePersonaIdDropdown } from './usePersonaDropdown';
 import { useFolderDropdown } from './useFolderDropdown';
 import { ModelOptionsControls } from './ModelOptionsControls';
 import { useModelsStore } from '~/common/stores/llms/store-llms';
@@ -30,7 +29,6 @@ export function ChatBarChat(props: {
   // external state
   const { showModelInfo } = useOptimaModals();
   const { chatLLMDropdown } = useChatLLMDropdown(props.llmDropdownRef);
-  const { personaDropdown } = usePersonaIdDropdown(props.conversationId, props.personaDropdownRef);
   const { folderDropdown } = useFolderDropdown(props.conversationId);
   
   // Get current model for info display
@@ -55,15 +53,7 @@ export function ChatBarChat(props: {
     if (value === 'high') return 'comprehensive';
     return 'off';
   }, [modelParameters]);
-  
-  const reasoningValue = React.useMemo(() => {
-    const value = modelParameters?.llmVndOaiReasoningEffort5 || modelParameters?.llmVndOaiReasoningEffort4 || modelParameters?.llmVndOaiReasoningEffort;
-    return (value as 'none' | 'low' | 'medium' | 'high' | 'xhigh') || 'none';
-  }, [modelParameters]);
-  
-  const deepResearchValue = React.useMemo(() => {
-    return chatLLMId?.includes('deep-research') || false;
-  }, [chatLLMId]);
+
 
   // Track model changes and add welcome messages to active conversations
   const prevChatLLMId = React.useRef<string | null>(null);
@@ -112,21 +102,6 @@ export function ChatBarChat(props: {
       llmVndOaiWebSearchContext: paramValue
     });
   }, [chatLLMId, updateLLMUserParameters]);
-
-  const handleReasoningChange = React.useCallback((value: 'none' | 'low' | 'medium' | 'high' | 'xhigh') => {
-    if (!chatLLMId) return;
-
-    // Use the newer parameter format if model supports it, otherwise fallback
-    const paramKey = modelParameters?.llmVndOaiReasoningEffort5 !== undefined
-      ? 'llmVndOaiReasoningEffort5'
-      : modelParameters?.llmVndOaiReasoningEffort4 !== undefined
-        ? 'llmVndOaiReasoningEffort4'
-        : 'llmVndOaiReasoningEffort';
-
-    updateLLMUserParameters(chatLLMId, {
-      [paramKey]: value
-    });
-  }, [chatLLMId, modelParameters, updateLLMUserParameters]);
 
   const handleDeepResearchChange = React.useCallback((enabled: boolean) => {
     if (!chatLLMId) return;

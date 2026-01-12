@@ -30,7 +30,6 @@ import type { AppChatIntent } from '../../AppChat';
 import { useChatAutoSuggestAttachmentPrompts, useChatMicTimeoutMsValue } from '../../store-app-chat';
 
 import { useAgiAttachmentPrompts } from '~/modules/aifn/agiattachmentprompts/useAgiAttachmentPrompts';
-import { useBrowseCapability } from '~/modules/browse/store-module-browsing';
 
 import { DLLM, LLM_IF_OAI_Vision } from '~/common/stores/llms/llms.types';
 import { AudioGenerator } from '~/common/util/audio/AudioGenerator';
@@ -50,7 +49,7 @@ import { createTextContentFragment, DMessageAttachmentFragment, DMessageContentF
 import { glueForMessageTokens, marshallWrapDocFragments } from '~/common/stores/chat/chat.tokens';
 import { isValidConversation, useChatStore } from '~/common/stores/chat/store-chats';
 import { getModelParameterValueOrThrow } from '~/common/stores/llms/llms.parameters';
-import { launchAppCall, removeQueryParam, useRouterQuery } from '~/common/app.routes';
+import { removeQueryParam, useRouterQuery } from '~/common/app.routes';
 import { lineHeightTextareaMd, themeBgAppChatComposer } from '~/common/app.theme';
 import { optimaOpenPreferences } from '~/common/layout/optima/useOptima';
 import { platformAwareKeystrokes } from '~/common/components/KeyStroke';
@@ -83,8 +82,7 @@ import { ButtonAttachCameraMemo, useCameraCaptureModalDialog } from './buttons/B
 import { ButtonAttachClipboardMemo } from './buttons/ButtonAttachClipboard';
 import { ButtonAttachScreenCaptureMemo } from './buttons/ButtonAttachScreenCapture';
 import { ButtonAttachWebMemo } from './buttons/ButtonAttachWeb';
-import { ButtonBeamMemo } from './buttons/ButtonBeam';
-import { ButtonCallMemo } from './buttons/ButtonCall';
+// ButtonBeam and ButtonCall removed
 import { ButtonGroupDrawRepeat } from './buttons/ButtonGroupDrawRepeat';
 import { ButtonMicContinuationMemo } from './buttons/ButtonMicContinuation';
 import { ButtonMicMemo } from './buttons/ButtonMic';
@@ -132,8 +130,6 @@ export function Composer(props: {
   isMulticast: boolean | null;
   isDeveloperMode: boolean;
   onAction: (conversationId: DConversationId, chatExecuteMode: ChatExecuteMode, fragments: (DMessageContentFragment | DMessageAttachmentFragment)[], metadata?: DMessageMetadata) => boolean;
-  onConversationBeamEdit: (conversationId: DConversationId, editMessageId?: DMessageId) => Promise<void>;
-  onConversationsImportFromFiles: (files: File[]) => Promise<void>;
   onTextImagine: (conversationId: DConversationId, text: string) => void;
   setIsMulticast: (on: boolean) => void;
   onComposerHasContent: (hasContent: boolean) => void;
@@ -197,24 +193,14 @@ export function Composer(props: {
   const chatLLMSupportsImages = !!props.chatLLM?.interfaces?.includes(LLM_IF_OAI_Vision);
 
   // don't load URLs if the user is typing a command or there's no capability
-  const hasComposerBrowseCapability = useBrowseCapability().inComposer;
+  const hasComposerBrowseCapability = false; // Browse capability removed
   const enableLoadURLsInComposer = hasComposerBrowseCapability && !composeText.startsWith('/');
 
-  // user message for attachments
-  const { onConversationBeamEdit, onConversationsImportFromFiles } = props;
-  const handleFilterAGIFile = React.useCallback(async (file: File): Promise<boolean> =>
-    await showPromisedOverlay('composer-open-or-attach', { rejectWithValue: false }, ({ onResolve, onUserReject }) => (
-      <ConfirmationModal
-        open onClose={onUserReject}
-        onPositive={() => {
-          onConversationsImportFromFiles([file]);
-          onResolve(true);
-        }}
-        title='Open Conversation or Attach?'
-        positiveActionText='Open' negativeActionText='Attach'
-        confirmationText={`Would you like to open the conversation "${file.name}" or attach it to the message?`}
-      />
-    )), [onConversationsImportFromFiles, showPromisedOverlay]);
+  // user message for attachments - import functionality removed
+  const handleFilterAGIFile = React.useCallback(async (_file: File): Promise<boolean> => {
+    // Always attach to message since import functionality was removed
+    return false;
+  }, []);
 
   // attachments-overlay: comes from the attachments slice of the conversation overlay
   const showChatAttachments = chatExecuteModeCanAttach(chatExecuteMode, props.capabilityHasT2IEdit);
@@ -502,18 +488,7 @@ export function Composer(props: {
     await handleSendAction(chatExecuteMode, composeText); // 'chat/write/...' button
   }, [chatExecuteMode, composeText, handleFinishMicAndSend, handleSendAction, micIsRunning, recognitionState.isActive]);
 
-  const handleSendTextBeamClicked = React.useCallback(async () => {
-    if (micIsRunning) {
-      addSnackbar({ key: 'chat-mic-running', message: 'Please wait for the microphone to finish.', type: 'info' });
-      return;
-    }
-    if (composeText) {
-      await handleSendAction('beam-content', composeText); // 'beam' button
-    } else {
-      if (targetConversationId)
-        void onConversationBeamEdit(targetConversationId); // beam-edit conversation
-    }
-  }, [composeText, handleSendAction, micIsRunning, onConversationBeamEdit, targetConversationId]);
+  // Beam functionality removed
 
   const handleStopClicked = React.useCallback(() => {
     targetConversationId && abortConversationTemp(targetConversationId);
@@ -522,9 +497,7 @@ export function Composer(props: {
 
   // Secondary buttons
 
-  const handleCallClicked = React.useCallback(() => {
-    targetConversationId && systemPurposeId && launchAppCall(targetConversationId, systemPurposeId);
-  }, [systemPurposeId, targetConversationId]);
+  // Call functionality removed
 
   const handleDrawOptionsClicked = React.useCallback(() => optimaOpenPreferences('draw'), []);
 
@@ -786,10 +759,6 @@ export function Composer(props: {
           : isTextBeam ? <ChatBeamIcon /> /* <GavelIcon /> */
             : isDraw ? <PhPaintBrush />
               : <TelegramIcon />;
-
-  const beamButtonColor: ColorPaletteProp | undefined =
-    !llmAttachmentDraftsCollection.canAttachAllFragments ? 'warning'
-      : undefined;
 
   const showTint: ColorPaletteProp | undefined = isDraw ? 'warning' : isReAct ? 'success' : undefined;
 
@@ -1114,13 +1083,9 @@ export function Composer(props: {
               <Box sx={isMobile ? { display: 'flex' } : { display: 'grid', gap: 1 }}>
 
                 {/* [mobile] bottom-corner secondary button */}
-                {isMobile && (showChatExtras
-                    ? (composerQuickButton === 'call'
-                      ? <ButtonCallMemo isMobile disabled={noConversation || noLLM} onClick={handleCallClicked} />
-                      : <ButtonBeamMemo isMobile disabled={noConversation /*|| noLLM*/} color={beamButtonColor} hasContent={!!composeText} onClick={handleSendTextBeamClicked} />)
-                    : isDraw
-                      ? <ButtonOptionsDraw isMobile onClick={handleDrawOptionsClicked} sx={{ mr: { xs: 1, md: 2 } }} />
-                      : <IconButton disabled sx={{ mr: { xs: 1, md: 2 } }} />
+                {isMobile && (isDraw
+                  ? <ButtonOptionsDraw isMobile onClick={handleDrawOptionsClicked} sx={{ mr: { xs: 1, md: 2 } }} />
+                  : <IconButton disabled sx={{ mr: { xs: 1, md: 2 } }} />
                 )}
 
                 <ButtonWebSearchMemo

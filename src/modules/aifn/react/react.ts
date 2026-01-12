@@ -3,9 +3,19 @@
  */
 
 import { aixChatGenerateText_Simple } from '~/modules/aix/client/aix.client';
-import { bareBonesPromptMixer } from '~/modules/persona/pmix/pmix';
-import { callApiSearchGoogle } from '~/modules/google/search.client';
-import { callBrowseFetchPageOrThrow } from '~/modules/browse/browse.client';
+
+// Persona module removed - using simple passthrough for prompt mixing
+const bareBonesPromptMixer = (prompt: string, _llmId?: string) => prompt;
+
+// Google search module removed - returning error
+const callApiSearchGoogle = async (_query: string, _count: number): Promise<never> => {
+  throw new Error('Google search is not available (google module removed)');
+};
+
+// Browse module removed - returning error
+const callBrowseFetchPageOrThrow = async (_url: string): Promise<never> => {
+  throw new Error('Web page fetching is not available (browse module removed)');
+};
 
 import type { DLLMId } from '~/common/stores/llms/llms.types';
 import { frontendSideFetch } from '~/common/util/clientFetchers';
