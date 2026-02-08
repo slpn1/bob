@@ -1474,9 +1474,14 @@ export namespace OpenAIWire_API_Responses {
     }).nullish(),
   });
 
+  const KeepaliveEvent_schema = _BaseEvent_schema.extend({
+    type: z.literal('keepalive'),
+  });
+
   // Combined streaming event
   export type StreamingEvent = z.infer<typeof StreamingEvent_schema>;
   export const StreamingEvent_schema = z.discriminatedUnion('type', [
+    KeepaliveEvent_schema,
     ResponseCreatedEvent_schema,
     ResponseInProgress_schema,
     ResponseCompletedEvent_schema,

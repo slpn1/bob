@@ -430,6 +430,10 @@ export function createOpenAIResponsesEventParser(userContext?: UserContext | nul
         pt.setDialectTerminatingIssue(`${errorCode || 'Error'}: ${errorMessage || 'unknown.'}${errorParam ? ` (param: ${errorParam})` : ''}`, IssueSymbols.Generic);
         break;
 
+      case 'keepalive':
+        // Heartbeat event to keep the connection alive, no action needed
+        break;
+
       default:
         // const _exhaustiveCheck: never = eventType;
         // FIXME: if we're here, we prob needed to implement the part
