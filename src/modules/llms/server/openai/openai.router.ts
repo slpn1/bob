@@ -273,9 +273,11 @@ export const llmOpenAIRouter = createTRPCRouter({
             
             models = openAIModels
               .filter(model => {
-                // Check if allowed by model ID or by display label
+                // Check if allowed by model ID (exact or prefix match) or by display label
                 const modelDescription = openAIModelToModelDescription(model.id, model.created);
-                const isAllowedById = allowedList.includes(model.id);
+                const isAllowedById = allowedList.some((allowed: string) =>
+                  model.id === allowed || model.id.startsWith(allowed + '-'),
+                );
                 const isAllowedByLabel = allowedList.some((allowed: string) => {
                   // Remove emoji and extra spacing for comparison
                   const cleanLabel = modelDescription.label.replace(/[🌐🎁💎💰⏱️🔓🧩]/g, '').trim();

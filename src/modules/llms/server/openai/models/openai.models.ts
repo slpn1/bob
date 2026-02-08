@@ -48,6 +48,34 @@ export const _knownOpenAIChatModels: ManualMappings = [
     // benchmark: { cbaElo: TBD }, // Not yet available
   },
 
+  // GPT-5
+  {
+    isLatest: true,
+    idPrefix: 'gpt-5-2025-08-07',
+    label: 'GPT-5 (2025-08-07)',
+    description: 'Most capable GPT model for complex, multi-step tasks.',
+    contextWindow: 400000,
+    maxCompletionTokens: 128000,
+    trainingDataCutoff: 'Sep 29, 2024',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Responses, LLM_IF_OAI_PromptCaching],
+    chatPrice: { input: 1.25, cache: { cType: 'oai-ac', read: 0.125 }, output: 10 },
+    // benchmark: { cbaElo: TBD }, // Not yet available
+  },
+  {
+    idPrefix: 'gpt-5',
+    label: 'GPT-5',
+    description: 'Most capable GPT model. Points to gpt-5-2025-08-07.',
+    symLink: 'gpt-5-2025-08-07',
+    hidden: true, // prefer versioned
+    // copied from symlinked
+    contextWindow: 400000,
+    maxCompletionTokens: 128000,
+    trainingDataCutoff: 'Sep 29, 2024',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Responses, LLM_IF_OAI_PromptCaching],
+    chatPrice: { input: 1.25, cache: { cType: 'oai-ac', read: 0.125 }, output: 10 },
+    // benchmark: { cbaElo: TBD }, // Not yet available
+  },
+
   // GPT-5 mini
   {
     isLatest: true,
