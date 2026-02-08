@@ -55,7 +55,8 @@ export async function ensureOpenAIModelsUpdated() {
     const gpt5Models = llms.filter(llm => llm.id.includes('gpt-5'));
     console.log('[OpenAI Startup Update] Found GPT-5 models:', gpt5Models.map(llm => ({ id: llm.id, label: llm.label, hidden: llm.hidden })));
 
-    const gpt52 = llms.find(llm => (llm.id === 'gpt-5.2' || llm.id.startsWith('gpt-5.2-')) && !llm.hidden);
+    // LLM IDs are prefixed with service ID (e.g., "openai-gpt-5.2"), so use includes() to match
+    const gpt52 = llms.find(llm => llm.id.includes('gpt-5.2') && !llm.hidden);
 
     if (gpt52) {
       console.log('[OpenAI Startup Update] Auto-assigning', gpt52.id, 'as primary chat model');
@@ -65,9 +66,9 @@ export async function ensureOpenAIModelsUpdated() {
       console.log('[OpenAI Startup Update] Available model IDs:', llms.map(llm => llm.id).filter(id => id.includes('gpt')));
     }
 
-    // Migration: Check if current model is the removed chatgpt-4o-latest and migrate to gpt-5.2
+    // Migration: Check if current model is using a removed model and migrate to gpt-5.2
     const currentChatModel = getDomainModelConfiguration('primaryChat', true, true)?.modelId;
-    if (currentChatModel === 'chatgpt-4o-latest') {
+    if (currentChatModel && currentChatModel.includes('chatgpt-4o-latest')) {
       console.log('[OpenAI Startup Update] Migrating from removed chatgpt-4o-latest to', gpt52?.id);
       if (gpt52) {
         assignDomainModelId('primaryChat', gpt52.id);
