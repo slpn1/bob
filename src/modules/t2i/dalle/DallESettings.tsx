@@ -20,6 +20,7 @@ const CONF = {
     { value: 'dall-e-2', label: 'DALL·E 2' },
     { value: 'dall-e-3', label: 'DALL·E 3' },
     { value: 'gpt-image-1', label: 'GPT Image' },
+    { value: 'gpt-image-1.5', label: 'GPT Image 1.5' },
     { value: null, label: 'Auto' },
   ] as { value: DalleModelSelection; label: string }[],
 
@@ -101,7 +102,7 @@ export function DallESettings() {
 
   // derived state - resolve the actual model
   const resolvedDalleModelId = resolveDalleModelId(dalleModelId);
-  const isGI = resolvedDalleModelId === 'gpt-image-1';
+  const isGI = resolvedDalleModelId === 'gpt-image-1.5' || resolvedDalleModelId === 'gpt-image-1';
   const isD3 = resolvedDalleModelId === 'dall-e-3';
   const isD2 = resolvedDalleModelId === 'dall-e-2';
 

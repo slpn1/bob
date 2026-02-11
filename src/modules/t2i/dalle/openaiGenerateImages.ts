@@ -39,12 +39,14 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
   const dalleModelId = resolveDalleModelId(dalleModelSelection);
 
   // This trick is explained on: https://platform.openai.com/docs/guides/images/usage?context=node
-  if (dalleNoRewrite && (dalleModelId === 'dall-e-3' || dalleModelId === 'dall-e-2'))
+  const isGptImage = dalleModelId === 'gpt-image-1.5' || dalleModelId === 'gpt-image-1';
+
+  if (dalleNoRewrite && !isGptImage)
     prompt = 'I NEED to test how the tool works with extremely simple prompts. DO NOT add any detail, just use it AS-IS: ' + prompt;
 
   // Warn about a misconfiguration
-  if (aixInlineImageParts?.length && (dalleModelId === 'dall-e-3' || dalleModelId === 'dall-e-2'))
-    throw new Error('Image transformation is not available with this model. Please use GPT-Image-1 instead.');
+  if (aixInlineImageParts?.length && !isGptImage)
+    throw new Error('Image transformation is not available with this model. Please use GPT-Image-1.5 instead.');
 
   // Function to generate images in batches
   async function generateImagesBatch(imageCount: number): Promise<T2iCreateImageOutput[]> {
@@ -52,9 +54,9 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
     // we use an async generator to stream heartbeat events while waiting for the images
     const operations = await apiStream.llmOpenAI.createImages.mutate({
       access: findServiceAccessOrThrow<{}, OpenAIAccessSchema>(modelServiceId).transportAccess,
-      generationConfig: dalleModelId === 'gpt-image-1' ? {
-        model: 'gpt-image-1',
-        prompt: prompt.slice(0, 32000 - 1), // GPT-Image-1 accepts much longer prompts
+      generationConfig: isGptImage ? {
+        model: dalleModelId,
+        prompt: prompt.slice(0, 32000 - 1), // GPT-Image models accept much longer prompts
         count: imageCount,
         size: dalleSizeGI,
         quality: dalleQualityGI,
@@ -136,6 +138,7 @@ export async function openAIGenerateImagesOrThrow(modelServiceId: DModelsService
 export function openAIImageModelsCurrentGeneratorName() {
   const dalleModelSelection = useDalleStore.getState().dalleModelId;
   const dalleModelId = resolveDalleModelId(dalleModelSelection);
+  if (dalleModelId === 'gpt-image-1.5') return 'GPT Image 1.5';
   if (dalleModelId === 'gpt-image-1') return 'GPT Image';
   else if (dalleModelId === 'dall-e-3') return 'DALL·E 3';
   else if (dalleModelId === 'dall-e-2') return 'DALL·E 2';
@@ -143,7 +146,7 @@ export function openAIImageModelsCurrentGeneratorName() {
 }
 
 function openAIImageModelsPrice(modelId: DalleModelId): undefined | { inputText: number, inputImage: number, outputImage: number } {
-  if (modelId === 'gpt-image-1')
+  if (modelId === 'gpt-image-1.5' || modelId === 'gpt-image-1')
     return { inputText: 5.00, inputImage: 10.0, outputImage: 40.0 };
   return undefined;
 }
@@ -153,7 +156,7 @@ function openAIImageModelsPrice(modelId: DalleModelId): undefined | { inputText:
  * TODO: update this when the OpenAI pricing changes.
  */
 export function openAIImageModelsPricing(modelId: DalleModelId, quality: DalleImageQuality, size: DalleSize): string {
-  if (modelId === 'gpt-image-1') {
+  if (modelId === 'gpt-image-1.5' || modelId === 'gpt-image-1') {
 
     // GPT-Image-1 output tokens table
     // https://platform.openai.com/docs/guides/image-generation?image-generation-model=gpt-image-1

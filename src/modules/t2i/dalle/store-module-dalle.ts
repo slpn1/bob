@@ -10,7 +10,7 @@ import { persist } from 'zustand/middleware';
 export const DALLE_DEFAULT_IMAGE_SIZE: DalleImageSize = '1024x1024'; // this works in all
 export type DalleImageSize = DalleSizeGI | DalleSizeD3 | DalleSizeD2;
 
-export type DalleModelId = 'gpt-image-1' | 'dall-e-3' | 'dall-e-2';
+export type DalleModelId = 'gpt-image-1.5' | 'gpt-image-1' | 'dall-e-3' | 'dall-e-2';
 export type DalleModelSelection = DalleModelId | null; // null = auto-select latest
 
 /**
@@ -21,7 +21,7 @@ export type DalleModelSelection = DalleModelId | null; // null = auto-select lat
 export function resolveDalleModelId(selection: DalleModelSelection): DalleModelId {
   // Auto-select latest model when null
   if (selection === null) {
-    return 'gpt-image-1'; // Current latest model
+    return 'gpt-image-1.5'; // Current latest model
   }
   return selection;
 }
