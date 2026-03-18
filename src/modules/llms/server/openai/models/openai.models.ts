@@ -13,11 +13,32 @@ import { fromManualMapping, ManualMappings } from './models.data';
 // - "Structured Outputs" is LLM_IF_OAI_Json
 export const _knownOpenAIChatModels: ManualMappings = [
 
+  /// GPT-5.4 series
+
+  // GPT-5.4
+  {
+    isLatest: true,
+    idPrefix: 'gpt-5.4',
+    label: 'GPT-5.4',
+    description: 'Frontier model for complex professional work. 1M+ context window.',
+    contextWindow: 1050000,
+    maxCompletionTokens: 128000,
+    trainingDataCutoff: 'Aug 31, 2025',
+    interfaces: [LLM_IF_OAI_Chat, LLM_IF_OAI_Vision, LLM_IF_OAI_Fn, LLM_IF_OAI_Json, LLM_IF_OAI_Reasoning, LLM_IF_OAI_Responses, LLM_IF_OAI_PromptCaching, LLM_IF_HOTFIX_NoTemperature],
+    parameterSpecs: [
+      { paramId: 'llmVndOaiReasoningEffort5' },
+      { paramId: 'llmVndOaiVerbosity' },
+      { paramId: 'llmVndOaiWebSearchContext' },
+      { paramId: 'llmVndOaiRestoreMarkdown' },
+    ],
+    chatPrice: { input: 2.50, cache: { cType: 'oai-ac', read: 0.25 }, output: 15 },
+    benchmark: { cbaElo: 1500 },
+  },
+
   /// GPT-5.2 series
 
   // GPT-5.2
   {
-    isLatest: true,
     idPrefix: 'gpt-5.2',
     label: 'GPT-5.2',
     description: 'The best model for coding and agentic tasks across domains.',
@@ -1140,6 +1161,8 @@ export function openAIModelToModelDescription(modelId: string, modelCreated: num
 
 
 const _manualOrderingIdPrefixes = [
+  // GPT-5.4
+  'gpt-5.4',
   // GPT-5.2
   'gpt-5.2',
   // GPT-5

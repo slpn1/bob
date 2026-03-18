@@ -24,7 +24,10 @@
       "Bash(git commit:*)",
       "Bash(git log --since=\"2024-10-20\" --until=\"2024-11-05\" --all --oneline --grep=\"Responses\\|response\" -i)",
       "WebFetch(domain:platform.openai.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git show:*)",
+      "WebFetch(domain:azure.status.microsoft)",
+      "WebFetch(domain:developers.openai.com)"
     ],
     "deny": [
       "Read(node_modules)",
