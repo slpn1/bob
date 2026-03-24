@@ -1,9 +1,11 @@
 import * as React from 'react';
 
 import type { SxProps } from '@mui/joy/styles/types';
-import { Box, Button, ButtonGroup, Dropdown, FormControl, Grid, IconButton, Menu, MenuButton, MenuItem, Textarea, Typography } from '@mui/joy';
+import { Box, Button, ButtonGroup, Chip, Dropdown, FormControl, Grid, IconButton, Menu, MenuButton, MenuItem, Sheet, Textarea, Typography } from '@mui/joy';
 import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import FormatPaintTwoToneIcon from '@mui/icons-material/FormatPaintTwoTone';
 import KeyboardArrowLeftIcon from '@mui/icons-material/KeyboardArrowLeft';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
@@ -30,12 +32,7 @@ export interface DesignerPrompt {
   dpId: string,
   prompt: string,
   _repeatCount: number,
-  // tags: string[],
-  // effects: string[],
-  // style: string[],
-  // detail: string[],
-  // restyle: string[],
-  // [key: string]: string[],
+  referenceImages: File[],
 }
 
 
@@ -53,6 +50,8 @@ export function PromptComposer(props: {
   const [tempRepeat, setTempRepeat] = React.useState<number>(1);
   const [isSimpleEnhancing, setIsSimpleEnhancing] = React.useState<boolean>(false);
   const [showMobileRepeat, setShowMobileRepeat] = React.useState<boolean>(false);
+  const [referenceImages, setReferenceImages] = React.useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = React.useState<string[]>([]);
 
   // external state
   const { currentIdea, nextRandomIdea, clearCurrentIdea } = useDrawIdeas();
@@ -68,6 +67,39 @@ export function PromptComposer(props: {
   const qBusy = queueLength > 0;
 
 
+  // Reference images
+
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAttachImages = React.useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileInputChange = React.useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files?.length) return;
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    if (!imageFiles.length) return;
+    setReferenceImages(prev => [...prev, ...imageFiles]);
+    // generate previews
+    for (const file of imageFiles) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (ev.target?.result)
+          setImagePreviews(prev => [...prev, ev.target!.result as string]);
+      };
+      reader.readAsDataURL(file);
+    }
+    // reset input so the same file can be re-selected
+    e.target.value = '';
+  }, []);
+
+  const handleRemoveImage = React.useCallback((index: number) => {
+    setReferenceImages(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+
   // Drawing
 
   const { onDrawingStop, onPromptEnqueue } = props;
@@ -79,14 +111,18 @@ export function PromptComposer(props: {
   const handlePromptEnqueue = React.useCallback(() => {
     setNextPrompt('');
     clearCurrentIdea();
+    const images = referenceImages;
+    setReferenceImages([]);
+    setImagePreviews([]);
     if (nonEmptyPrompt?.trim()) {
       onPromptEnqueue([{
         dpId: agiUuid('draw-prompt'),
         prompt: nonEmptyPrompt,
         _repeatCount: isRepeatShown ? tempRepeat : 1,
+        referenceImages: images,
       }]);
     }
-  }, [clearCurrentIdea, isRepeatShown, nonEmptyPrompt, onPromptEnqueue, tempRepeat]);
+  }, [clearCurrentIdea, isRepeatShown, nonEmptyPrompt, onPromptEnqueue, referenceImages, tempRepeat]);
 
 
   // Type...
@@ -234,6 +270,16 @@ export function PromptComposer(props: {
             gap: { xs: 1, md: 2 },
           }}>
 
+            {/* Hidden file input for reference images */}
+            <input
+              ref={fileInputRef}
+              type='file'
+              accept='image/*'
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFileInputChange}
+            />
+
             {props.isMobile ? (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
 
@@ -242,21 +288,15 @@ export function PromptComposer(props: {
                     <AddRoundedIcon />
                   </MenuButton>
                   <Menu placement='top'>
-                    {/* Add From History? */}
-                    {/*<MenuItem>*/}
-                    {/*  <ButtonPromptFromPlaceholder name='History' disabled />*/}
-                    {/*</MenuItem>*/}
                     <MenuItem>
                       <ButtonPromptFromIdea disabled={userHasText} onIdeaNext={nextRandomIdea} onIdeaUse={handleIdeaUse} />
                     </MenuItem>
-                    {/*<MenuItem>*/}
-                    {/*  <ButtonPromptFromX name='Image' disabled />*/}
-                    {/*</MenuItem>*/}
-                    {/*<MenuItem>*/}
-                    {/*  <ButtonPromptFromPlaceholder name='Chat' disabled />*/}
-                    {/*</MenuItem>*/}
                   </Menu>
                 </Dropdown>
+
+                <IconButton color='neutral' onClick={handleAttachImages}>
+                  <AttachFileRoundedIcon />
+                </IconButton>
 
               </Box>
             ) : (
@@ -264,38 +304,91 @@ export function PromptComposer(props: {
 
                 <ButtonPromptFromIdea disabled={userHasText} onIdeaNext={nextRandomIdea} onIdeaUse={handleIdeaUse} />
 
-                {/*<ButtonPromptFromX name='Image' disabled />*/}
-
-                {/*<ButtonPromptFromPlaceholder name='Chats' disabled />*/}
+                <Button
+                  variant='soft'
+                  color='primary'
+                  onClick={handleAttachImages}
+                  startDecorator={<AttachFileRoundedIcon />}
+                  sx={{ justifyContent: 'flex-start' }}
+                >
+                  Reference
+                </Button>
 
               </Box>
 
             )}
 
-            <Textarea
-              variant='outlined'
-              // size='sm'
-              autoFocus
-              minRows={props.isMobile ? 4 : 3}
-              maxRows={props.isMobile ? 6 : 8}
-              placeholder={currentIdeaPrompt || 'Enter your prompt here and hit "Draw".'}
-              value={nextPrompt}
-              onChange={handleTextareaTextChange}
-              onKeyDown={handleTextareaKeyDown}
-              endDecorator={textEnrichComponents}
-              slotProps={{
-                textarea: {
-                  enterKeyHint: enterIsNewline ? 'enter' : 'send',
-                  // ref: props.designerTextAreaRef,
-                },
-              }}
-              sx={{
-                flexGrow: 1,
-                boxShadow: 'md',
-                '&:focus-within': { backgroundColor: 'background.popup' },
-                lineHeight: lineHeightTextareaMd,
-              }}
-            />
+            <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+
+              {/* Reference image previews */}
+              {imagePreviews.length > 0 && (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {imagePreviews.map((preview, index) => (
+                    <Sheet
+                      key={index}
+                      variant='outlined'
+                      sx={{
+                        position: 'relative',
+                        borderRadius: 'sm',
+                        overflow: 'hidden',
+                        width: 64,
+                        height: 64,
+                      }}
+                    >
+                      <img
+                        src={preview}
+                        alt={`Reference ${index + 1}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <IconButton
+                        size='sm'
+                        variant='solid'
+                        color='danger'
+                        onClick={() => handleRemoveImage(index)}
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          right: 0,
+                          minWidth: 20,
+                          minHeight: 20,
+                          p: 0,
+                          borderRadius: '0 0 0 4px',
+                        }}
+                      >
+                        <CloseRoundedIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Sheet>
+                  ))}
+                  <Chip size='sm' variant='soft' color='neutral' sx={{ alignSelf: 'center' }}>
+                    {imagePreviews.length} ref image{imagePreviews.length > 1 ? 's' : ''}
+                  </Chip>
+                </Box>
+              )}
+
+              <Textarea
+                variant='outlined'
+                autoFocus
+                minRows={props.isMobile ? 4 : 3}
+                maxRows={props.isMobile ? 6 : 8}
+                placeholder={currentIdeaPrompt || 'Enter your prompt here and hit "Draw".'}
+                value={nextPrompt}
+                onChange={handleTextareaTextChange}
+                onKeyDown={handleTextareaKeyDown}
+                endDecorator={textEnrichComponents}
+                slotProps={{
+                  textarea: {
+                    enterKeyHint: enterIsNewline ? 'enter' : 'send',
+                  },
+                }}
+                sx={{
+                  flexGrow: 1,
+                  boxShadow: 'md',
+                  '&:focus-within': { backgroundColor: 'background.popup' },
+                  lineHeight: lineHeightTextareaMd,
+                }}
+              />
+
+            </Box>
 
           </Box>
         </Grid>

@@ -54,7 +54,7 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
         const activeProvider = _resolveActiveT2IProvider(userProviderId, providers);
         const mayWork = providers.some(p => p.configured);
         const resolvedDalleModelId = resolveDalleModelId(dalleModelId);
-        const mayEdit = activeProvider?.vendor === 'openai' && resolvedDalleModelId === 'gpt-image-1';
+        const mayEdit = activeProvider?.vendor === 'openai' && (resolvedDalleModelId === 'gpt-image-1' || resolvedDalleModelId === 'gpt-image-1.5');
         return {
             mayWork,
             mayEdit,
