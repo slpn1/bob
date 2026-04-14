@@ -139,6 +139,7 @@ export type AttachmentDraftConverterType =
   | 'image-original' | 'image-resized-high' | 'image-resized-low' | 'image-ocr' | 'image-to-default'
   | 'pdf-text' | 'pdf-images' | 'pdf-text-and-images'
   | 'docx-to-html'
+  | 'pptx-to-text' | 'pptx-to-images' | 'pptx-to-text-and-images'
   | 'xlsx-to-text' | 'xlsx-to-html'
   | 'url-page-text' | 'url-page-markdown' | 'url-page-html' | 'url-page-null' | 'url-page-image'
   | 'youtube-transcript' | 'youtube-transcript-simple'

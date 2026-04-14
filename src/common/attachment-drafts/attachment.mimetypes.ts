@@ -227,3 +227,8 @@ export function mimeTypeIsPDF(mimeType: string): boolean {
 export function mimeTypeIsDocX(mimeType: string): boolean {
   return GuessedMimeLookupTable[mimeType]?.dt === 'doc-msw';
 }
+
+// MimeTypes to treat as PowerPoint documents for attachment purposes (OOXML .pptx only, not legacy .ppt)
+export function mimeTypeIsPptX(mimeType: string): boolean {
+  return mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+}

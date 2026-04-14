@@ -22,7 +22,7 @@ import { createDMessageDataInlineText, createDocAttachmentFragment, DMessageAtta
 import type { AttachmentCreationOptions, AttachmentDraft, AttachmentDraftConverter, AttachmentDraftId, AttachmentDraftInput, AttachmentDraftSource, AttachmentDraftSourceOriginFile, DraftEgoFragmentsInputData, DraftWebInputData, DraftYouTubeInputData } from './attachment.types';
 import type { AttachmentsDraftsStore } from './store-attachment-drafts_slice';
 import { attachmentGetLiveFileId, attachmentSourceSupportsLiveFile } from './attachment.livefile';
-import { guessInputContentTypeFromMime, heuristicMimeTypeFixup, mimeTypeIsDocX, mimeTypeIsPDF, mimeTypeIsPlainText, mimeTypeIsSupportedImage, reverseLookupMimeType } from './attachment.mimetypes';
+import { guessInputContentTypeFromMime, heuristicMimeTypeFixup, mimeTypeIsDocX, mimeTypeIsPDF, mimeTypeIsPptX, mimeTypeIsPlainText, mimeTypeIsSupportedImage, reverseLookupMimeType } from './attachment.mimetypes';
 import { imageDataToImageAttachmentFragmentViaDBlob } from './attachment.dblobs';
 
 
@@ -303,6 +303,13 @@ export function attachmentDefineConverters(source: AttachmentDraftSource, input:
     // DOCX
     case mimeTypeIsDocX(input.mimeType):
       converters.push({ id: 'docx-to-html', name: 'DOCX to HTML' });
+      break;
+
+    // PPTX (PowerPoint)
+    case mimeTypeIsPptX(input.mimeType):
+      converters.push({ id: 'pptx-to-text', name: 'PPTX To Text', isActive: !autoAddImages || undefined });
+      converters.push({ id: 'pptx-to-images', name: 'PPTX To Images' });
+      converters.push({ id: 'pptx-to-text-and-images', name: 'PPTX Text & Images (best)', isActive: autoAddImages });
       break;
 
     // Excel (XLS/XLSX)
@@ -685,15 +692,83 @@ export async function attachmentPerformConversion(
         }
         break;
 
+
+      // PPTX to text
+      case 'pptx-to-text':
+        if (!_expectBlob(input.data, 'PPTX text converter')) break;
+        try {
+          const { convertPptxToText } = await import('./file-converters/PptxToText');
+          const { text } = await convertPptxToText(await input.data.arrayBuffer());
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(text, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        } catch (error) {
+          console.error('Error in PPTX to Text conversion:', error);
+        }
+        break;
+
+      // PPTX to images
+      case 'pptx-to-images':
+        if (!_expectBlob(input.data, 'PPTX images converter')) break;
+        try {
+          const { extractPptxImages } = await import('./file-converters/PptxToText');
+          const pptxImages = await extractPptxImages(await input.data.arrayBuffer());
+          for (const pptxImage of pptxImages) {
+            const slideLabel = pptxImage.slideNumber ? ` (slide ${pptxImage.slideNumber})` : '';
+            const imageF = await imageDataToImageAttachmentFragmentViaDBlob(pptxImage.mimeType, pptxImage.data, source, `${title}${slideLabel} - ${pptxImage.name}`, caption, false, 'openai-high-res');
+            if (imageF)
+              newFragments.push(imageF);
+          }
+        } catch (error) {
+          console.error('Error extracting PPTX images:', error);
+        }
+        break;
+
+      // PPTX to text and images
+      case 'pptx-to-text-and-images':
+        if (!_expectBlob(input.data, 'PPTX text and images converter')) break;
+        try {
+          const { convertPptxToText: pptxToText, extractPptxImages: pptxExtractImages } = await import('./file-converters/PptxToText');
+          const pptxArrayBufferForText = await input.data.arrayBuffer();
+          const pptxArrayBufferForImages = await input.data.arrayBuffer();
+
+          // Extract images first
+          const imageFragments: DMessageAttachmentFragment[] = [];
+          const pptxImagesForCombo = await pptxExtractImages(pptxArrayBufferForImages);
+          console.log(`[PPTX pipeline] Received ${pptxImagesForCombo.length} images from extractor`);
+          for (const pptxImage of pptxImagesForCombo) {
+            console.log(`[PPTX pipeline] Processing image: ${pptxImage.name}, mime=${pptxImage.mimeType}, blobType="${pptxImage.data.type}", blobSize=${pptxImage.data.size}, slide=${pptxImage.slideNumber}`);
+            const slideLabel = pptxImage.slideNumber ? ` (slide ${pptxImage.slideNumber})` : '';
+            const imageF = await imageDataToImageAttachmentFragmentViaDBlob(pptxImage.mimeType, pptxImage.data, source, `${title}${slideLabel} - ${pptxImage.name}`, caption, false, 'openai-high-res');
+            if (imageF) {
+              console.log(`[PPTX pipeline] Image fragment created OK: ${pptxImage.name}`);
+              imageFragments.push(imageF);
+            } else {
+              console.warn(`[PPTX pipeline] Image fragment FAILED (returned null): ${pptxImage.name}`);
+            }
+          }
+
+          // Extract text
+          const { text: pptxText } = await pptxToText(pptxArrayBufferForText);
+          console.log(`[PPTX pipeline] Extracted text: ${pptxText.length} chars`);
+          if (pptxText.trim().length >= 2) {
+            const textFragment = createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(pptxText, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta);
+            newFragments.push(textFragment);
+          }
+
+          // Add text first, then images
+          console.log(`[PPTX pipeline] Final: ${newFragments.length} text fragments + ${imageFragments.length} image fragments`);
+          newFragments.push(...imageFragments);
+        } catch (error) {
+          console.error('Error in PPTX text and images conversion:', error);
+        }
+        break;
+
+
       // Excel to text
       case 'xlsx-to-text':
-        if (!(input.data instanceof ArrayBuffer)) {
-          console.log('Expected ArrayBuffer for Excel text converter, got:', typeof input.data);
-          break;
-        }
+        if (!_expectBlob(input.data, 'Excel text converter')) break;
         try {
           const { convertExcelToText } = await import('./file-converters/ExcelToText');
-          const { text } = await convertExcelToText(input.data);
+          const { text } = await convertExcelToText(await input.data.arrayBuffer());
           newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(text, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
         } catch (error) {
           console.error('Error in Excel to Text conversion:', error);
@@ -702,13 +777,10 @@ export async function attachmentPerformConversion(
 
       // Excel to HTML
       case 'xlsx-to-html':
-        if (!(input.data instanceof ArrayBuffer)) {
-          console.log('Expected ArrayBuffer for Excel HTML converter, got:', typeof input.data);
-          break;
-        }
+        if (!_expectBlob(input.data, 'Excel HTML converter')) break;
         try {
           const { convertExcelToHTML } = await import('./file-converters/ExcelToText');
-          const { html } = await convertExcelToHTML(input.data);
+          const { html } = await convertExcelToHTML(await input.data.arrayBuffer());
           newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.VndAgiCode, createDMessageDataInlineText(html, 'text/html'), refString, DOCPART_DEFAULT_VERSION, docMeta));
         } catch (error) {
           console.error('Error in Excel to HTML conversion:', error);
