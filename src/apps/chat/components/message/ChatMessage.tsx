@@ -18,6 +18,8 @@ import ForkRightIcon from '@mui/icons-material/ForkRight';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatPaintOutlinedIcon from '@mui/icons-material/FormatPaintOutlined';
 import InsertLinkIcon from '@mui/icons-material/InsertLink';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import DescriptionIcon from '@mui/icons-material/Description';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 import NotificationsOutlinedIcon from '@mui/icons-material/NotificationsOutlined';
@@ -46,6 +48,8 @@ import { TooltipOutlined } from '~/common/components/TooltipOutlined';
 import { adjustContentScaling, themeScalingMap, themeZIndexChatBubble } from '~/common/app.theme';
 import { avatarIconSx, makeMessageAvatarIcon, messageBackground, useMessageAvatarLabel } from '~/common/util/dMessageUtils';
 import { copyToClipboard } from '~/common/util/clipboardUtils';
+import { exportMessageToPdf, sanitizePdfFilename } from '~/common/util/exportMessageToPdf';
+import { exportMessageToDocx } from '~/common/util/exportMessageToDocx';
 import { createTextContentFragment, DMessageFragment, DMessageFragmentId, updateFragmentWithEditedText } from '~/common/stores/chat/chat.fragments';
 import { useFragmentBuckets } from '~/common/stores/chat/hooks/useFragmentBuckets';
 import { useUIPreferencesStore } from '~/common/stores/store-ui';
@@ -320,6 +324,30 @@ export function ChatMessage(props: {
     closeContextMenu();
     closeBubble();
   };
+
+  const handleOpsExportPdf = React.useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleCloseOpsMenu();
+    if (!textSubject) return;
+    const filename = sanitizePdfFilename(textSubject.split('\n')[0] || 'assistant-response');
+    try {
+      await exportMessageToPdf(textSubject, filename);
+    } catch (err) {
+      console.error('[PDF export] failed', err);
+    }
+  }, [handleCloseOpsMenu, textSubject]);
+
+  const handleOpsExportDocx = React.useCallback(async (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleCloseOpsMenu();
+    if (!textSubject) return;
+    const filename = sanitizePdfFilename(textSubject.split('\n')[0] || 'assistant-response');
+    try {
+      await exportMessageToDocx(textSubject, filename);
+    } catch (err) {
+      console.error('[DOCX export] failed', err);
+    }
+  }, [handleCloseOpsMenu, textSubject]);
 
   const handleOpsEditToggle = React.useCallback((e: React.MouseEvent) => {
     if (messagePendingIncomplete && !isEditingText) return; // don't allow editing while incomplete
@@ -751,6 +779,24 @@ export function ChatMessage(props: {
                     </TooltipOutlined>
                 )}
 
+                {/* Export as PDF (assistant responses only) */}
+                {fromAssistant && !messagePendingIncomplete && (
+                    <Tooltip arrow disableInteractive title='Export as PDF'>
+                      <IconButton size='sm' variant='plain' color='neutral' onClick={handleOpsExportPdf} sx={{ mt: 0.5 }}>
+                        <PictureAsPdfIcon />
+                      </IconButton>
+                    </Tooltip>
+                )}
+
+                {/* Export as Word (assistant responses only) */}
+                {fromAssistant && !messagePendingIncomplete && (
+                    <Tooltip arrow disableInteractive title='Export as Word'>
+                      <IconButton size='sm' variant='plain' color='neutral' onClick={handleOpsExportDocx}>
+                        <DescriptionIcon />
+                      </IconButton>
+                    </Tooltip>
+                )}
+
               </Box>
           )}
 
@@ -957,6 +1003,21 @@ export function ChatMessage(props: {
                     </MenuItem>
                 )}
               </Box>
+
+              {/* Export as PDF (assistant responses only) */}
+              {fromAssistant && !messagePendingIncomplete && (
+                <MenuItem onClick={handleOpsExportPdf}>
+                  <ListItemDecorator><PictureAsPdfIcon /></ListItemDecorator>
+                  Export as PDF
+                </MenuItem>
+              )}
+              {/* Export as Word (assistant responses only) */}
+              {fromAssistant && !messagePendingIncomplete && (
+                <MenuItem onClick={handleOpsExportDocx}>
+                  <ListItemDecorator><DescriptionIcon /></ListItemDecorator>
+                  Export as Word
+                </MenuItem>
+              )}
 
               {/* Notify Complete */}
               {messagePendingIncomplete && !!onMessageToggleUserFlag && <ListDivider />}
