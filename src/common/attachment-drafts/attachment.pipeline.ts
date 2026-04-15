@@ -312,6 +312,16 @@ export function attachmentDefineConverters(source: AttachmentDraftSource, input:
       converters.push({ id: 'pptx-to-text-and-images', name: 'PPTX Text & Images (best)', isActive: autoAddImages });
       break;
 
+    // Audio (mp3, wav, m4a, etc.) — transcribe via OpenAI Whisper
+    case input.mimeType.startsWith('audio/'):
+      converters.push({ id: 'audio-to-text', name: 'Transcribe Audio', isActive: true });
+      break;
+
+    // Video (mp4, mov, webm, etc.) — extract audio, then transcribe
+    case input.mimeType.startsWith('video/'):
+      converters.push({ id: 'video-to-text', name: 'Transcribe Audio Track', isActive: true });
+      break;
+
     // Excel (XLS/XLSX)
     case input.mimeType === 'application/vnd.ms-excel' || input.mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
       converters.push({ id: 'xlsx-to-text', name: 'Excel to Text', isActive: true });
@@ -786,6 +796,37 @@ export async function attachmentPerformConversion(
           console.error('Error in Excel to HTML conversion:', error);
         }
         break;
+
+      // Audio to text (transcription)
+      case 'audio-to-text':
+        if (!_expectBlob(input.data, 'Audio transcription')) break;
+        try {
+          const { convertAudioToText } = await import('./file-converters/AudioToText');
+          const fileName = (source.media === 'file' ? source.refPath : title) || 'audio';
+          const { text } = await convertAudioToText(input.data, fileName);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(text, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        } catch (error) {
+          console.error('Error in audio transcription:', error);
+          const msg = error instanceof Error ? error.message : String(error);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(`[Audio transcription failed: ${msg}]`, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        }
+        break;
+
+      // Video to text (extract audio, then transcribe)
+      case 'video-to-text':
+        if (!_expectBlob(input.data, 'Video transcription')) break;
+        try {
+          const { convertVideoToText } = await import('./file-converters/AudioToText');
+          const fileName = (source.media === 'file' ? source.refPath : title) || 'video';
+          const { text } = await convertVideoToText(input.data, fileName);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(text, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        } catch (error) {
+          console.error('Error in video transcription:', error);
+          const msg = error instanceof Error ? error.message : String(error);
+          newFragments.push(createDocAttachmentFragment(title, caption, DVMimeType.TextPlain, createDMessageDataInlineText(`[Video transcription failed: ${msg}]`, 'text/plain'), refString, DOCPART_DEFAULT_VERSION, docMeta));
+        }
+        break;
+
 
       // url page text
       case 'url-page-text':

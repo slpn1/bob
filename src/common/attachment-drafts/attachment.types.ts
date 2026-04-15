@@ -141,6 +141,7 @@ export type AttachmentDraftConverterType =
   | 'docx-to-html'
   | 'pptx-to-text' | 'pptx-to-images' | 'pptx-to-text-and-images'
   | 'xlsx-to-text' | 'xlsx-to-html'
+  | 'audio-to-text' | 'video-to-text'
   | 'url-page-text' | 'url-page-markdown' | 'url-page-html' | 'url-page-null' | 'url-page-image'
   | 'youtube-transcript' | 'youtube-transcript-simple'
   | 'ego-fragments-inlined'
