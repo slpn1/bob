@@ -9,7 +9,7 @@ import { Link } from '~/common/components/Link';
 import { useToggleableBoolean } from '~/common/util/hooks/useToggleableBoolean';
 import { clientEnv } from '~/modules/env/env.client';
 
-import { DALLE_DEFAULT_IMAGE_SIZE, DalleImageSize, DalleModelSelection, resolveDalleModelId, useDalleStore } from './store-module-dalle';
+import { DALLE_DEFAULT_IMAGE_SIZE, DalleImageSize, DalleModelSelection, isGptImage25Model, isGptImageModel, resolveDalleModelId, useDalleStore } from './store-module-dalle';
 import { openAIImageModelsPricing } from './openaiGenerateImages';
 import { FormChipControl } from '~/common/components/forms/FormChipControl';
 
@@ -21,17 +21,32 @@ const CONF = {
     { value: 'dall-e-3', label: 'DALL·E 3' },
     { value: 'gpt-image-1', label: 'GPT Image' },
     { value: 'gpt-image-1.5', label: 'GPT Image 1.5' },
+    { value: 'gpt-image-2.5-flare', label: '2.5 Fast' },
+    { value: 'gpt-image-2.5-sunburst', label: '2.5 Precise' },
     { value: null, label: 'Auto' },
   ] as { value: DalleModelSelection; label: string }[],
 
   RES_D2: ['256x256', '512x512', '1024x1024'] as DalleImageSize[],
   RES_D3: ['1024x1024', '1792x1024', '1024x1792'] as DalleImageSize[],
-  RES_GI: ['1024x1024', '1536x1024', '1024x1536'] as DalleImageSize[],
+  RES_GI: ['auto', '1024x1024', '1536x1024', '1024x1536'] as DalleImageSize[],
 
   QUALITY_GI: [
     { value: 'low', label: 'Low' },
     { value: 'medium', label: 'Medium' },
     { value: 'high', label: 'High' },
+    { value: 'auto', label: 'Auto' },
+  ],
+  QUALITY_GI25: [
+    { value: 'low', label: 'Low' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'high', label: 'High' },
+    { value: 'xhigh', label: 'X-High' },
+    { value: 'max', label: 'Max' },
+    { value: 'auto', label: 'Auto' },
+  ],
+  FIDELITY_GI: [
+    { value: 'high', label: 'High' },
+    { value: 'low', label: 'Low' },
   ],
   BACKGROUND_GI: [
     // { value: 'opaque', label: 'Opaque' },
@@ -75,6 +90,9 @@ export function DallESettings() {
     dalleOutputFormatGI, setDalleOutputFormatGI,
     dalleOutputCompressionGI, setDalleOutputCompressionGI,
     dalleModerationGI, setDalleModerationGI,
+    dalleAutoSettings, setDalleAutoSettings,
+    dalleUseConversationContext, setDalleUseConversationContext,
+    dalleInputFidelityGI, setDalleInputFidelityGI,
   } = useDalleStore();
 
 
@@ -99,12 +117,22 @@ export function DallESettings() {
   const handleModerationGIChange = (event: React.ChangeEvent<HTMLInputElement>) =>
     setDalleModerationGI(!event.target.checked ? 'low' : 'auto');
 
+  const handleAutoSettingsChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setDalleAutoSettings(event.target.checked);
+
+  const handleConversationContextChange = (event: React.ChangeEvent<HTMLInputElement>) =>
+    setDalleUseConversationContext(event.target.checked);
+
 
   // derived state - resolve the actual model
   const resolvedDalleModelId = resolveDalleModelId(dalleModelId);
-  const isGI = resolvedDalleModelId === 'gpt-image-1.5' || resolvedDalleModelId === 'gpt-image-1';
+  const isGI = isGptImageModel(resolvedDalleModelId);
+  const isGI25 = isGptImage25Model(resolvedDalleModelId);
   const isD3 = resolvedDalleModelId === 'dall-e-3';
   const isD2 = resolvedDalleModelId === 'dall-e-2';
+
+  // when the director picks the parameters per prompt, the manual controls below are only a fallback
+  const autoPicksParams = isGI && dalleAutoSettings;
 
   const isD3HD = isD3 && dalleQualityD3 === 'hd';
 
@@ -131,20 +159,43 @@ export function DallESettings() {
 
     <FormChipControl
       title='Model'
-      description={dalleModelId === null ? `Latest (${resolvedDalleModelId})` : isGI ? 'Latest' : isD3 ? 'Good' : 'Older'}
+      description={dalleModelId === null ? 'Latest, per request' : isGI25 ? 'Latest' : isGI ? 'Previous' : isD3 ? 'Good' : 'Older'}
+      tooltip={dalleModelId !== null ? undefined : 'Auto uses GPT Image 2.5 Fast for new images, and GPT Image 2.5 Precise when editing an existing one.'}
       options={CONF.MODEL_OPTS.map(opt => ({ ...opt, value: opt.value || 'auto' }))}
       value={dalleModelId || 'auto'} 
       onChange={(value) => setDalleModelId(value === 'auto' ? null : value as DalleModelSelection)}
     />
 
+    {isGI && <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
+      <FormLabelStart title='Auto Settings'
+                      description={dalleAutoSettings ? 'Chosen per prompt' : 'Use the settings below'}
+                      tooltip='Picks the aspect ratio, quality, background and file format from what you asked for - a poster comes out portrait, a logo comes out square on a transparent background.'
+      />
+      <Switch checked={dalleAutoSettings} onChange={handleAutoSettingsChange}
+              startDecorator={dalleAutoSettings ? 'Auto' : 'Manual'} />
+    </FormControl>}
+
+    {isGI && <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
+      <FormLabelStart title='Use Chat Images'
+                      description={dalleUseConversationContext ? 'Refine across turns' : 'Each image is new'}
+                      tooltip='Lets a follow-up such as "make the back panel black" reuse the image it refers to, along with any images you uploaded earlier in the conversation.'
+      />
+      <Switch checked={dalleUseConversationContext} onChange={handleConversationContextChange}
+              startDecorator={dalleUseConversationContext ? 'On' : 'Off'} />
+    </FormControl>}
+
     <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
       <FormLabelStart title='Resolution'
-                      description={!hasResolution
-                        ? 'Unsupported'
-                        : currentResolution === DALLE_DEFAULT_IMAGE_SIZE ? 'Default' : 'Custom'
+                      description={autoPicksParams
+                        ? 'Chosen per prompt'
+                        : !hasResolution
+                          ? 'Unsupported'
+                          : currentResolution === 'auto' ? 'Automatic'
+                            : currentResolution === DALLE_DEFAULT_IMAGE_SIZE ? 'Default' : 'Custom'
                       } />
       <Select
         variant='outlined'
+        disabled={autoPicksParams}
         // color='primary'
         value={currentResolution}
         onChange={isD2 ? handleResolutionD2Change : isD3 ? handleResolutionD3Change : handleResolutionGIChange}
@@ -157,7 +208,7 @@ export function DallESettings() {
       >
         {resolutions.map((resolution) =>
           <Option key={'res-' + resolution} value={resolution}>
-            {resolution.replace('x', ' x ')}
+            {resolution === 'auto' ? 'Automatic' : resolution.replace('x', ' x ')}
           </Option>,
         )}
       </Select>
@@ -168,8 +219,9 @@ export function DallESettings() {
       <FormChipControl
         title='Quality'
         // color='primary'
-        description='Higher quality takes longer'
-        options={CONF.QUALITY_GI}
+        description={autoPicksParams ? 'Chosen per prompt' : 'Higher quality takes longer'}
+        disabled={autoPicksParams}
+        options={isGI25 ? CONF.QUALITY_GI25 : CONF.QUALITY_GI}
         value={dalleQualityGI} onChange={setDalleQualityGI}
       />
 
@@ -177,12 +229,15 @@ export function DallESettings() {
         title='Background'
         // color='primary'
         description={
-          !showTransparencyWarning
-            ? 'Transparency'
-            : <Typography level='body-xs' color='warning'>
-              Transparent background requires PNG or WebP format
-            </Typography>
+          autoPicksParams
+            ? 'Chosen per prompt'
+            : !showTransparencyWarning
+              ? 'Transparency'
+              : <Typography level='body-xs' color='warning'>
+                Transparent background requires PNG or WebP format
+              </Typography>
         }
+        disabled={autoPicksParams}
         options={CONF.BACKGROUND_GI}
         value={dalleBackgroundGI} onChange={setDalleBackgroundGI}
       />
@@ -190,7 +245,8 @@ export function DallESettings() {
       {advanced.on && <FormChipControl
         title='File Format'
         // color='primary'
-        description='File format for the generated image'
+        description={autoPicksParams ? 'Chosen per prompt' : 'File format for the generated image'}
+        disabled={autoPicksParams}
         options={CONF.OUT_FORMAT_GI}
         value={dalleOutputFormatGI} onChange={setDalleOutputFormatGI}
       />}
@@ -213,6 +269,14 @@ export function DallESettings() {
           />
         </FormControl>
       )}
+
+      {advanced.on && !isGI25 && <FormChipControl
+        title='Edit Fidelity'
+        description='Detail kept when editing'
+        tooltip='GPT Image 1 only. High keeps faces, products and fine detail stable across repeated edits. GPT Image 2.5 manages this itself, so the control is hidden there.'
+        options={CONF.FIDELITY_GI}
+        value={dalleInputFidelityGI} onChange={setDalleInputFidelityGI}
+      />}
 
       {advanced.on && <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
         <FormLabelStart title='Moderation'
@@ -260,7 +324,9 @@ export function DallESettings() {
 
     {advanced.on && <FormControl orientation='horizontal' sx={{ justifyContent: 'space-between' }}>
       <FormLabelStart title='Cost per Image'
-                      tooltip={!isGI ? undefined : 'OpenAI gpt-image-1 and similar models will also be charged for the input text tokens'}
+                      tooltip={!isGI ? undefined : isGI25
+                        ? 'Estimate only: OpenAI has not published the token counts for GPT Image 2.5. Input text and any reference images are charged on top.'
+                        : 'OpenAI gpt-image-1 and similar models will also be charged for the input text tokens'}
         // description={<Link href='https://platform.openai.com/docs/pricing' target='_blank' noLinkStyle sx={{ textDecoration: 'none' }}>OpenAI Pricing </Link>}
       />
       <Typography>$ {costPerImage}</Typography>

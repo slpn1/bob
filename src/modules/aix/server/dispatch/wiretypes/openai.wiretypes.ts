@@ -660,6 +660,9 @@ export namespace OpenAIWire_API_Images_Generations {
     prompt: z.string().max(32000),
 
     model: z.enum([
+      'gpt-image-2.5-sunburst', // GI25 - best editing precision, inpainting
+      'gpt-image-2.5-flare',    // GI25 - fast, high-quality everyday generation
+      'gpt-image-1.5',
       'gpt-image-1',
       'dall-e-3',
       'dall-e-2', // default
@@ -671,7 +674,8 @@ export namespace OpenAIWire_API_Images_Generations {
     // Image quality
     quality: z.enum([
       'auto',                   // default
-      'high', 'medium', 'low',  // gpt-image-1
+      'max', 'xhigh',           // gpt-image-2.5 only
+      'high', 'medium', 'low',  // gpt-image-1, gpt-image-2.5
       'hd', 'standard',         // dall-e-3: hd | standard, dall-e-2: only standard
     ]).optional(),
 
@@ -680,24 +684,28 @@ export namespace OpenAIWire_API_Images_Generations {
     response_format: z.enum(['url', 'b64_json']).optional(),
 
     // size of the generated images
-    size: z.enum([
-      'auto',       // GI (or default if omitted)
-      '256x256',    //          D2
-      '512x512',    //          D2
-      '1024x1024',  // GI  D3  D2
-      // landscape
-      '1536x1024',  // GI
-      '1792x1024',  //      D3
-      // portrait
-      '1024x1536',  // GI
-      '1024x1792',  //      D3
+    size: z.union([
+      z.enum([
+        'auto',       // GI  GI25 (or default if omitted)
+        '256x256',    //               D2
+        '512x512',    //               D2
+        '1024x1024',  // GI  GI25  D3  D2
+        // landscape
+        '1536x1024',  // GI  GI25
+        '1792x1024',  //           D3
+        // portrait
+        '1024x1536',  // GI  GI25
+        '1024x1792',  //           D3
+      ]),
+      // GI25 only: arbitrary WIDTHxHEIGHT - multiples of 16, aspect ratio 1:3..3:1, max 3840px per edge
+      z.string().regex(/^\d{3,4}x\d{3,4}$/),
     ]).optional(),
 
     // optional unique identifier representing your end-user
     user: z.string().optional(),
 
 
-    // -- GPT Image 1 Specific Parameters --
+    // -- GPT Image (1 and 2.5) Specific Parameters --
 
     // Allows to set transparency (in that case, format = png or webp)
     background: z.enum(['transparent', 'opaque', 'auto' /* default */]).optional(),
@@ -710,6 +718,9 @@ export namespace OpenAIWire_API_Images_Generations {
 
     // WEBP/JPEG compression level for gpt-image-1
     output_compression: z.number().min(0).max(100).int().optional(),
+
+    // Number of partial images to stream back (0-3) - requires stream: true
+    partial_images: z.number().min(0).max(3).int().optional(),
 
 
     // -- Dall-E 3 Specific Parameters --
@@ -727,6 +738,13 @@ export namespace OpenAIWire_API_Images_Generations {
       revised_prompt: z.string().optional(),
       url: z.url().optional(), // if the response_format is 'url' - DEPRECATED
     })),
+
+    // GPT Image models echo back the parameters actually used - this is the only
+    // reliable way to learn the real dimensions when requesting size: 'auto'
+    size: z.string().optional(),          // e.g. '1536x1024'
+    quality: z.string().optional(),
+    output_format: z.string().optional(), // 'png' | 'jpeg' | 'webp'
+    background: z.string().optional(),
 
     // gpt-image-1 only
     usage: z.object({
@@ -761,7 +779,13 @@ export namespace OpenAIWire_API_Images_Edits {
 
     // mask: file - OPTIONAL - Handled as file upload in FormData ('mask' field)
 
-    model: z.enum(['gpt-image-1', 'dall-e-2']).optional(),
+    model: z.enum([
+      'gpt-image-2.5-sunburst',
+      'gpt-image-2.5-flare',
+      'gpt-image-1.5',
+      'gpt-image-1',
+      'dall-e-2',
+    ]).optional(),
 
     // Number of images to generate, between 1 and 10
     n: z.number().min(1).max(10).nullable().optional(),
@@ -769,7 +793,8 @@ export namespace OpenAIWire_API_Images_Edits {
     // Image quality
     quality: z.enum([
       'auto',                   // default
-      'high', 'medium', 'low',  // gpt-image-1
+      'max', 'xhigh',           // gpt-image-2.5 only
+      'high', 'medium', 'low',  // gpt-image-1, gpt-image-2.5
       'standard',               // dall-e-2: only standard
     ]).optional(),
 
@@ -777,16 +802,27 @@ export namespace OpenAIWire_API_Images_Edits {
     // OMITTED here as we'll enforce b64_json or handle it based on model if DALL-E 2 edit were supported.
 
     // size of the generated images
-    size: z.enum([
-      'auto',       // GI (or default if omitted)
-      '256x256',    //          D2
-      '512x512',    //          D2
-      '1024x1024',  // GI       D2
-      // landscape
-      '1536x1024',  // GI
-      // portrait
-      '1024x1536',  // GI
+    size: z.union([
+      z.enum([
+        'auto',       // GI  GI25 (or default if omitted)
+        '256x256',    //               D2
+        '512x512',    //               D2
+        '1024x1024',  // GI  GI25      D2
+        // landscape
+        '1536x1024',  // GI  GI25
+        // portrait
+        '1024x1536',  // GI  GI25
+      ]),
+      // GI25 only: arbitrary WIDTHxHEIGHT
+      z.string().regex(/^\d{3,4}x\d{3,4}$/),
     ]).optional(),
+
+    /**
+     * gpt-image-1 ONLY. How much effort to spend preserving the input images: 'high' keeps
+     * faces, products and fine detail stable across edits.
+     * The gpt-image-2.5 models reject this parameter - they handle input fidelity natively.
+     */
+    input_fidelity: z.enum(['high', 'low']).optional(),
 
     // optional unique identifier representing your end-user
     user: z.string().optional(),

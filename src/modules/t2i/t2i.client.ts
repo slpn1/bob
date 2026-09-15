@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import type { AixParts_InlineImagePart } from '~/modules/aix/server/api/aix.wiretypes';
 import type { ModelVendorId } from '~/modules/llms/vendors/vendors.registry';
-import { resolveDalleModelId, useDalleStore } from '~/modules/t2i/dalle/store-module-dalle';
+import { isGptImageModel, resolveDalleModelId, useDalleStore } from '~/modules/t2i/dalle/store-module-dalle';
 
 import { addDBImageAsset, DBlobDBScopeId } from '~/common/stores/blob/dblobs-portability';
 import { nanoidToUuidV4 } from '~/common/util/idUtils';
@@ -16,7 +16,7 @@ import { llmsStoreState, useModelsStore } from '~/common/stores/llms/store-llms'
 import { shallowEquals } from '~/common/util/hooks/useShallowObject';
 
 import type { T2iCreateImageOutput } from './t2i.server';
-import { openAIGenerateImagesOrThrow, openAIImageModelsCurrentGeneratorName } from './dalle/openaiGenerateImages';
+import { openAIGenerateImagesOrThrow, openAIImageModelsCurrentGeneratorName, type T2IImageParamsOverride } from './dalle/openaiGenerateImages';
 import { useTextToImageStore } from './store-module-t2i';
 
 
@@ -53,8 +53,8 @@ export function useCapabilityTextToImage(): CapabilityTextToImage {
         const providers = _getTextToImageProviders(llmsModelServices);
         const activeProvider = _resolveActiveT2IProvider(userProviderId, providers);
         const mayWork = providers.some(p => p.configured);
-        const resolvedDalleModelId = resolveDalleModelId(dalleModelId);
-        const mayEdit = activeProvider?.vendor === 'openai' && (resolvedDalleModelId === 'gpt-image-1' || resolvedDalleModelId === 'gpt-image-1.5');
+        const resolvedDalleModelId = resolveDalleModelId(dalleModelId, true);
+        const mayEdit = activeProvider?.vendor === 'openai' && isGptImageModel(resolvedDalleModelId);
         return {
             mayWork,
             mayEdit,
@@ -92,7 +92,7 @@ export function getActiveTextToImageProviderOrThrow() {
     return activeProvider;
 }
 
-async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProvider, prompt: string, aixInlineImageParts: AixParts_InlineImagePart[], count: number): Promise<T2iCreateImageOutput[]> {
+async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProvider, prompt: string, aixInlineImageParts: AixParts_InlineImagePart[], count: number, paramsOverride?: T2IImageParamsOverride): Promise<T2iCreateImageOutput[]> {
     switch (vendor) {
 
         case 'gemini':
@@ -107,7 +107,7 @@ async function _t2iGenerateImagesOrThrow({ providerId, vendor }: TextToImageProv
         case 'openai':
             if (!providerId)
                 throw new Error('No OpenAI Model Service configured for TextToImage');
-            return await openAIGenerateImagesOrThrow(providerId, prompt, aixInlineImageParts, count);
+            return await openAIGenerateImagesOrThrow(providerId, prompt, aixInlineImageParts, count, paramsOverride);
 
         case 'xai':
             throw new Error('xAI image generation integration coming soon');
@@ -127,6 +127,7 @@ export async function t2iGenerateImageContentFragments(
     aixInlineImageParts: AixParts_InlineImagePart[],
     count: number,
     scopeId: DBlobDBScopeId,
+    paramsOverride?: T2IImageParamsOverride,
 ): Promise<DMessageContentFragment[]> {
 
     // T2I: Use the active provider if null
@@ -134,7 +135,7 @@ export async function t2iGenerateImageContentFragments(
         t2iProvider = getActiveTextToImageProviderOrThrow();
 
     // T2I: Generate
-    const generatedImages = await _t2iGenerateImagesOrThrow(t2iProvider, prompt, aixInlineImageParts, count);
+    const generatedImages = await _t2iGenerateImagesOrThrow(t2iProvider, prompt, aixInlineImageParts, count, paramsOverride);
     if (!generatedImages?.length)
         throw new Error('No image generated');
 

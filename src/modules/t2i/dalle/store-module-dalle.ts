@@ -10,34 +10,53 @@ import { persist } from 'zustand/middleware';
 export const DALLE_DEFAULT_IMAGE_SIZE: DalleImageSize = '1024x1024'; // this works in all
 export type DalleImageSize = DalleSizeGI | DalleSizeD3 | DalleSizeD2;
 
-export type DalleModelId = 'gpt-image-1.5' | 'gpt-image-1' | 'dall-e-3' | 'dall-e-2';
+export type DalleModelId =
+  | 'gpt-image-2.5-flare'     // fast, high-quality everyday generation
+  | 'gpt-image-2.5-sunburst'  // best editing precision, inpainting
+  | 'gpt-image-1.5'
+  | 'gpt-image-1'
+  | 'dall-e-3'
+  | 'dall-e-2';
 export type DalleModelSelection = DalleModelId | null; // null = auto-select latest
 
+/** Models of the GPT Image family - these support image inputs (editing) and the modern parameter set */
+export function isGptImageModel(modelId: DalleModelId): boolean {
+  return modelId.startsWith('gpt-image-');
+}
+
+/** Models of the GPT Image 2.5 family - these add the 'xhigh'/'max' qualities and custom sizes */
+export function isGptImage25Model(modelId: DalleModelId): boolean {
+  return modelId.startsWith('gpt-image-2.5');
+}
+
 /**
- * Resolve the actual DALL-E model to use
+ * Resolve the actual model to use
  * @param selection - User's selection (null = auto-select latest)
+ * @param forEditing - when auto-selecting, prefer the model tuned for editing precision
  * @returns The concrete model ID to use
  */
-export function resolveDalleModelId(selection: DalleModelSelection): DalleModelId {
-  // Auto-select latest model when null
-  if (selection === null) {
-    return 'gpt-image-1.5'; // Current latest model
-  }
+export function resolveDalleModelId(selection: DalleModelSelection, forEditing: boolean = false): DalleModelId {
+  // Auto-select latest model when null: Sunburst holds detail across repeated edits, Flare is faster for fresh images
+  if (selection === null)
+    return forEditing ? 'gpt-image-2.5-sunburst' : 'gpt-image-2.5-flare';
   return selection;
 }
 
 export type DalleImageQuality = DalleImageQualityGI | DalleImageQualityD3;
-type DalleImageQualityGI = 'high' | 'medium' | 'low'; // gpt-image-1
+// 'xhigh' and 'max' are gpt-image-2.5 only - clamped down for gpt-image-1 at request time
+export type DalleImageQualityGI = 'auto' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type DalleImageQualityD3 = 'hd' | 'standard'; // DALL-E 3
 
 type DalleImageStyleD3 = 'vivid' | 'natural';
 
-type DalleBackgroundGI = 'auto' | 'transparent' | 'opaque';
-type DalleOutputFormatGI = 'png' | 'jpeg' | 'webp';
+export type DalleBackgroundGI = 'auto' | 'transparent' | 'opaque';
+export type DalleOutputFormatGI = 'png' | 'jpeg' | 'webp';
 type DalleModerationGI = 'auto' | 'low';
+type DalleInputFidelityGI = 'high' | 'low';
 
 export type DalleSize = DalleSizeGI | DalleSizeD3 | DalleSizeD2;
-export type DalleSizeGI = '1024x1024' | '1536x1024' | '1024x1536'; // 'auto': would force w/h inference in the server, so we remove it
+// 'auto' lets OpenAI infer the best aspect ratio from the prompt
+export type DalleSizeGI = 'auto' | '1024x1024' | '1536x1024' | '1024x1536';
 export type DalleSizeD3 = '1024x1024' | '1792x1024' | '1024x1792';
 export type DalleSizeD2 = '256x256' | '512x512' | '1024x1024';
 
@@ -49,6 +68,19 @@ interface ModuleDalleStore {
 
   dalleNoRewrite: boolean;
   setDalleNoRewrite: (noRewrite: boolean) => void;
+
+  // -- added for gpt-image-2.5 [2026-09-15] --
+
+  /** Let a fast model pick size/quality/background/format from the prompt, instead of using the fixed settings below */
+  dalleAutoSettings: boolean;
+  setDalleAutoSettings: (autoSettings: boolean) => void;
+
+  /** Carry previously generated/uploaded images of the conversation forward as edit references */
+  dalleUseConversationContext: boolean;
+  setDalleUseConversationContext: (useContext: boolean) => void;
+
+  dalleInputFidelityGI: DalleInputFidelityGI;
+  setDalleInputFidelityGI: (fidelity: DalleInputFidelityGI) => void;
 
   // -- added for gpt-image-1 [2025-04-24] --
 
@@ -98,12 +130,23 @@ export const useDalleStore = create<ModuleDalleStore>()(
       dalleNoRewrite: false,
       setDalleNoRewrite: (dalleNoRewrite) => set({ dalleNoRewrite }),
 
+      // -- added for gpt-image-2.5 [2026-09-15] --
+
+      dalleAutoSettings: true,
+      setDalleAutoSettings: (dalleAutoSettings) => set({ dalleAutoSettings }),
+
+      dalleUseConversationContext: true,
+      setDalleUseConversationContext: (dalleUseConversationContext) => set({ dalleUseConversationContext }),
+
+      dalleInputFidelityGI: 'high',
+      setDalleInputFidelityGI: (dalleInputFidelityGI) => set({ dalleInputFidelityGI }),
+
       // -- added for gpt-image-1 [2025-04-24] --
 
-      dalleSizeGI: '1024x1024',
+      dalleSizeGI: 'auto',
       setDalleSizeGI: (dalleSizeGI) => set({ dalleSizeGI }),
 
-      dalleQualityGI: 'high',
+      dalleQualityGI: 'auto',
       setDalleQualityGI: (dalleQualityGI) => set({ dalleQualityGI }),
 
       dalleBackgroundGI: 'auto',
@@ -137,7 +180,7 @@ export const useDalleStore = create<ModuleDalleStore>()(
     }),
     {
       name: 'app-module-dalle',
-      version: 3,
+      version: 4,
 
       migrate: (state: unknown, fromVersion) => {
 
@@ -154,6 +197,21 @@ export const useDalleStore = create<ModuleDalleStore>()(
             ...(state as ModuleDalleStore),
             dalleModelId: null, // auto-select latest
           } satisfies ModuleDalleStore;
+
+        // 4: gpt-image-2.5 - move everyone onto the latest model and onto automatic parameters,
+        //    since size/quality are now inferred per-prompt rather than set once in Settings
+        if (state && fromVersion < 4) {
+          const prev = state as ModuleDalleStore;
+          state = {
+            ...prev,
+            dalleModelId: null, // auto-select latest
+            dalleAutoSettings: true,
+            dalleUseConversationContext: true,
+            dalleInputFidelityGI: 'high',
+            dalleSizeGI: 'auto',
+            dalleQualityGI: 'auto',
+          } satisfies ModuleDalleStore;
+        }
 
         return state;
       },

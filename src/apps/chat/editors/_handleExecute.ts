@@ -11,6 +11,7 @@ import type { ChatExecuteMode } from '../execute-mode/execute-mode.types';
 import { textToDrawCommand } from '../commands/CommandsDraw';
 
 import { _handleExecuteCommand, RET_NO_CMD } from './_handleExecuteCommand';
+import { collectImageConversationContext } from './image-history-context';
 import { runImageGenerationUpdatingState } from './image-generate';
 import { runPersonaOnConversationHead } from './chat-persona';
 import { runReActUpdatingState } from './react-tangent';
@@ -55,7 +56,7 @@ export async function _handleExecute(chatExecuteMode: ChatExecuteMode, conversat
 
   // execute a command, if the last message has one
   if (lastMessage.role === 'user') {
-    const cmdRC = await _handleExecuteCommand(lastMessage.id, firstFragment, lastMessage, cHandler, chatLLMId);
+    const cmdRC = await _handleExecuteCommand(lastMessage.id, firstFragment, lastMessage, cHandler, chatLLMId, initialHistory);
     if (cmdRC !== RET_NO_CMD) return cmdRC;
   }
 
@@ -92,7 +93,10 @@ export async function _handleExecute(chatExecuteMode: ChatExecuteMode, conversat
           isZyncAssetImageReferencePart(fragment.part) || isImageRefPart(fragment.part)
         ));
 
-      return await runImageGenerationUpdatingState(cHandler, imagePrompt, imageInputFragments);
+      // earlier images and turns, so that "make the back panel black" can find what it refers to
+      const imageContext = collectImageConversationContext(initialHistory);
+
+      return await runImageGenerationUpdatingState(cHandler, imagePrompt, imageInputFragments, imageContext, conversationId);
 
     case 'react-content':
       // verify we were called with a single DMessageTextContent

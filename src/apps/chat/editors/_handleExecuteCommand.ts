@@ -4,6 +4,7 @@ import { ConversationHandler } from '~/common/chat-overlay/ConversationHandler';
 import { createTextContentFragment, DMessageFragment, isContentOrAttachmentFragment, isImageRefPart, isTextContentFragment, isZyncAssetImageReferencePart } from '~/common/stores/chat/chat.fragments';
 
 import { extractChatCommand, helpPrettyChatCommands } from '../commands/commands.registry';
+import { collectImageConversationContext } from './image-history-context';
 import { runImageGenerationUpdatingState } from './image-generate';
 import { runReActUpdatingState } from './react-tangent';
 
@@ -11,7 +12,7 @@ import { runReActUpdatingState } from './react-tangent';
 export const RET_NO_CMD = 'no-cmd';
 
 
-export async function _handleExecuteCommand(lastMessageId: DMessageId, lastMessageFirstFragment: DMessageFragment, lastMessage: Readonly<DMessage>, cHandler: ConversationHandler, chatLLMId: DLLMId) {
+export async function _handleExecuteCommand(lastMessageId: DMessageId, lastMessageFirstFragment: DMessageFragment, lastMessage: Readonly<DMessage>, cHandler: ConversationHandler, chatLLMId: DLLMId, history?: Readonly<DMessage[]>) {
 
   // commands must have a first Content DMessageTextPart
   if (!isTextContentFragment(lastMessageFirstFragment))
@@ -41,7 +42,10 @@ export async function _handleExecuteCommand(lastMessageId: DMessageId, lastMessa
           isZyncAssetImageReferencePart(fragment.part) || isImageRefPart(fragment.part)
         ));
 
-      return await runImageGenerationUpdatingState(cHandler, userText!, imageInputFragments);
+      // earlier images and turns, so that a follow-up /draw can refer back to them
+      const imageContext = history?.length ? collectImageConversationContext(history) : undefined;
+
+      return await runImageGenerationUpdatingState(cHandler, userText!, imageInputFragments, imageContext, lastMessageId);
 
     case 'cmd-chat-alter':
       // clear command

@@ -58,6 +58,18 @@ const overlayButtonsGridSx: SxProps = {
 export type RenderImageURLVariant = 'content-part' | 'attachment-card' | 'attachment-button';
 
 /**
+ * Cap for images rendered inline in a message.
+ *
+ * Generated images are large (a 1024x1536 portrait fills ~1000px of a typical chat column),
+ * which pushes the rest of the conversation off screen. Capping the height keeps the whole
+ * image - and some of the surrounding conversation - visible without scrolling; the aspect
+ * ratio is preserved because the width is left to follow. Click the image for the full size.
+ *
+ * 'dvh' rather than 'vh' so that mobile browser chrome is accounted for.
+ */
+const CONTENT_PART_IMAGE_MAX_HEIGHT = '60dvh';
+
+/**
  * Renders an Image Data URL, or a remote URL.
  */
 export const RenderImageURL = (props: {
@@ -128,6 +140,7 @@ export const RenderImageURL = (props: {
   // derived state
   const isCard = props.variant === 'attachment-card';
   const isOnButton = props.variant === 'attachment-button';
+  const isContentPart = props.variant === 'content-part';
   const isTempDalleUrl = props.imageURL?.startsWith('https://oaidalle') || false;
 
 
@@ -153,7 +166,14 @@ export const RenderImageURL = (props: {
 
           // resizeable image
           '& picture': { display: 'flex', justifyContent: 'center' },
-          '& img': { maxWidth: '100%', maxHeight: '100%', filter: props.disabled ? 'grayscale(100%)' : undefined },
+          '& img': {
+            maxWidth: '100%',
+            // inline message images are capped to the viewport, so a tall image doesn't take over the screen
+            maxHeight: isContentPart ? CONTENT_PART_IMAGE_MAX_HEIGHT : '100%',
+            // let the width follow the capped height, preserving the aspect ratio
+            ...(isContentPart && { width: 'auto', height: 'auto', objectFit: 'contain' }),
+            filter: props.disabled ? 'grayscale(100%)' : undefined,
+          },
           [`&:hover > .${overlayButtonsClassName}`]: overlayButtonsActiveSx,
           '&:hover .overlay-text': overlayButtonsActiveSx,
 

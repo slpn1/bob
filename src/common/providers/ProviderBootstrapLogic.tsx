@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/router';
+import { useSession } from 'next-auth/react';
 
 import { getChatTokenCountingMethod } from '../../apps/chat/store-app-chat';
 
@@ -17,6 +18,7 @@ export function ProviderBootstrapLogic(props: { children: React.ReactNode }) {
 
   // external state
   const { route, events } = useRouter();
+  const { status: sessionStatus } = useSession();
 
   // AUTO-LOG events from this scope on; note that we are past the Sherpas
   useClientLoggerInterception(true, false);
@@ -63,13 +65,17 @@ export function ProviderBootstrapLogic(props: { children: React.ReactNode }) {
   }, []);
 
   // [openai] ensure models are always updated on startup
+  // NOTE: gated on an authenticated session. Unauthenticated this call can only fail - the
+  //       middleware rejects it - so on /login it used to surface as a spurious client error.
   React.useEffect(() => {
+    if (sessionStatus !== 'authenticated') return;
     console.log('[ProviderBootstrapLogic] Ensuring OpenAI models are updated');
     // Run after a short delay to let other initialization complete
-    setTimeout(async () => {
-      await ensureOpenAIModelsUpdated();
+    const timeoutId = setTimeout(() => {
+      void ensureOpenAIModelsUpdated();
     }, 1000);
-  }, []);
+    return () => clearTimeout(timeoutId);
+  }, [sessionStatus]);
 
   //
   // Render Gates

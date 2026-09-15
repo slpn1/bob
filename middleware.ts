@@ -43,6 +43,17 @@ export default async function middleware(request: NextRequest) {
   if (protectedRoutes.some(route => pathname.startsWith(route))) {
     const token = await getToken({ req: request });
     if (!token) {
+      /* API routes must fail as JSON.
+         Redirecting them to the sign-in page returns an HTML document, which every
+         JSON client (tRPC, fetch) then fails to parse - surfacing as a confusing
+         `Unexpected token '<', "<!DOCTYPE "... is not valid JSON` instead of an auth error. */
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: "Unauthorized", code: "auth_required" },
+          { status: 401 },
+        );
+      }
+
       const signInUrl = new URL("/api/auth/signin/azure-ad", request.url);
       return NextResponse.redirect(signInUrl);
     }

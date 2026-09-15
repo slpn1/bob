@@ -87,10 +87,12 @@ const _createImageConfigBase = z.object({
 });
 
 // GPT Image (shared config for gpt-image-1 and gpt-image-1.5)
+// NOTE: 'auto' is accepted for size/quality - the server reads the real values back from the
+//       response, so OpenAI can pick the aspect ratio and quality tier from the prompt.
 const _createImageConfigGIBase = _createImageConfigBase.extend({
   prompt: z.string().max(32000),
-  size: z.enum([/*'auto',*/ '1024x1024', '1536x1024', '1024x1536']),
-  quality: z.enum(['high', 'medium', 'low']).optional(),
+  size: z.enum(['auto', '1024x1024', '1536x1024', '1024x1536']),
+  quality: z.enum(['auto', 'high', 'medium', 'low']).optional(),
   background: z.enum(['auto', 'transparent', 'opaque']).optional(),
   output_format: z.enum(['png', 'jpeg', 'webp']).optional(),
   output_compression: z.number().min(0).max(100).int().optional(),
@@ -101,6 +103,30 @@ const createImageConfigGI15 = _createImageConfigGIBase.extend({
 });
 const createImageConfigGI = _createImageConfigGIBase.extend({
   model: z.literal('gpt-image-1'),
+  // gpt-image-1 only, and only on /v1/images/edits - stripped for generations.
+  // NOTE: gpt-image-1.5 and gpt-image-2.5 reject this parameter.
+  input_fidelity: z.enum(['high', 'low']).optional(),
+});
+
+// GPT Image 2.5 (flare: fast | sunburst: best editing precision)
+const _createImageConfigGI25 = _createImageConfigBase.extend({
+  prompt: z.string().max(32000),
+  // 'auto' lets OpenAI pick the aspect ratio from the prompt; custom sizes are WIDTHxHEIGHT
+  size: z.union([
+    z.enum(['auto', '1024x1024', '1536x1024', '1024x1536']),
+    z.string().regex(/^\d{3,4}x\d{3,4}$/),
+  ]),
+  quality: z.enum(['auto', 'max', 'xhigh', 'high', 'medium', 'low']).optional(),
+  background: z.enum(['auto', 'transparent', 'opaque']).optional(),
+  output_format: z.enum(['png', 'jpeg', 'webp']).optional(),
+  output_compression: z.number().min(0).max(100).int().optional(),
+  moderation: z.enum(['low', 'auto']).optional(),
+});
+const createImageConfigGI25Flare = _createImageConfigGI25.extend({
+  model: z.literal('gpt-image-2.5-flare'),
+});
+const createImageConfigGI25Sunburst = _createImageConfigGI25.extend({
+  model: z.literal('gpt-image-2.5-sunburst'),
 });
 
 // DALL-E 3
@@ -127,6 +153,8 @@ const createImagesInputSchema = z.object({
   access: openAIAccessSchema,
   // for this object sync with <> OpenAIWire_API_Images_Generations.Request_schema
   generationConfig: z.discriminatedUnion('model', [
+    createImageConfigGI25Flare,
+    createImageConfigGI25Sunburst,
     createImageConfigGI15,
     createImageConfigGI,
     createImageConfigD3,
@@ -349,7 +377,7 @@ export const llmOpenAIRouter = createTRPCRouter({
       const { access, generationConfig: config, editConfig } = input;
 
       // Determine if this is an edit request
-      const isGptImageModel = config.model === 'gpt-image-1.5' || config.model === 'gpt-image-1';
+      const isGptImageModel = config.model.startsWith('gpt-image-'); // 1, 1.5, 2.5-flare, 2.5-sunburst
       const isEdit = !!editConfig?.inputImages?.length && isGptImageModel;
 
       // validate input
@@ -370,6 +398,11 @@ export const llmOpenAIRouter = createTRPCRouter({
       if (!isEdit) {
 
         const { count, ...restConfig } = config;
+
+        // 'input_fidelity' is only accepted by /v1/images/edits - sending it here is a 400
+        if ('input_fidelity' in restConfig)
+          delete (restConfig as Record<string, unknown>).input_fidelity;
+
         requestBody = {
           ...restConfig, // includes response_format for dall-e-3 and dall-e-2 models
           n: count,
@@ -398,6 +431,23 @@ export const llmOpenAIRouter = createTRPCRouter({
         if (size && (size as string) !== 'auto') requestBody.append('size', size);
         // if (model === 'dall-e-2') requestBody.append('response_format', 'b64_json');
         requestBody.append('user', user || 'Big-AGI');
+
+        // GPT Image editing options - /v1/images/edits accepts the same output controls as
+        // /generations, plus 'input_fidelity' (gpt-image-1 only; the 1.5 and 2.5 models reject it)
+        const giEditConfig = config as Partial<{
+          background: string; output_format: string; output_compression: number;
+          moderation: string; input_fidelity: string;
+        }>;
+        if (giEditConfig.background && giEditConfig.background !== 'auto')
+          requestBody.append('background', giEditConfig.background);
+        if (giEditConfig.output_format)
+          requestBody.append('output_format', giEditConfig.output_format);
+        if (giEditConfig.output_compression !== undefined && (giEditConfig.output_format === 'jpeg' || giEditConfig.output_format === 'webp'))
+          requestBody.append('output_compression', '' + giEditConfig.output_compression);
+        if (giEditConfig.moderation)
+          requestBody.append('moderation', giEditConfig.moderation);
+        if (giEditConfig.input_fidelity)
+          requestBody.append('input_fidelity', giEditConfig.input_fidelity);
 
         // append input images
         const imagesCount = editConfig.inputImages.length;
@@ -449,18 +499,28 @@ export const llmOpenAIRouter = createTRPCRouter({
       if (!wireOpenAICreateImageOutput)
         return null;
 
-      // common image fields
-      const [width, height] = (config.size as any) === 'auto'
-        ? [1024, 1024] // NOTE: this is broken, bad assumption, but so that we don't throw an error
-        : config.size.split('x').map(nStr => parseInt(nStr));
-      if (!width || !height) {
-        console.error(`openai.router.createImages: invalid size ${config.size}`);
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `[OpenAI Issue] Invalid size ${config.size}` });
-      }
-      const { count: _ignoreCount, prompt: origPrompt, ...parameters } = config;
-
       // parse the response and emit all images in the response
-      const { data: images, usage: tokens } = OpenAIWire_API_Images_Generations.Response_schema.parse(wireOpenAICreateImageOutput);
+      const { data: images, usage: tokens, size: respSize, output_format: respOutputFormat } =
+        OpenAIWire_API_Images_Generations.Response_schema.parse(wireOpenAICreateImageOutput);
+
+      // GPT Image models echo back the parameters they actually used, which is the only way to
+      // learn the real dimensions when we requested size: 'auto' - fall back to the requested size
+      // note: 'auto' only survives here if the endpoint didn't echo the size back (e.g. LocalAI)
+      const effectiveSize = (respSize && respSize !== 'auto') ? respSize
+        : (config.size as string) !== 'auto' ? config.size
+          : '1024x1024'; // last-resort fallback, rather than failing the whole generation
+      const [width, height] = String(effectiveSize).split('x').map(nStr => parseInt(nStr));
+      if (!width || !height) {
+        console.error(`openai.router.createImages: invalid size ${effectiveSize}`);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `[OpenAI Issue] Invalid size ${effectiveSize}` });
+      }
+
+      // likewise, trust the echoed output_format over what we asked for (edits may coerce it)
+      if (respOutputFormat === 'jpeg') genImageMimeType = 'image/jpeg';
+      else if (respOutputFormat === 'webp') genImageMimeType = 'image/webp';
+      else if (respOutputFormat === 'png') genImageMimeType = 'image/png';
+
+      const { count: _ignoreCount, prompt: origPrompt, ...parameters } = config;
       for (const image of images) {
         if (!('b64_json' in image))
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: `[OpenAI Issue] Expected a b64_json, got a url` });
@@ -477,7 +537,7 @@ export const llmOpenAIRouter = createTRPCRouter({
             ...(tokens?.input_tokens !== undefined ? { inputTokens: tokens.input_tokens } : {}),
             ...(tokens?.output_tokens !== undefined ? { outputTokens: tokens.output_tokens } : {}),
             generatorName: config.model,
-            parameters: parameters,
+            parameters: { ...parameters, size: effectiveSize },
             generatedAt: new Date().toISOString(),
           },
         };
